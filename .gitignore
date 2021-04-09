@@ -1,0 +1,10 @@
+*build*
+*.blg
+*.bbl
+
+*.pyc
+tests/test_graph.pdf
+test.xlsx
+test_results.xlsx
+dispatch_test_results.csv
+DCF_test_results.csv
