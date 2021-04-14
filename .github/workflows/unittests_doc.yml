@@ -46,3 +46,13 @@ jobs:
       - name: Test with unittest
         run: $CONDA/bin/python -m unittest discover tests
         shell: bash
+
+      - name: Install rtd theme for sphinx doc from pypi
+        run: $CONDA/bin/python -m pip install sphinx_rtd_theme 
+      - name: Build docs with sphinx
+        run: $CONDA/bin/sphinx-build -b html docs/source/ docs/build
+      - name: Store doc as artifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: DocumentationHTML
+          path: docs/build/
