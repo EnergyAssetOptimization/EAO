@@ -15,7 +15,7 @@ dependencies:
   - scipy
   - networkx
   - sphinx
-  - cvxpy
   - pip:
     - python-dateutil
+    - cvxpy
     #- jupyter-contrib-nbextensions==0.5.1
