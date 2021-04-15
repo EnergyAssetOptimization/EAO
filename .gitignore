@@ -1,7 +1,0 @@
-*build*
-*.blg
-*.bbl
-*.pyc
-tests/test_graph.pdf
-test.xlsx
-*test_results*
