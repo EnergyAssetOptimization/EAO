@@ -19,4 +19,5 @@ dependencies:
     - python-dateutil
     - cvxpy
     - openpyxl
+    - nbsphinx
     #- jupyter-contrib-nbextensions==0.5.1
