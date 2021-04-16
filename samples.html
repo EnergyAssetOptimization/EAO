@@ -1,0 +1,346 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Samples &mdash; EAO  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Sample for optimizing a portfolio that supplies a load minimum share of green energy" href="samples/green_ppa/sample_green_ppa.html" />
+    <link rel="prev" title="EAO package" href="eao.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> EAO
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="eao.html">EAO package</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Samples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#green-ppa-and-structured-doenstream-contract">Green PPA and structured doenstream contract</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samples/green_ppa/sample_green_ppa.html">Sample for optimizing a portfolio that supplies a load minimum share of green energy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/green_ppa/sample_green_ppa.html#Some-prerequisites">Some prerequisites</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/green_ppa/sample_green_ppa.html#Interpret-the-results">Interpret the results</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#marginal-costs-in-portfolio-optimization">Marginal costs in portfolio optimization</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samples/marginal_costs/marginal_costs.html">Marginal costs - basic concept and example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/marginal_costs/marginal_costs.html#Some-prerequisites">Some prerequisites</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#stochastic-linear-programs">Stochastic Linear Programs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samples/stochastic_optimization/slp_sample.html">Stochastic linear program (SLP) to take into account uncertainty</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/stochastic_optimization/slp_sample.html#Some-prerequisites">Some prerequisites</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#robust-optimization">Robust optimization</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samples/robust_optimization/robust_optimization_szenarios.html">Robust optimization - example with szenario analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/robust_optimization/robust_optimization_szenarios.html#Some-prerequisites">Some prerequisites</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/robust_optimization/robust_optimization_szenarios.html#Define-price-samples">Define price samples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/robust_optimization/robust_optimization_szenarios.html#Running-the-optimization">Running the optimization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/robust_optimization/robust_optimization_szenarios.html#Analysis">Analysis</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">EAO</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Samples</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/samples.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="samples">
+<h1>Samples<a class="headerlink" href="#samples" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="green-ppa-and-structured-doenstream-contract">
+<h2>Green PPA and structured doenstream contract<a class="headerlink" href="#green-ppa-and-structured-doenstream-contract" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="samples/green_ppa/sample_green_ppa.html">Sample for optimizing a portfolio that supplies a load minimum share of green energy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="samples/green_ppa/sample_green_ppa.html#Some-prerequisites">Some prerequisites</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="samples/green_ppa/sample_green_ppa.html#Timegrid">Timegrid</a></li>
+<li class="toctree-l2"><a class="reference internal" href="samples/green_ppa/sample_green_ppa.html#The-nodes-as-the-starting-point">The nodes as the starting point</a></li>
+<li class="toctree-l2"><a class="reference internal" href="samples/green_ppa/sample_green_ppa.html#The-downstream-contract">The downstream contract</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samples/green_ppa/sample_green_ppa.html#Starting-with-the-load">Starting with the load</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="samples/green_ppa/sample_green_ppa.html#Green-energy-supply-PPAs:-PV-and-wind-with-a-given-generation-profile">Green energy supply PPAs: PV and wind with a given generation profile</a></li>
+<li class="toctree-l2"><a class="reference internal" href="samples/green_ppa/sample_green_ppa.html#Add-storage-to-be-able-to-maximize-green-supply">Add storage to be able to maximize green supply</a></li>
+<li class="toctree-l2"><a class="reference internal" href="samples/green_ppa/sample_green_ppa.html#The-market">The market</a></li>
+<li class="toctree-l2"><a class="reference internal" href="samples/green_ppa/sample_green_ppa.html#Putting-everything-together">Putting everything together</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="samples/green_ppa/sample_green_ppa.html#Interpret-the-results">Interpret the results</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="samples/green_ppa/sample_green_ppa.html#Detailed-results-–-plotting-saving-to-file-for-further-inspection">Detailed results – plotting saving to file for further inspection</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="marginal-costs-in-portfolio-optimization">
+<h2>Marginal costs in portfolio optimization<a class="headerlink" href="#marginal-costs-in-portfolio-optimization" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="samples/marginal_costs/marginal_costs.html">Marginal costs - basic concept and example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="samples/marginal_costs/marginal_costs.html#Some-prerequisites">Some prerequisites</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="samples/marginal_costs/marginal_costs.html#Parameter-setting">Parameter setting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="samples/marginal_costs/marginal_costs.html#Set-up-portfolio">Set up portfolio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="samples/marginal_costs/marginal_costs.html#Perform-the-optimization">Perform the optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="samples/marginal_costs/marginal_costs.html#Create-charts-and-interpret-the-results">Create charts and interpret the results</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samples/marginal_costs/marginal_costs.html#Left-figure:">Left figure:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/marginal_costs/marginal_costs.html#Right-figure:">Right figure:</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="samples/marginal_costs/marginal_costs.html#Marginal-costs-and-duals-in-linear-programs">Marginal costs and duals in linear programs</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="stochastic-linear-programs">
+<h2>Stochastic Linear Programs<a class="headerlink" href="#stochastic-linear-programs" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="samples/stochastic_optimization/slp_sample.html">Stochastic linear program (SLP) to take into account uncertainty</a></li>
+<li class="toctree-l1"><a class="reference internal" href="samples/stochastic_optimization/slp_sample.html#Some-prerequisites">Some prerequisites</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="samples/stochastic_optimization/slp_sample.html#Parameter-setting">Parameter setting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="samples/stochastic_optimization/slp_sample.html#Set-up-portfolio">Set up portfolio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="samples/stochastic_optimization/slp_sample.html#Perform-the-optimization">Perform the optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="samples/stochastic_optimization/slp_sample.html#Create-charts-and-interpret-the-results">Create charts and interpret the results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="samples/stochastic_optimization/slp_sample.html#Interpretation:">Interpretation:</a></li>
+<li class="toctree-l2"><a class="reference internal" href="samples/stochastic_optimization/slp_sample.html#Notes:">Notes:</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="robust-optimization">
+<h2>Robust optimization<a class="headerlink" href="#robust-optimization" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="samples/robust_optimization/robust_optimization_szenarios.html">Robust optimization - example with szenario analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="samples/robust_optimization/robust_optimization_szenarios.html#Some-prerequisites">Some prerequisites</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="samples/robust_optimization/robust_optimization_szenarios.html#Load-data-from-JSON">Load data from JSON</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="samples/robust_optimization/robust_optimization_szenarios.html#Define-price-samples">Define price samples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="samples/robust_optimization/robust_optimization_szenarios.html#Running-the-optimization">Running the optimization</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="samples/robust_optimization/robust_optimization_szenarios.html#(1)-deterministic-optimization-on-the-mean-price">(1) deterministic optimization on the mean price</a></li>
+<li class="toctree-l2"><a class="reference internal" href="samples/robust_optimization/robust_optimization_szenarios.html#(2)-robust-optimization-on-the-whole-set-of-prices">(2) robust optimization on the whole set of prices</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="samples/robust_optimization/robust_optimization_szenarios.html#Analysis">Analysis</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="samples/robust_optimization/robust_optimization_szenarios.html#Looking-at-the-plain-portfolio-value,-it-is-not-surprising,-that-the-robust-optimization-achieves-less-value-on-the-mean-price,-than-the-optimization-that-is-optimized-directly-on-the-mean">Looking at the plain portfolio value, it is not surprising, that the robust optimization achieves less value on the mean price, than the optimization that is optimized directly on the mean</a></li>
+<li class="toctree-l2"><a class="reference internal" href="samples/robust_optimization/robust_optimization_szenarios.html#Interpretation-of-the-results">Interpretation of the results</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="samples/green_ppa/sample_green_ppa.html" class="btn btn-neutral float-right" title="Sample for optimizing a portfolio that supplies a load minimum share of green energy" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="eao.html" class="btn btn-neutral float-left" title="EAO package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
