@@ -2,7 +2,7 @@ Samples
 ================================
 
 
-Green PPA and structured doenstream contract
+Green PPA and structured downstream contract
 --------------------------------------------
 
 .. toctree:: 
