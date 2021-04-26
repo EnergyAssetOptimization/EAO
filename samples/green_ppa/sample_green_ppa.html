@@ -89,10 +89,14 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../eao.html">EAO package</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../../samples.html">Samples</a><ul class="current">
-<li class="toctree-l2 current"><a class="reference internal" href="../../samples.html#green-ppa-and-structured-doenstream-contract">Green PPA and structured doenstream contract</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../samples.html#green-ppa-and-structured-downstream-contract">Green PPA and structured downstream contract</a><ul class="current">
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Sample for optimizing a portfolio that supplies a load minimum share of green energy</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Some-prerequisites">Some prerequisites</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Basic-definitions">Basic definitions</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Timegrid">Timegrid</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#Define-the-portfolio">Define the portfolio</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#The-nodes-as-the-starting-point">The nodes as the starting point</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#The-downstream-contract">The downstream contract</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Green-energy-supply-PPAs:-PV-and-wind-with-a-given-generation-profile">Green energy supply PPAs: PV and wind with a given generation profile</a></li>
@@ -101,6 +105,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#Putting-everything-together">Putting everything together</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#Optimize">Optimize</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Interpret-the-results">Interpret the results</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#Detailed-results-–-plotting-saving-to-file-for-further-inspection">Detailed results – plotting saving to file for further inspection</a></li>
 </ul>
@@ -457,6 +462,8 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="section" id="Some-prerequisites">
 <h1>Some prerequisites<a class="headerlink" href="#Some-prerequisites" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="Basic-definitions">
+<h2>Basic definitions<a class="headerlink" href="#Basic-definitions" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
@@ -476,6 +483,7 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 </div>
+</div>
 <div class="section" id="Timegrid">
 <h2>Timegrid<a class="headerlink" href="#Timegrid" title="Permalink to this headline">¶</a></h2>
 <p>The timegrid defines start and end of the optimization, including discretization and conversion unit from flow (i.e. capacity, here MW) and volume (here MWh)</p>
@@ -491,6 +499,9 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 </div>
+</div>
+<div class="section" id="Define-the-portfolio">
+<h1>Define the portfolio<a class="headerlink" href="#Define-the-portfolio" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="The-nodes-as-the-starting-point">
 <h2>The nodes as the starting point<a class="headerlink" href="#The-nodes-as-the-starting-point" title="Permalink to this headline">¶</a></h2>
 <p>A node reflects a virtual trading point that all assets are connected to. In case of a setup with transport limitations, several nodes may be used. A node always comes with a commodity that is traded at it. Here it’s power. Note that commodity and unit serve for documentation only</p>
@@ -539,6 +550,9 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 </div>
+</div>
+<div class="section" id="Green-restriction">
+<h3>Green restriction<a class="headerlink" href="#Green-restriction" title="Permalink to this headline">¶</a></h3>
 <p>To link green and grey sources to their delivery counterparts, we define transport assets. The green link implements a “minimum take”, i.e. a minimum volume over the optimization time</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
@@ -551,6 +565,9 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 </div>
+</div>
+<div class="section" id="Create-contract-object">
+<h3>Create contract object<a class="headerlink" href="#Create-contract-object" title="Permalink to this headline">¶</a></h3>
 <p>To wrap things up, we pack all assets together in a portfolio that defines our downstream contract. This in turn is used to define the new structured asset that connects to the outside world via the sourcing nodes</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
@@ -577,7 +594,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/samples_green_ppa_sample_green_ppa_16_0.svg" src="../../_images/samples_green_ppa_sample_green_ppa_16_0.svg" /></div>
+<img alt="../../_images/samples_green_ppa_sample_green_ppa_17_0.svg" src="../../_images/samples_green_ppa_sample_green_ppa_17_0.svg" /></div>
 </div>
 </div>
 </div>
@@ -654,11 +671,15 @@ div.rendered_html tbody tr:hover {
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/samples_green_ppa_sample_green_ppa_24_0.svg" src="../../_images/samples_green_ppa_sample_green_ppa_24_0.svg" /></div>
+<img alt="../../_images/samples_green_ppa_sample_green_ppa_25_0.svg" src="../../_images/samples_green_ppa_sample_green_ppa_25_0.svg" /></div>
 </div>
 <ol class="arabic simple" start="2">
 <li><p>With the structured downstream contract as a structured asset, hiding some internal mechanics</p></li>
 </ol>
+</div>
+</div>
+<div class="section" id="Optimize">
+<h1>Optimize<a class="headerlink" href="#Optimize" title="Permalink to this headline">¶</a></h1>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
@@ -675,8 +696,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/samples_green_ppa_sample_green_ppa_26_0.svg" src="../../_images/samples_green_ppa_sample_green_ppa_26_0.svg" /></div>
-</div>
+<img alt="../../_images/samples_green_ppa_sample_green_ppa_28_0.svg" src="../../_images/samples_green_ppa_sample_green_ppa_28_0.svg" /></div>
 </div>
 </div>
 <div class="section" id="Interpret-the-results">
@@ -705,10 +725,10 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-               Values
+                 Values
 Parameter
-status     successful
-value         58102.9
+status       successful
+value      58024.059186
 </pre></div></div>
 </div>
 <div class="section" id="Detailed-results-–-plotting-saving-to-file-for-further-inspection">
@@ -759,29 +779,29 @@ value         58102.9
       <th>2021-01-01 06:00:00</th>
       <td>-9.3</td>
       <td>-0.0</td>
-      <td>3.8</td>
+      <td>4.2</td>
       <td>0.0</td>
       <td>0.0</td>
       <td>-0.0</td>
-      <td>5.6</td>
+      <td>5.1</td>
     </tr>
     <tr>
       <th>2021-01-01 07:00:00</th>
-      <td>-3.5</td>
-      <td>-9.2</td>
-      <td>0.3</td>
-      <td>1.3</td>
-      <td>9.2</td>
+      <td>-12.7</td>
       <td>-0.0</td>
-      <td>1.9</td>
+      <td>0.2</td>
+      <td>1.3</td>
+      <td>0.0</td>
+      <td>-0.0</td>
+      <td>11.2</td>
     </tr>
     <tr>
       <th>2021-01-01 08:00:00</th>
-      <td>-3.2</td>
-      <td>-7.6</td>
-      <td>0.7</td>
+      <td>-5.7</td>
+      <td>-5.1</td>
+      <td>3.2</td>
       <td>2.5</td>
-      <td>7.6</td>
+      <td>5.1</td>
       <td>-0.0</td>
       <td>0.0</td>
     </tr>
@@ -789,51 +809,51 @@ value         58102.9
       <th>2021-01-01 09:00:00</th>
       <td>-4.9</td>
       <td>-0.0</td>
-      <td>3.3</td>
+      <td>2.6</td>
       <td>3.5</td>
       <td>0.0</td>
       <td>-0.0</td>
-      <td>-2.0</td>
+      <td>-1.3</td>
     </tr>
     <tr>
       <th>2021-01-01 10:00:00</th>
       <td>-0.3</td>
       <td>-0.0</td>
-      <td>2.5</td>
+      <td>4.9</td>
       <td>4.3</td>
       <td>0.0</td>
       <td>-0.0</td>
-      <td>-6.5</td>
+      <td>-8.9</td>
     </tr>
     <tr>
       <th>2021-01-01 11:00:00</th>
       <td>-0.8</td>
       <td>-0.0</td>
-      <td>4.2</td>
+      <td>4.7</td>
       <td>4.8</td>
       <td>0.0</td>
       <td>-0.0</td>
-      <td>-8.3</td>
+      <td>-8.7</td>
     </tr>
     <tr>
       <th>2021-01-01 12:00:00</th>
       <td>-2.6</td>
       <td>-0.0</td>
-      <td>2.6</td>
+      <td>4.9</td>
       <td>5.0</td>
       <td>0.0</td>
       <td>-0.0</td>
-      <td>-5.0</td>
+      <td>-7.3</td>
     </tr>
     <tr>
       <th>2021-01-01 13:00:00</th>
       <td>-5.2</td>
       <td>-0.0</td>
-      <td>4.9</td>
+      <td>2.0</td>
       <td>4.8</td>
       <td>0.0</td>
       <td>-0.0</td>
-      <td>-4.5</td>
+      <td>-1.6</td>
     </tr>
     <tr>
       <th>2021-01-01 14:00:00</th>
@@ -849,31 +869,31 @@ value         58102.9
       <th>2021-01-01 15:00:00</th>
       <td>-1.8</td>
       <td>-0.0</td>
-      <td>2.4</td>
+      <td>4.8</td>
       <td>3.5</td>
       <td>0.0</td>
-      <td>-4.1</td>
-      <td>-0.1</td>
+      <td>-4.3</td>
+      <td>-2.3</td>
     </tr>
     <tr>
       <th>2021-01-01 16:00:00</th>
       <td>-5.5</td>
       <td>-0.0</td>
-      <td>3.6</td>
+      <td>4.0</td>
       <td>2.5</td>
       <td>0.0</td>
-      <td>-0.6</td>
+      <td>-1.0</td>
       <td>-0.0</td>
     </tr>
     <tr>
       <th>2021-01-01 17:00:00</th>
       <td>-4.2</td>
       <td>-0.0</td>
-      <td>4.5</td>
+      <td>1.0</td>
       <td>1.3</td>
       <td>0.0</td>
-      <td>-1.6</td>
       <td>-0.0</td>
+      <td>1.9</td>
     </tr>
   </tbody>
 </table>
@@ -900,7 +920,7 @@ value         58102.9
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/samples_green_ppa_sample_green_ppa_33_0.svg" src="../../_images/samples_green_ppa_sample_green_ppa_33_0.svg" /></div>
+<img alt="../../_images/samples_green_ppa_sample_green_ppa_35_0.svg" src="../../_images/samples_green_ppa_sample_green_ppa_35_0.svg" /></div>
 </div>
 </div>
 </div>

@@ -89,17 +89,22 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../eao.html">EAO package</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../../samples.html">Samples</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="../../samples.html#green-ppa-and-structured-doenstream-contract">Green PPA and structured doenstream contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../samples.html#green-ppa-and-structured-downstream-contract">Green PPA and structured downstream contract</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../../samples.html#marginal-costs-in-portfolio-optimization">Marginal costs in portfolio optimization</a><ul class="current">
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Marginal costs - basic concept and example</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Some-prerequisites">Some prerequisites</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Basic-definitions">Basic definitions</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Parameter-setting">Parameter setting</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#Set-up-portfolio">Set up portfolio</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#Perform-the-optimization">Perform the optimization</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#Create-charts-and-interpret-the-results">Create charts and interpret the results</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#Marginal-costs-and-duals-in-linear-programs">Marginal costs and duals in linear programs</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#Set-up-portfolio">Set up portfolio</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Perform-the-optimization">Perform the optimization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Create-charts-and-interpret-the-results">Create charts and interpret the results</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Left-figure:">Left figure:</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Right-figure:">Right figure:</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#Marginal-costs-and-duals-in-linear-programs">Marginal costs and duals in linear programs</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../../samples.html#stochastic-linear-programs">Stochastic Linear Programs</a></li>
@@ -452,6 +457,8 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="section" id="Some-prerequisites">
 <h1>Some prerequisites<a class="headerlink" href="#Some-prerequisites" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="Basic-definitions">
+<h2>Basic definitions<a class="headerlink" href="#Basic-definitions" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
@@ -479,6 +486,7 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 </div>
+</div>
 <div class="section" id="Parameter-setting">
 <h2>Parameter setting<a class="headerlink" href="#Parameter-setting" title="Permalink to this headline">¶</a></h2>
 <p>Defining timegrid and main portfolio settings. Note that we do not explain the setup in detail. Please refer to the basic samples to understand the concepts and parameters</p>
@@ -501,8 +509,9 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 </div>
+</div>
 <div class="section" id="Set-up-portfolio">
-<h2>Set up portfolio<a class="headerlink" href="#Set-up-portfolio" title="Permalink to this headline">¶</a></h2>
+<h1>Set up portfolio<a class="headerlink" href="#Set-up-portfolio" title="Permalink to this headline">¶</a></h1>
 <ol class="arabic simple">
 <li><p>a given load to cover</p></li>
 <li><p>generation assets with different production costs</p></li>
@@ -525,7 +534,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="section" id="Perform-the-optimization">
-<h2>Perform the optimization<a class="headerlink" href="#Perform-the-optimization" title="Permalink to this headline">¶</a></h2>
+<h1>Perform the optimization<a class="headerlink" href="#Perform-the-optimization" title="Permalink to this headline">¶</a></h1>
 <p>Setting up the optimization provlem ans solving. Note that in this setup no (market) prices are needed to solve the problem, as we try to cover the load at minimal costs</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
@@ -553,7 +562,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="section" id="Create-charts-and-interpret-the-results">
-<h2>Create charts and interpret the results<a class="headerlink" href="#Create-charts-and-interpret-the-results" title="Permalink to this headline">¶</a></h2>
+<h1>Create charts and interpret the results<a class="headerlink" href="#Create-charts-and-interpret-the-results" title="Permalink to this headline">¶</a></h1>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
@@ -580,19 +589,27 @@ div.rendered_html tbody tr:hover {
 <img alt="../../_images/samples_marginal_costs_marginal_costs_12_0.svg" src="../../_images/samples_marginal_costs_marginal_costs_12_0.svg" /></div>
 </div>
 <div class="section" id="Left-figure:">
-<h3>Left figure:<a class="headerlink" href="#Left-figure:" title="Permalink to this headline">¶</a></h3>
+<h2>Left figure:<a class="headerlink" href="#Left-figure:" title="Permalink to this headline">¶</a></h2>
 <p>Dispatch of the single assets. The generation units 1-5 are dispatched in the order of their production costs. At lower loads we need only gen_1, while at higher loads we need all of them</p>
 </div>
 <div class="section" id="Right-figure:">
-<h3>Right figure:<a class="headerlink" href="#Right-figure:" title="Permalink to this headline">¶</a></h3>
+<h2>Right figure:<a class="headerlink" href="#Right-figure:" title="Permalink to this headline">¶</a></h2>
 <p>The marginal costs are determined by the most expensive asset needed.</p>
 </div>
 </div>
 <div class="section" id="Marginal-costs-and-duals-in-linear-programs">
-<h2>Marginal costs and duals in linear programs<a class="headerlink" href="#Marginal-costs-and-duals-in-linear-programs" title="Permalink to this headline">¶</a></h2>
+<h1>Marginal costs and duals in linear programs<a class="headerlink" href="#Marginal-costs-and-duals-in-linear-programs" title="Permalink to this headline">¶</a></h1>
 <p>The marginal cost for each node is given by the dual of the corresponding nodal restriction. Intuitively, it reflects the change in value of the portfolio as at the node we have an infinitesimal extra amount of the commodity available</p>
 <p>In this simple case, the marginal costs are just the production costs of the most expensive asset needed. However, the concept applies directly to any other and more complex portfolio of assets.</p>
 <p>Once more nodes are used in the portfolio, nodal prices may be different if there are transport bottlenecks</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>
+</pre></div>
+</div>
 </div>
 </div>
 
