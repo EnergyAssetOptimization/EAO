@@ -101,7 +101,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#Set-up-portfolio">Set up portfolio</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Perform-the-optimization">Perform the optimization</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Create-charts-and-interpret-the-results">Create charts and interpret the results</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#Interpretation:">Interpretation:</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Interpretation">Interpretation</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#Notes:">Notes:</a></li>
@@ -458,7 +458,7 @@ div.rendered_html tbody tr:hover {
 <div class="section" id="Basics">
 <h2>Basics<a class="headerlink" href="#Basics" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -490,7 +490,7 @@ div.rendered_html tbody tr:hover {
 <p>Defining timegrid and main portfolio settings as well as settings for SLP. Note that we do not explain the setup in detail. Please refer to the basic samples to understand the concepts and parameters</p>
 <p>For the SLP part we define the number of samples to be used. Using the parameter ‘sigma’ we can adjust uncertainty in price samples. The parameter ‘start_future’ defines the transition between the two stages of the SLP - present and future. In the two-stage setup we determine the optimal steps in the present given an uncertain future</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -513,7 +513,7 @@ div.rendered_html tbody tr:hover {
 <li><p>definition of how prices are sampled</p></li>
 </ol>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -543,7 +543,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -569,7 +569,7 @@ div.rendered_html tbody tr:hover {
 <h1>Perform the optimization<a class="headerlink" href="#Perform-the-optimization" title="Permalink to this headline">¶</a></h1>
 <p>For comparison we perform a deterministic optimization on the ‘mean price’ and an SLP on given samples for the future</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -588,7 +588,7 @@ div.rendered_html tbody tr:hover {
 <div class="section" id="Create-charts-and-interpret-the-results">
 <h1>Create charts and interpret the results<a class="headerlink" href="#Create-charts-and-interpret-the-results" title="Permalink to this headline">¶</a></h1>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -613,7 +613,7 @@ div.rendered_html tbody tr:hover {
 <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span> <span class="o">=</span> <span class="s1">&#39;upper left&#39;</span><span class="p">)</span>
 <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span> <span class="o">=</span> <span class="s1">&#39;upper left&#39;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-<span class="c1">#plt.savefig(file_chart)</span>
+
 </pre></div>
 </div>
 </div>
@@ -623,8 +623,8 @@ div.rendered_html tbody tr:hover {
 <div class="output_area docutils container">
 <img alt="../../_images/samples_stochastic_optimization_slp_sample_11_0.svg" src="../../_images/samples_stochastic_optimization_slp_sample_11_0.svg" /></div>
 </div>
-<div class="section" id="Interpretation:">
-<h2>Interpretation:<a class="headerlink" href="#Interpretation:" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="Interpretation">
+<h2>Interpretation<a class="headerlink" href="#Interpretation" title="Permalink to this headline">¶</a></h2>
 <p>The red line indicates the start of the uncertain future (Jan 3). While for the pending decision (stage 1) prices are certain, for the future (stage 2) we have five price samples that encode the uncertainty. Solutions in this example are relatively similar – but note that the deterministic optimization charges the storage maximally undil Jan 03 as future prices are higher than present prices. Since uncertainty is high, the SLP solution starts discharching earlier, as future prices may be higher
 today but are uncertain.</p>
 </div>

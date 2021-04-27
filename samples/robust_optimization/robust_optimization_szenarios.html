@@ -104,8 +104,8 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#Analysis">Analysis</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#Looking-at-the-plain-portfolio-value,-it-is-not-surprising,-that-the-robust-optimization-achieves-less-value-on-the-mean-price,-than-the-optimization-that-is-optimized-directly-on-the-mean">Looking at the plain portfolio value, it is not surprising, that the robust optimization achieves less value on the mean price, than the optimization that is optimized directly on the mean</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#Interpretation-of-the-results">Interpretation of the results</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Portfolio-value">Portfolio value</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Detailed-view">Detailed view</a></li>
 </ul>
 </li>
 </ul>
@@ -460,7 +460,7 @@ div.rendered_html tbody tr:hover {
 <div class="section" id="Some-prerequisites">
 <h1>Some prerequisites<a class="headerlink" href="#Some-prerequisites" title="Permalink to this headline">¶</a></h1>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -482,7 +482,7 @@ div.rendered_html tbody tr:hover {
 <h2>Load data from JSON<a class="headerlink" href="#Load-data-from-JSON" title="Permalink to this headline">¶</a></h2>
 <p>For simplicity we use a predefined (simple) portfolio. Note that eao provides a simple (de-)serialization from and to JSON files. This allows you to define and store simgle assets or portfolios</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -509,7 +509,7 @@ div.rendered_html tbody tr:hover {
 <h1>Define price samples<a class="headerlink" href="#Define-price-samples" title="Permalink to this headline">¶</a></h1>
 <p>Each contract comes with its own price. In this example we keep two price series fixed (for fix price sales contracts) and sample the floating price (sourcing). Note that the storage is the main element that requires robust optimization. In a deterministic case, it is steered hard to a specific price vector. In the robust case it takes into account prices are uncertain.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -540,7 +540,7 @@ div.rendered_html tbody tr:hover {
 <div class="section" id="(1)-deterministic-optimization-on-the-mean-price">
 <h2>(1) deterministic optimization on the mean price<a class="headerlink" href="#(1)-deterministic-optimization-on-the-mean-price" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -554,7 +554,7 @@ div.rendered_html tbody tr:hover {
 <h2>(2) robust optimization on the whole set of prices<a class="headerlink" href="#(2)-robust-optimization-on-the-whole-set-of-prices" title="Permalink to this headline">¶</a></h2>
 <p>In the implementation we re-use the optimization problem with all its restrictions and add the samples. For this purpose, the price samples need to be translated to specific cost arrays for each asset in the portfolio.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -567,10 +567,11 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="section" id="Analysis">
 <h1>Analysis<a class="headerlink" href="#Analysis" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="Looking-at-the-plain-portfolio-value,-it-is-not-surprising,-that-the-robust-optimization-achieves-less-value-on-the-mean-price,-than-the-optimization-that-is-optimized-directly-on-the-mean">
-<h2>Looking at the plain portfolio value, it is not surprising, that the robust optimization achieves less value on the mean price, than the optimization that is optimized directly on the mean<a class="headerlink" href="#Looking-at-the-plain-portfolio-value,-it-is-not-surprising,-that-the-robust-optimization-achieves-less-value-on-the-mean-price,-than-the-optimization-that-is-optimized-directly-on-the-mean" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="Portfolio-value">
+<h2>Portfolio value<a class="headerlink" href="#Portfolio-value" title="Permalink to this headline">¶</a></h2>
+<p>Looking at the plain portfolio value, it is not surprising, that the robust optimization achieves less value on the mean price, than the optimization that is optimized directly on the mean</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -592,7 +593,7 @@ Portfolio value against mean prices:
 </div>
 <p>Now let us look at the performance of the optimized portfolios against price samples.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -619,7 +620,7 @@ Minimum portfolio value on original samples:
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -651,11 +652,11 @@ Minimum portfolio value on original samples:
 <img alt="../../_images/samples_robust_optimization_robust_optimization_szenarios_16_0.svg" src="../../_images/samples_robust_optimization_robust_optimization_szenarios_16_0.svg" /></div>
 </div>
 </div>
-<div class="section" id="Interpretation-of-the-results">
-<h2>Interpretation of the results<a class="headerlink" href="#Interpretation-of-the-results" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="Detailed-view">
+<h2>Detailed view<a class="headerlink" href="#Detailed-view" title="Permalink to this headline">¶</a></h2>
 <p>Let us look at prices and the dispatch</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -665,7 +666,7 @@ Minimum portfolio value on original samples:
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
