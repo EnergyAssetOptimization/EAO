@@ -24,7 +24,7 @@ You can find the code along with some sample notebooks here:
 `GitHub repository <https://github.com/EnergyAssetOptimization/EAO>`_
 
 And an extensive technical report here:
-`Report <xx>`_
+`Report <https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3842822>`_
 
 .. toctree::
    :maxdepth: 3
