@@ -1,3 +1,6 @@
+
+[![CI](https://github.com/EnergyAssetOptimization/EAO/actions/workflows/unittests_doc.yml/badge.svg)](https://github.com/EnergyAssetOptimization/EAO/actions/workflows/unittests_doc.yml)
+
 # The Energy Asset Optimization (EAO) package
 
 The EAO package is a modular Python framework, designed to enable practitioners to use, build and optimize energy and commodity trading portfolios using linear or mixed integer programming as well as stochastic linear programming. It provides an implementation of
@@ -17,4 +20,3 @@ And an extensive technical report here:
 
 
 
-[![CI](https://github.com/EnergyAssetOptimization/EAO/actions/workflows/unittests_doc.yml/badge.svg)](https://github.com/EnergyAssetOptimization/EAO/actions/workflows/unittests_doc.yml)
