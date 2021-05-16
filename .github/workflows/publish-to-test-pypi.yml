@@ -1,9 +1,8 @@
 name: Publish Package to TestPyPI
 
-# do not run automitically until git workflow (developing on 'develop' branch) has been established
+# do not run automatically until git workflow (developing on 'develop' branch) has been established
 # on: push
 on: workflow_dispatch
-
 
 jobs:
   build-n-publish:
