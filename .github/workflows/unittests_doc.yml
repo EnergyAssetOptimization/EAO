@@ -47,7 +47,7 @@ jobs:
         run: |
           pip install coverage
           #$CONDA/bin/python -m unittest discover tests
-          coverage run -m unittest discover tests
+           $CONDA/bin/coverage run -m unittest discover tests
         shell: bash
         
       - name: Upload Coverage to Codecov
