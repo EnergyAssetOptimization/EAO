@@ -1,5 +1,6 @@
 
 [![CI](https://github.com/EnergyAssetOptimization/EAO/actions/workflows/unittests_doc.yml/badge.svg)](https://github.com/EnergyAssetOptimization/EAO/actions/workflows/unittests_doc.yml)
+[![codecov](https://codecov.io/gh/favdo/EAO/branch/main/graph/badge.svg?token=UtatBZOGUf)](https://codecov.io/gh/favdo/EAO)
 
 # The Energy Asset Optimization (EAO) package
 
