@@ -43,8 +43,11 @@ jobs:
           # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
           $CONDA/bin/flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
           
-      - name: Test with unittest
-        run: $CONDA/bin/python -m unittest discover tests
+      - name: Test with unittest and coverage
+        run: |
+          pip install coverage
+          #$CONDA/bin/python -m unittest discover tests
+          coverage -m unittest discover tests
         shell: bash
 
       - name: Install rtd theme for sphinx doc from pypi
