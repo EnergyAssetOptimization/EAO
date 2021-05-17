@@ -5,9 +5,9 @@ import abc
 import scipy.sparse as sp
 
 from typing import Union, List, Dict
-from eao.assets import Node, Asset, Timegrid
-from eao.optimization import OptimProblem          
-from eao.optimization import Results 
+from eaopack.assets import Node, Asset, Timegrid
+from eaopack.optimization import OptimProblem          
+from eaopack.optimization import Results 
 
 class Portfolio:
     """ The portfolio class allows for collecting several assets in a network of nodes 

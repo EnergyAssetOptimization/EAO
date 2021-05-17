@@ -3,8 +3,8 @@ import pandas as pd
 from os.path import dirname, join
 import sys
 mypath = (dirname(__file__))
-sys.path.append(join(mypath, '../..'))
-import eao as eao
+sys.path.append(join(mypath, '../../../..'))
+import eaopack as eao
 
 # define file names for this sample
 ## input data

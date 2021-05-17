@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 import datetime as dt
 
-from eao.portfolio import Portfolio
-from eao.optimization import Results, OptimProblem
+from eaopack.portfolio import Portfolio
+from eaopack.optimization import Results, OptimProblem
 
 
 def extract_output(portf: Portfolio, op: OptimProblem, res:Results, prices: dict = None) -> dict:

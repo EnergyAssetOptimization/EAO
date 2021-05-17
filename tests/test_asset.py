@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import datetime as dt
 import json
-import eao as eao
+import eaopack as eao
 
 class SimpleContractTest(unittest.TestCase):
     def test_optimization(self):

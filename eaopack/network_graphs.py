@@ -1,9 +1,9 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 
-from eao.portfolio import Portfolio
-from eao.serialization import load_from_json
-from eao.assets import Transport, ExtendedTransport
+from eaopack.portfolio import Portfolio
+from eaopack.serialization import load_from_json
+from eaopack.assets import Transport, ExtendedTransport
 
 def create_graph(portf: Portfolio, file_name: str = None, title = None):
     """ generate a network graph from a portfolio and save to pdf

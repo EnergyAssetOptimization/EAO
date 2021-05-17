@@ -7,3 +7,14 @@ test.xlsx
 *test_results*
 doc/source/samples/green_ppa/results.xlsx
 doc/source/samples/green_ppa/results.xlsx
+test_portf.json
+doc/source/samples/optimal_res_scaling/loop_results50.xlsx
+doc/source/samples/optimal_res_scaling/normed_assets.json
+doc/source/samples/optimal_res_scaling/prices.json
+doc/source/samples/optimal_res_scaling/scaling_assets.json
+doc/source/samples/optimal_res_scaling/timegrid.json
+doc/source/samples/optimal_res_scaling/vol_matching_assets.json
+doc/source/samples/power_renewable_storage/network_graph_portfolio_renewable_storage.pdf
+doc/source/samples/power_renewable_storage/portfolio_renewable_storage.xlsx
+doc/source/samples/simple_start/network_graph_simple_start.pdf
+doc/source/samples/simple_start/results_simple_start.xlsx
