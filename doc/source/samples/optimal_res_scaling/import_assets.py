@@ -7,13 +7,13 @@ from os.path import dirname, join
 import sys
 mypath = (dirname(__file__))
 sys.path.append(join(mypath, '../..'))
-import eao as eao
+sys.path.append(join(mypath, '../../../..'))
+import eaopack as eao
 
-import eao
-from eao.assets import  Contract, Storage, SimpleContract, ScaledAsset
-from eao.basic_classes import Node, Timegrid, Unit
-from eao.portfolio import Portfolio
-from eao.serialization import to_json
+from eaopack.assets import  Contract, Storage, SimpleContract, ScaledAsset
+from eaopack.basic_classes import Node, Timegrid, Unit
+from eaopack.portfolio import Portfolio
+from eaopack.serialization import to_json
 
 ###############################################   setting
 Start = dt.date(2020, 1, 1)

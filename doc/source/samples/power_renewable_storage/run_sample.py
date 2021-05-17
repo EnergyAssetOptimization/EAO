@@ -6,12 +6,12 @@ import datetime as dt
 from os.path import dirname, join
 import sys
 mypath = (dirname(__file__))
-sys.path.append(join(mypath, '../..'))
-import eao as eao
+sys.path.append(join(mypath, '../../../..'))
+import eaopack as eao
 
-import eao
-from eao.assets import Node, Timegrid, Contract, Storage, SimpleContract
-from eao.portfolio import Portfolio
+import eaopack
+from eaopack.assets import Node, Timegrid, Contract, Storage, SimpleContract
+from eaopack.portfolio import Portfolio
 
 
 # define file names for this sample
