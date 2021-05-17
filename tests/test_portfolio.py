@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import datetime as dt
 import unittest
-import eao as eao
+import eaopack as eao
 
 
 

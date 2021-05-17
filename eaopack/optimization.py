@@ -4,7 +4,7 @@ import datetime as dt
 from typing import Union, List, Dict
 import scipy.sparse as sp
 
-from eao.assets import Timegrid
+from eaopack.assets import Timegrid
 
 class Results:
     def __init__(self, value:float, x: np.array, duals: dict):

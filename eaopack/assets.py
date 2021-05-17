@@ -6,9 +6,9 @@ import numpy as np
 import pandas as pd
 import scipy.sparse as sp
 
-from eao.basic_classes import Timegrid, Unit, Node
-from eao.optimization import OptimProblem          
-from eao.optimization import Results 
+from eaopack.basic_classes import Timegrid, Unit, Node
+from eaopack.optimization import OptimProblem          
+from eaopack.optimization import Results 
 
 class Asset:
     """ Asset parent class. Defines all basic methods and properties of an asset

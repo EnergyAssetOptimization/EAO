@@ -3,7 +3,7 @@ import pandas as pd
 import datetime as dt
 import json
 
-from eao.assets import Node, \
+from eaopack.assets import Node, \
                        Timegrid,  \
                        Asset,  \
                        Unit,  \
@@ -13,8 +13,8 @@ from eao.assets import Node, \
                        Contract,  \
                        ScaledAsset,  \
                        ExtendedTransport
-from eao.portfolio import Portfolio, StructuredAsset
-from eao.io import extract_output, output_to_file
+from eaopack.portfolio import Portfolio, StructuredAsset
+from eaopack.io import extract_output, output_to_file
 
 
 def json_serialize_objects(obj) -> dict:

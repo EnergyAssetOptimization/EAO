@@ -5,9 +5,9 @@ from typing import Union, List, Dict
 import scipy.sparse as sp
 from  copy import deepcopy
 
-from eao.assets import Timegrid
-from eao.portfolio import Portfolio
-from eao.optimization import OptimProblem
+from eaopack.assets import Timegrid
+from eaopack.portfolio import Portfolio
+from eaopack.optimization import OptimProblem
 
 def make_slp(optim_problem:OptimProblem, portf:Portfolio, timegrid:Timegrid,  start_future:dt.datetime, samples: List[Dict]) -> OptimProblem:
     """ Create a two stage SLP (stochastic linear program) from a given OptimProblem

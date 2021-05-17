@@ -5,10 +5,10 @@ import json
 
 import unittest   
 
-import eao as eao
-from eao.serialization import json_serialize_objects, json_deserialize_objects
-from eao.serialization import to_json, load_from_json, run_from_json
-from eao.network_graphs import create_graph
+import eaopack as eao
+from eaopack.serialization import json_serialize_objects, json_deserialize_objects
+from eaopack.serialization import to_json, load_from_json, run_from_json
+from eaopack.network_graphs import create_graph
 
 class IOTests(unittest.TestCase):
 
