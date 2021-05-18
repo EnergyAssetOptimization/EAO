@@ -5,7 +5,7 @@ EAO package
 Assets
 ------------------------------------
 
-.. automodule:: eao.assets
+.. automodule:: eaopack.assets
    :members:
    :undoc-members:
    :show-inheritance:
@@ -13,7 +13,7 @@ Assets
 
 Optimization
 ------------------------------------
-.. automodule:: eao.optimization
+.. automodule:: eaopack.optimization
    :members:
    :undoc-members:
    :show-inheritance:
@@ -21,7 +21,7 @@ Optimization
 
 Basic classes
 ------------------------------------
-.. automodule:: eao.basic_classes
+.. automodule:: eaopack.basic_classes
    :members:
    :undoc-members:
    :show-inheritance:   
@@ -29,7 +29,7 @@ Basic classes
 
 Input and output
 ------------------------------------
-.. automodule:: eao.io
+.. automodule:: eaopack.io
    :members:
    :undoc-members:
    :show-inheritance:
@@ -37,7 +37,7 @@ Input and output
 
 Serialization
 ------------------------------------
-.. automodule:: eao.serialization
+.. automodule:: eaopack.serialization
    :members:
    :undoc-members:
    :show-inheritance:
@@ -45,7 +45,7 @@ Serialization
 
 Stochastic linear program
 ------------------------------------
-.. automodule:: eao.stoch_lin_prog
+.. automodule:: eaopack.stoch_lin_prog
    :members:
    :undoc-members:
    :show-inheritance:
@@ -53,7 +53,7 @@ Stochastic linear program
 
 Network graphs
 ------------------------------------
-.. automodule:: eao.network_graphs
+.. automodule:: eaopack.network_graphs
    :members:
    :undoc-members:
    :show-inheritance:   

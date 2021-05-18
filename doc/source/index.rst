@@ -30,7 +30,7 @@ And an extensive technical report here:
    :maxdepth: 3
    :caption: Contents:
 
-   eaopack
+   eao
    samples
    
 
