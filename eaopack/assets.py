@@ -492,7 +492,7 @@ class Transport(Asset):
             # first set belongs to node 1, second to node 2
             mapping['node']      = np.vstack((np.tile(self.nodes[0].name, (T,1)),np.tile(self.nodes[1].name, (T,1))))
             # restriction: in and efficiency*out must add to zero
-            A = sp.hstack(( sp.identity(T), self.efficiency*sp.identity(T)  ))
+            A = sp.hstack(( self.efficiency*sp.identity(T), sp.identity(T)  ))
             b = np.zeros(T)
             cType = 'S'*T # equal type restriction
         else:
@@ -646,9 +646,25 @@ class ExtendedTransport(Transport):
                 max_take:Union[float, List[float], Dict] = None,
                 *args,
                 **kwargs): 
-        """ Extension of transport with more complex restrictions:
+        """ Transport:
+
+            name (str): Unique name of the asset                                              (asset parameter)
+            nodes (Node): 2 nodes, the transport links                                        (asset parameter)
+            timegrid (Timegrid): Timegrid for discretization                                  (asset parameter)
+            start (dt.datetime) : start of asset being active. defaults to none (-> timegrid start relevant)
+            end (dt.datetime)   : end of asset being active. defaults to none (-> timegrid start relevant)            
+            wacc (float): Weighted average cost of capital to discount cash flows in target   (asset parameter)
+
+            min_cap (float) : Minimum flow/capacity for transporting (from node 1 to node 2)
+            max_cap (float) : Minimum flow/capacity for transporting (from node 1 to node 2)
+            efficiency (float): efficiency of transport. May be any positive float. Defaults to 1.
+            costs_time_series (str): Name of cost vector for transporting. Defaults to None
+            costs_const (float, optional): extra costs added to price vector (in or out). Defaults to 0.
+
+            Extension of transport with more complex restrictions:
+       
             - time dependent capacity restrictions
-            - MinTake & MaxTake for a list of periods
+            - MinTake & MaxTake for a list of periods. With efficiency, min/maxTake refer to the quantity delivered from/to node 2 
             Examples
             - with min_cap = max_cap and a detailed time series
             - with MinTake & MaxTake, implement structured gas contracts

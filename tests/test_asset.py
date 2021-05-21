@@ -3,6 +3,12 @@ import numpy as np
 import pandas as pd
 import datetime as dt
 import json
+
+from os.path import dirname, join
+import sys
+mypath = (dirname(__file__))
+sys.path.append(join(mypath, '..'))
+
 import eaopack as eao
 
 class SimpleContractTest(unittest.TestCase):
@@ -192,6 +198,23 @@ class TransportTest(unittest.TestCase):
         op = portf.setup_optim_problem(prices, timegrid)
         res = op.optimize()
         self.assertAlmostEqual(res.value,5., 5)
+
+    def test_transport_efficiency(self):
+        """ check efficiency in transport """
+        node1a = eao.assets.Node('N1a')
+        node1b = eao.assets.Node('N1b')
+        node2 = eao.assets.Node('N2')
+        timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,1,11), freq = 'd', main_time_unit='d')
+        prices ={'buy': np.ones(timegrid.T), 'sell': 10.*np.ones(timegrid.T)}
+        trans = eao.assets.Transport(name = 'TrA', nodes = [node1a, node2],
+                        min_cap= 0., max_cap=10., efficiency = 0.95)
+        buy  = eao.assets.SimpleContract(name = 'buya', price = 'buy', max_cap = 1, nodes = node1a  )
+        sell = eao.assets.SimpleContract(name = 'sell', price = 'sell', min_cap = -1, nodes = node2  )
+
+        portf = eao.portfolio.Portfolio([trans, buy, sell])
+        op = portf.setup_optim_problem(prices, timegrid)
+        res = op.optimize()
+        self.assertAlmostEqual(res.value, 10*(9.5-1), 5) # buy one (at price 1), get 0.95 out (at price 10) for each day
 
 class ContractTest(unittest.TestCase):
     def test_max_cap_vector(self):
