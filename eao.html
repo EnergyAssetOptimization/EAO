@@ -340,15 +340,29 @@ in which case it must have been set previously</p></li>
 <em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">ExtendedTransport</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_take</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">Dict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_take</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">Dict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.assets.ExtendedTransport" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#eaopack.assets.Transport" title="eaopack.assets.Transport"><code class="xref py py-class docutils literal notranslate"><span class="pre">eaopack.assets.Transport</span></code></a></p>
 <p>Extended Transport Class, as an extension of Transport</p>
-<dl>
-<dt>Extension of transport with more complex restrictions:</dt><dd><ul class="simple">
+<p>Transport:</p>
+<blockquote>
+<div><p>name (str): Unique name of the asset                                              (asset parameter)
+nodes (Node): 2 nodes, the transport links                                        (asset parameter)
+timegrid (Timegrid): Timegrid for discretization                                  (asset parameter)
+start (dt.datetime) : start of asset being active. defaults to none (-&gt; timegrid start relevant)
+end (dt.datetime)   : end of asset being active. defaults to none (-&gt; timegrid start relevant)
+wacc (float): Weighted average cost of capital to discount cash flows in target   (asset parameter)</p>
+<p>min_cap (float) : Minimum flow/capacity for transporting (from node 1 to node 2)
+max_cap (float) : Minimum flow/capacity for transporting (from node 1 to node 2)
+efficiency (float): efficiency of transport. May be any positive float. Defaults to 1.
+costs_time_series (str): Name of cost vector for transporting. Defaults to None
+costs_const (float, optional): extra costs added to price vector (in or out). Defaults to 0.</p>
+<p>Extension of transport with more complex restrictions:</p>
+<ul class="simple">
 <li><p>time dependent capacity restrictions</p></li>
-<li><p>MinTake &amp; MaxTake for a list of periods</p></li>
+<li><p>MinTake &amp; MaxTake for a list of periods. With efficiency, min/maxTake refer to the quantity delivered from/to node 2</p></li>
 </ul>
 <p>Examples
 - with min_cap = max_cap and a detailed time series
 - with MinTake &amp; MaxTake, implement structured gas contracts</p>
-</dd>
+</div></blockquote>
+<dl>
 <dt>Additional args:</dt><dd><p>min_cap (float) : Minimum flow/capacity for buying (negative) or selling (positive). Defaults to 0
 max_cap (float) : Maximum flow/capacity for selling (positive). Defaults to 0
 min_take (float) : Minimum volume within given period. Defaults to None
