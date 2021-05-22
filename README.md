@@ -18,5 +18,6 @@ You can find the documentation along with several sample notebooks here:
 And an extensive technical report here:
 [`Report`](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3842822)
 
-
+To install:
+pip install eaopack
 

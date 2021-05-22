@@ -5,6 +5,12 @@ import json
 
 import unittest   
 
+from os.path import dirname, join
+import os
+import sys
+mypath = (dirname(__file__))
+sys.path.append(join(mypath, '..'))
+
 import eaopack as eao
 from eaopack.serialization import json_serialize_objects, json_deserialize_objects
 from eaopack.serialization import to_json, load_from_json, run_from_json
@@ -123,6 +129,65 @@ class IOTests(unittest.TestCase):
         create_graph(portf = portf, file_name='tests/test_graph.pdf')
         return True
 
+    def test_dates_serialize(self):
+        """ test how to ensure correct serialization of dates in arrays """
+
+        ### capture asset and write to JSON
+
+        ################################### define parameters
+        asset_file = os.path.join(os.path.join(os.path.dirname(__file__)),'test_result_asset.JSON')
+        node_main     = eao.assets.Node(name = 'main')
+        node_internal = eao.assets.Node(name = 'int')
+        battery = eao.assets.Storage(name        = 'battery',
+                                    nodes       = node_internal,
+                                    cap_out     = 1.,
+                                    cap_in      = 1.15,
+                                    size        = 5,
+                                    start_level = 2.5,
+                                    end_level   = 2.5,
+                                    block_size  = 24)     # optimization for each day independently
+        # charging -- with maximum volume transported
+        # since I have a daily restriction, I need to provide it for all days. I choose a validity for the asset
+        # as "daily" is not implemented in the asset (yet)
+        Start = dt.date(2021,1,1)
+        End   = dt.date(2021,1,10)
+        dates = pd.date_range(Start, End, freq = 'd').values
+        maxCharge = {'start'  : dates[:-1],
+                    'end'    : dates[1:],
+                    'values' : [3]*(len(dates)-1)}
+        charge = eao.assets.ExtendedTransport(name     = 'charge',
+                                            min_cap  = 0.,
+                                            max_cap  = 2.,
+                                            nodes    = [node_main, node_internal],
+                                            max_take = maxCharge)  
+        # discharging -- no restriction
+        discharge = eao.assets.ExtendedTransport(name     = 'discharge',
+                                                min_cap  = 0.,
+                                                max_cap  = 2.,
+                                                nodes    = [node_internal, node_main])
+
+        market = eao.assets.SimpleContract(max_cap=10, min_cap=-10, price='price', nodes = node_main, name = 'market')
+        portf          = eao.portfolio.Portfolio([battery, charge, discharge])
+        struct_battery = eao.portfolio.StructuredAsset(name = 'lademngmt', portfolio= portf, nodes = node_main)
+        ## write to JSON
+        eao.serialization.to_json(struct_battery, file_name=asset_file)
+        ## get from JSON
+        myasset = eao.serialization.load_from_json( file_name=asset_file)
+
+        # check that dates remain the same
+        dates1 = struct_battery.portfolio.assets[1].max_take['start']
+        dates2 = myasset.portfolio.assets[1].max_take['start']
+        assert((dates1==dates2).all())
+        portf = eao.portfolio.Portfolio([market, myasset])
+
+        ## now optimize
+        timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,2,1), freq = 'd')
+        prices ={'price': -(5+5*(np.cos(np.linspace(0.,10., timegrid.T)))) }
+        
+        optprob = portf.setup_optim_problem(prices = prices, timegrid=timegrid)
+        res = optprob.optimize()
+       
+        self.assertAlmostEqual(res.value, 72.47901667940106, 5) ## calculated once. check for change
 if __name__ == "__main__" :
     unittest.main()
 

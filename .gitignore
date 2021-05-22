@@ -18,3 +18,4 @@ doc/source/samples/power_renewable_storage/network_graph_portfolio_renewable_sto
 doc/source/samples/power_renewable_storage/portfolio_renewable_storage.xlsx
 doc/source/samples/simple_start/network_graph_simple_start.pdf
 doc/source/samples/simple_start/results_simple_start.xlsx
+tests/test_result_asset.JSON

@@ -96,7 +96,7 @@ def json_deserialize_objects(obj):
         elif obj['__class__'] == 'np_array':
             if 'is_date' in obj: # backwards compatible
                 if obj['is_date']:
-                    pass # note: may want to create dates from ns numbers
+                    obj['np_list'] = [np.datetime64(ll, 'ns') for ll in obj['np_list']]
             res = np.asarray(obj['np_list'])
         else:
             raise NotImplementedError(obj['__class__']+ ' not deseralizable')
