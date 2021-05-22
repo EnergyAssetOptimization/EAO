@@ -665,7 +665,8 @@ class ExtendedTransport(Transport):
        
             - time dependent capacity restrictions
             - MinTake & MaxTake for a list of periods. With efficiency, min/maxTake refer to the quantity delivered from/to node 2 
-            Examples
+
+        Examples
             - with min_cap = max_cap and a detailed time series
             - with MinTake & MaxTake, implement structured gas contracts
         Additional args:

@@ -3,12 +3,10 @@ import numpy as np
 import pandas as pd
 import datetime as dt
 import json
-
 from os.path import dirname, join
 import sys
 mypath = (dirname(__file__))
 sys.path.append(join(mypath, '..'))
-
 import eaopack as eao
 
 class SimpleContractTest(unittest.TestCase):

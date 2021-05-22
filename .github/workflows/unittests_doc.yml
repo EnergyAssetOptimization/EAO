@@ -47,34 +47,34 @@ jobs:
         run: $CONDA/bin/python -m unittest discover tests
         shell: bash
 
-      - name: Install rtd theme for sphinx doc from pypi
-        run: $CONDA/bin/python -m pip install sphinx_rtd_theme 
-      - name: Install Pandoc
-        uses: r-lib/actions/setup-pandoc@v1
-        with:
-          pandoc-version: 2.9.1
-      - name: Build docs with sphinx
-        run: $CONDA/bin/sphinx-build -b html doc/source/ doc/build
-      - name: Store doc as artifact
-        uses: actions/upload-artifact@v1
-        with:
-          name: DocumentationHTML
-          path: doc/build/
-      - name: Commit documentation changes
-        run: |
-          git clone https://github.com/EnergyAssetOptimization/EAO.git --branch gh-pages --single-branch gh-pages
-          cp -r doc/build/* gh-pages/
-          cd gh-pages
-          touch .nojekyll
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add .
-          git commit -m "Update documentation" -a || true
-          # The above command will fail if no changes were present, so we ignore
-          # that.
-      - name: Push changes
-        uses: ad-m/github-push-action@master
-        with:
-          branch: gh-pages
-          directory: gh-pages
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+#      - name: Install rtd theme for sphinx doc from pypi
+#        run: $CONDA/bin/python -m pip install sphinx_rtd_theme 
+#      - name: Install Pandoc
+#        uses: r-lib/actions/setup-pandoc@v1
+#        with:
+#          pandoc-version: 2.9.1
+#      - name: Build docs with sphinx
+#        run: $CONDA/bin/sphinx-build -b html doc/source/ doc/build
+#      - name: Store doc as artifact
+#        uses: actions/upload-artifact@v1
+#        with:
+#          name: DocumentationHTML
+#          path: doc/build/
+#      - name: Commit documentation changes
+#        run: |
+#          git clone https://github.com/JTPfi/EAO.git --branch gh-pages --single-branch gh-pages
+#          cp -r doc/build/* gh-pages/
+#          cd gh-pages
+#          touch .nojekyll
+#          git config --local user.email "action@github.com"
+#          git config --local user.name "GitHub Action"
+#          git add .
+#          git commit -m "Update documentation" -a || true
+#          # The above command will fail if no changes were present, so we ignore
+#          # that.
+#      - name: Push changes
+#        uses: ad-m/github-push-action@master
+#        with:
+#          branch: gh-pages
+#          directory: gh-pages
+#          github_token: ${{ secrets.GITHUB_TOKEN }}
