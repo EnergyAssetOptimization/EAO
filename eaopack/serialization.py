@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import datetime as dt
 import json
+import pytz
 
 from eaopack.assets import Node, \
                        Timegrid,  \
@@ -27,8 +28,14 @@ def json_serialize_objects(obj) -> dict:
     # simple conversion for some types
     # hook
     if isinstance(obj, dt.datetime) or isinstance(obj, pd.Timestamp):
+        if obj.tzinfo is None:
+            mytz = None
+        else:
+            mytz = str(obj.tzinfo)
         res =  {'__class__': dt.datetime.__name__,
-                '__value__': str(obj)
+                '__tz__'   : mytz,
+                '__tzh__'   : obj.strftime("%z"),
+                '__value__': obj.strftime("%Y-%m-%d %H:%M:%S")
                }
     elif isinstance(obj, dt.date):
         res =  {'__class__': dt.date.__name__,
@@ -71,6 +78,10 @@ def json_deserialize_objects(obj):
     if '__class__' in obj:
         if obj['__class__'] == 'datetime':
             res = dt.datetime.strptime(obj['__value__'], "%Y-%m-%d %H:%M:%S")
+            if '__tz__' in obj:
+                if not obj['__tz__'] is None:
+                    tz = pytz.timezone(obj['__tz__'])
+                    res = tz.localize(res, obj['__tz__'])
         elif obj['__class__'] == 'date':
             res = dt.datetime.strptime(obj['__value__'], "%Y-%m-%d").date()
         elif obj['__class__'] == 'Node':
