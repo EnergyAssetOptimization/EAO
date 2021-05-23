@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import datetime as dt
 import json
+import pytz
 
 from eaopack.assets import Node, \
                        Timegrid,  \
@@ -27,8 +28,15 @@ def json_serialize_objects(obj) -> dict:
     # simple conversion for some types
     # hook
     if isinstance(obj, dt.datetime) or isinstance(obj, pd.Timestamp):
+        if obj.tzinfo is None:
+            mytz = None
+        else:
+            # saving as UTC
+            mytz = str(obj.tzinfo)
+            obj = pd.Timestamp(obj).tz_convert('UTC')
         res =  {'__class__': dt.datetime.__name__,
-                '__value__': str(obj)
+                '__tz__'   : mytz,
+                '__value__' : obj.strftime("%Y-%m-%d %H:%M:%S")
                }
     elif isinstance(obj, dt.date):
         res =  {'__class__': dt.date.__name__,
@@ -63,6 +71,10 @@ def json_serialize_objects(obj) -> dict:
         res['is_date'] = np.issubdtype(obj.dtype, np.datetime64)
         # Note: For datetime this leads to saving a number in JSON. May want to make it a str
         res['np_list'] =  obj.tolist() 
+    elif isinstance(obj, pd.DatetimeIndex):
+        res = {'__class__' : 'pd_DateTimeIndex',
+               '__freq__'  : obj.freqstr,
+               '__value__' : obj.tolist()}
     else:
         raise TypeError(str(obj) + ' is not json serializable')
     return res
@@ -70,7 +82,12 @@ def json_serialize_objects(obj) -> dict:
 def json_deserialize_objects(obj):   
     if '__class__' in obj:
         if obj['__class__'] == 'datetime':
-            res = dt.datetime.strptime(obj['__value__'], "%Y-%m-%d %H:%M:%S")
+            res = pd.Timestamp(dt.datetime.strptime(obj['__value__'], "%Y-%m-%d %H:%M:%S"))
+            if '__tz__' in obj:
+                if not obj['__tz__'] is None:
+                    # saved as UTC
+                    res = res.tz_localize('UTC')
+                    res = res.tz_convert(obj['__tz__'])
         elif obj['__class__'] == 'date':
             res = dt.datetime.strptime(obj['__value__'], "%Y-%m-%d").date()
         elif obj['__class__'] == 'Node':
@@ -98,6 +115,8 @@ def json_deserialize_objects(obj):
                 if obj['is_date']:
                     obj['np_list'] = [np.datetime64(ll, 'ns') for ll in obj['np_list']]
             res = np.asarray(obj['np_list'])
+        elif obj['__class__'] == 'pd_DateTimeIndex':
+            res = pd.Index(obj['__value__'], freq = obj['__freq__'])
         else:
             raise NotImplementedError(obj['__class__']+ ' not deseralizable')
     else:
