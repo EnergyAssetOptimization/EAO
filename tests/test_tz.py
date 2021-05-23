@@ -159,6 +159,42 @@ class TimeZones(unittest.TestCase):
         assert all(prices['buy']==p2['buy'])
         assert all(prices['sell']==p2['sell'])
 
+
+    def test_optim_trivial_tz(self):
+        """Simple test where first ten times price is zero and afterwards price is one, zero costs
+        """
+        ### march
+        node = eao.assets.Node('testNode')
+        Start = dt.datetime(2020,3,29) # includes time change winter -> summer
+        End   = dt.date(2020,3,30)        
+        timegrid = eao.assets.Timegrid(Start, End, freq = '15min', timezone='CET')
+
+        a = eao.assets.Storage('STORAGE', node, start=Start, end=End,size=100,\
+             cap_in=1, cap_out=1, start_level=0, end_level=0, price='price')
+        price = np.ones([timegrid.T])
+        price[:46] = 0
+        prices ={ 'price': price}
+        op = a.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        self.assertAlmostEqual(res.value, 46./4., 5)
+        
+        ### october
+        node = eao.assets.Node('testNode')
+        Start = dt.datetime(2020,10,25) # includes time change winter -> summer
+        End   = dt.date(2020,10,26)        
+        timegrid = eao.assets.Timegrid(Start, End, freq = '15min', timezone='CET')
+
+        a = eao.assets.Storage('STORAGE', node, start=Start, end=End,size=100,\
+             cap_in=1, cap_out=1, start_level=0, end_level=0, price='price')
+        price = np.ones([timegrid.T])
+        price[:50] = 0
+        prices ={ 'price': price}
+        op = a.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        self.assertAlmostEqual(res.value, 50./4., 5)
+
+                       
+
 ###########################################################################################################
 ###########################################################################################################
 ###########################################################################################################
