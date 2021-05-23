@@ -507,8 +507,10 @@ class Transport(Asset):
 
 
 ########## SimpleContract and Transport extended with minTake and maxTake restrictions
+
 def define_restr(my_take, my_type, my_n, map, timegrid, node = None):
     """ encapsulates the generation of restriction from given min/max take or similar """
+    my_take = timegrid.prep_date_dict(my_take)
     # starting empty, adding rows
     my_A     = sp.lil_matrix((0, my_n)) 
     my_b     = np.empty(shape=(0))
