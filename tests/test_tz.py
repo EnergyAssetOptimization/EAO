@@ -65,10 +65,11 @@ class TimeZones(unittest.TestCase):
         res = op.optimize()
 
         self.assertAlmostEqual(res.value, 90., 5) # given by min_take
+        out = eao.io.extract_output(portf, op, res, prices)
+        eao.io.output_to_file(out, 'test_output.xlsx')
 
-
-    def test_tz_io(self):
-        """ Unit test. Extended transport
+    def test_tz_serialization(self):
+        """ Unit test. Timezones and serialization
         """
         node = eao.assets.Node('N1a')
         Start = dt.datetime(2020,10,24) # includes time change winter -> summer
@@ -99,10 +100,64 @@ class TimeZones(unittest.TestCase):
         ss = eao.serialization.to_json(portf)
         portf_io = eao.serialization.load_from_json(ss)
         
-        # test with hourly prices
-        prices = {}
-        prices['start'] = pd.date_range(Start, End, freq = '15min', tz = 'CET')
-        pass
+        # test with hourly prices -  as list
+        myd =  pd.date_range(Start, End, freq = '15min', tz = 'CET').tolist()
+        ss = eao.serialization.to_json(myd)
+        myd2 = eao.serialization.load_from_json(ss)
+        assert myd == myd2
+        # as index
+        myd =  pd.date_range(Start, End, freq = '15min', tz = 'CET')
+        ss = eao.serialization.to_json(myd)
+        myd2 = eao.serialization.load_from_json(ss)
+        assert all(myd2 == myd)
+
+        ### serialize contract
+        min_take = {}
+        min_take['start']  = pd.date_range(Start, End, freq = '15min', tz = 'CET')
+        min_take['end'] = min_take['start']
+        min_take['values'] = -10.*np.ones(len(min_take['start']))
+        sell = eao.assets.Contract(name = 'sell', price = 'sell', min_cap = -1, min_take = min_take, nodes = node)
+        ss = eao.serialization.to_json(sell)
+        c2 = eao.serialization.load_from_json(ss)
+        for a,b in zip(c2.min_take['start'], sell.min_take['start']):
+            assert(a==b)
+        assert (c2.min_take['start'][-1] == pd.Timestamp(End, tz = 'CET'))
+
+
+    def test_tz_to_grid(self):
+        """ Unit test. Extended transport
+        """
+        node = eao.assets.Node('N1a')
+
+        Start = dt.datetime(2020,10,24) # includes time change winter -> summer
+        End   = dt.date(2020,10,26)
+        tgCET = eao.assets.Timegrid(Start, End , freq = '10min', main_time_unit='h', timezone= 'CET')
+        mybuy = {}
+        mybuy['start']  = pd.date_range(Start, End, freq = 'h', tz = 'CET')
+        mybuy['values'] = np.random.rand(len(mybuy['start']))
+        mybuy_grid = tgCET.values_to_grid(mybuy)
+        prices ={'buy': mybuy_grid, 'sell': np.random.rand(tgCET.T)}
+
+        ss = eao.serialization.to_json(prices)
+        p2 = eao.serialization.load_from_json(ss)
+
+        assert all(prices['buy']==p2['buy'])
+        assert all(prices['sell']==p2['sell'])
+
+        Start = dt.datetime(2020,3,20) # includes time change winter -> summer
+        End   = dt.date(2020,4,1)
+        tgCET = eao.assets.Timegrid(Start, End , freq = '10min', main_time_unit='h', timezone= 'CET')
+        mybuy = {}
+        mybuy['start']  = pd.date_range(Start, End, freq = 'h', tz = 'CET')
+        mybuy['values'] = np.random.rand(len(mybuy['start']))
+        mybuy_grid = tgCET.values_to_grid(mybuy)
+        prices ={'buy': mybuy_grid, 'sell': np.random.rand(tgCET.T)}
+
+        ss = eao.serialization.to_json(prices)
+        p2 = eao.serialization.load_from_json(ss)
+
+        assert all(prices['buy']==p2['buy'])
+        assert all(prices['sell']==p2['sell'])
 
 ###########################################################################################################
 ###########################################################################################################
