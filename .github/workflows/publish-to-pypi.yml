@@ -7,7 +7,7 @@ on: workflow_dispatch
 jobs:
   build-n-publish:
     name: Build and publish package to PyPI
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@main
@@ -16,12 +16,6 @@ jobs:
       with:
         python-version: 3.8
         
-    - name: Install pip 21.1.1
-      run: >-
-        python -m
-        pip install 
-        --upgrade pip==21.1.1
-
     - name: Install pypa/build
       run: >-
         python -m
