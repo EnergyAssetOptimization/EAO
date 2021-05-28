@@ -626,13 +626,13 @@ div.rendered_html tbody tr:hover {
 <div class="section" id="Add-storage-to-be-able-to-maximize-green-supply">
 <h2>Add storage to be able to maximize green supply<a class="headerlink" href="#Add-storage-to-be-able-to-maximize-green-supply" title="Permalink to this headline">¶</a></h2>
 <p>Green sources are not always available. The storage enables us to flatten green production to match the load The storage is placed at the node “green_sources” so that we ensure there is no mixture of green and grey power. A storage comes with a defined capacity in and out (MW) and storage volume (MWh). Furthermore we define efficiency, costs, etc</p>
-<p>Note that in order to take out computational complexity we define a block size of 24. This has the effect that the battery is optimized daily (24h).</p>
+<p>Note that in order to take out computational complexity we define a daily block size. This has the effect that the battery is optimized per day only, going back to start/end fill level each day.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">storage</span> <span class="o">=</span> <span class="n">eao</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">Storage</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;battery&#39;</span><span class="p">,</span> <span class="n">nodes</span> <span class="o">=</span> <span class="n">green_sources</span><span class="p">,</span> <span class="n">cap_in</span><span class="o">=</span> <span class="mi">1</span><span class="o">*</span><span class="n">max_load</span><span class="p">,</span> <span class="n">cap_out</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">max_load</span><span class="p">,</span> <span class="n">size</span> <span class="o">=</span> <span class="mi">4</span><span class="o">*</span><span class="n">max_load</span><span class="p">,</span> <span class="n">cost_in</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span><span class="n">cost_out</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">eff_in</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">block_size</span><span class="o">=</span><span class="mi">24</span><span class="p">,</span> <span class="n">start_level</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">max_load</span><span class="p">,</span> <span class="n">end_level</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">max_load</span><span class="p">)</span>
+<span></span><span class="n">storage</span> <span class="o">=</span> <span class="n">eao</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">Storage</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;battery&#39;</span><span class="p">,</span> <span class="n">nodes</span> <span class="o">=</span> <span class="n">green_sources</span><span class="p">,</span> <span class="n">cap_in</span><span class="o">=</span> <span class="mi">1</span><span class="o">*</span><span class="n">max_load</span><span class="p">,</span> <span class="n">cap_out</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">max_load</span><span class="p">,</span> <span class="n">size</span> <span class="o">=</span> <span class="mi">4</span><span class="o">*</span><span class="n">max_load</span><span class="p">,</span> <span class="n">cost_in</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span><span class="n">cost_out</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">eff_in</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">block_size</span><span class="o">=</span><span class="s1">&#39;d&#39;</span><span class="p">,</span> <span class="n">start_level</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">max_load</span><span class="p">,</span> <span class="n">end_level</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">max_load</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -733,7 +733,7 @@ div.rendered_html tbody tr:hover {
                  Values
 Parameter
 status       successful
-value      57804.482138
+value      57820.038998
 </pre></div></div>
 </div>
 <div class="section" id="Detailed-results">
@@ -785,121 +785,121 @@ value      57804.482138
       <th>2021-01-01 06:00:00</th>
       <td>-9.3</td>
       <td>-0.0</td>
-      <td>2.5</td>
+      <td>4.7</td>
       <td>0.0</td>
       <td>0.0</td>
       <td>-0.0</td>
-      <td>6.9</td>
+      <td>4.6</td>
     </tr>
     <tr>
       <th>2021-01-01 07:00:00</th>
-      <td>-5.9</td>
-      <td>-6.8</td>
-      <td>4.6</td>
+      <td>-9.8</td>
+      <td>-2.9</td>
+      <td>2.5</td>
       <td>1.3</td>
-      <td>6.8</td>
+      <td>2.9</td>
+      <td>-0.0</td>
+      <td>6.0</td>
+    </tr>
+    <tr>
+      <th>2021-01-01 08:00:00</th>
+      <td>-2.7</td>
+      <td>-8.1</td>
+      <td>0.2</td>
+      <td>2.5</td>
+      <td>8.1</td>
       <td>-0.0</td>
       <td>0.0</td>
     </tr>
     <tr>
-      <th>2021-01-01 08:00:00</th>
-      <td>-5.0</td>
-      <td>-5.9</td>
-      <td>2.5</td>
-      <td>2.5</td>
-      <td>5.9</td>
-      <td>-0.0</td>
-      <td>-0.0</td>
-    </tr>
-    <tr>
       <th>2021-01-01 09:00:00</th>
-      <td>-4.3</td>
-      <td>-0.6</td>
-      <td>3.9</td>
-      <td>3.5</td>
-      <td>0.6</td>
+      <td>-4.9</td>
       <td>-0.0</td>
-      <td>-3.2</td>
+      <td>1.5</td>
+      <td>3.5</td>
+      <td>0.0</td>
+      <td>-0.0</td>
+      <td>-0.2</td>
     </tr>
     <tr>
       <th>2021-01-01 10:00:00</th>
       <td>-0.0</td>
       <td>-0.3</td>
-      <td>1.2</td>
+      <td>3.6</td>
       <td>4.3</td>
       <td>0.3</td>
       <td>-0.0</td>
-      <td>-5.5</td>
+      <td>-7.9</td>
     </tr>
     <tr>
       <th>2021-01-01 11:00:00</th>
-      <td>-0.0</td>
       <td>-0.8</td>
-      <td>3.9</td>
-      <td>4.8</td>
-      <td>0.8</td>
       <td>-0.0</td>
-      <td>-8.8</td>
+      <td>4.6</td>
+      <td>4.8</td>
+      <td>0.0</td>
+      <td>-0.0</td>
+      <td>-8.7</td>
     </tr>
     <tr>
       <th>2021-01-01 12:00:00</th>
       <td>-2.6</td>
       <td>-0.0</td>
-      <td>2.0</td>
+      <td>0.9</td>
       <td>5.0</td>
       <td>0.0</td>
       <td>-0.0</td>
-      <td>-4.4</td>
+      <td>-3.3</td>
     </tr>
     <tr>
       <th>2021-01-01 13:00:00</th>
       <td>-5.2</td>
       <td>-0.0</td>
-      <td>1.1</td>
+      <td>4.4</td>
       <td>4.8</td>
       <td>0.0</td>
       <td>-0.0</td>
-      <td>-0.8</td>
+      <td>-4.1</td>
     </tr>
     <tr>
       <th>2021-01-01 14:00:00</th>
       <td>-3.4</td>
       <td>-0.0</td>
-      <td>0.8</td>
+      <td>1.5</td>
       <td>4.3</td>
       <td>0.0</td>
       <td>-0.0</td>
-      <td>-1.7</td>
+      <td>-2.4</td>
     </tr>
     <tr>
       <th>2021-01-01 15:00:00</th>
       <td>-1.8</td>
       <td>-0.0</td>
-      <td>4.2</td>
+      <td>3.4</td>
       <td>3.5</td>
       <td>0.0</td>
       <td>-0.0</td>
-      <td>-6.0</td>
+      <td>-5.2</td>
     </tr>
     <tr>
       <th>2021-01-01 16:00:00</th>
       <td>-5.5</td>
       <td>-0.0</td>
-      <td>0.8</td>
+      <td>0.2</td>
       <td>2.5</td>
       <td>0.0</td>
       <td>-0.0</td>
-      <td>2.2</td>
+      <td>2.8</td>
     </tr>
     <tr>
       <th>2021-01-01 17:00:00</th>
       <td>-4.2</td>
       <td>-0.0</td>
-      <td>3.0</td>
+      <td>1.7</td>
       <td>1.3</td>
       <td>0.0</td>
       <td>-0.0</td>
-      <td>-0.1</td>
+      <td>1.2</td>
     </tr>
   </tbody>
 </table>

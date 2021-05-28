@@ -92,6 +92,7 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">EAO package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#module-eaopack.assets">Assets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-eaopack.portfolio">Portfolio</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-eaopack.optimization">Optimization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-eaopack.basic_classes">Basic classes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-eaopack.io">Input and output</a></li>
@@ -358,11 +359,13 @@ costs_const (float, optional): extra costs added to price vector (in or out). De
 <li><p>time dependent capacity restrictions</p></li>
 <li><p>MinTake &amp; MaxTake for a list of periods. With efficiency, min/maxTake refer to the quantity delivered from/to node 2</p></li>
 </ul>
-<p>Examples
-- with min_cap = max_cap and a detailed time series
-- with MinTake &amp; MaxTake, implement structured gas contracts</p>
 </div></blockquote>
 <dl>
+<dt>Examples</dt><dd><ul class="simple">
+<li><p>with min_cap = max_cap and a detailed time series</p></li>
+<li><p>with MinTake &amp; MaxTake, implement structured gas contracts</p></li>
+</ul>
+</dd>
 <dt>Additional args:</dt><dd><p>min_cap (float) : Minimum flow/capacity for buying (negative) or selling (positive). Defaults to 0
 max_cap (float) : Maximum flow/capacity for selling (positive). Defaults to 0
 min_take (float) : Minimum volume within given period. Defaults to None
@@ -507,7 +510,7 @@ in which case it must have been set previously</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="eaopack.assets.Storage">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">Storage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="#eaopack.basic_classes.Node" title="eaopack.basic_classes.Node"><span class="pre">eaopack.basic_classes.Node</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime.datetime</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime.datetime</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wacc</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cap_in</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cap_out</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_level</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_level</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cost_out</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cost_in</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">block_size</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eff_in</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inflow</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">price</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.assets.Storage" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">Storage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="#eaopack.basic_classes.Node" title="eaopack.basic_classes.Node"><span class="pre">eaopack.basic_classes.Node</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime.datetime</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime.datetime</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wacc</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cap_in</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cap_out</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_level</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_level</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cost_out</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cost_in</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">block_size</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eff_in</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inflow</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">price</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.assets.Storage" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#eaopack.assets.Asset" title="eaopack.assets.Asset"><code class="xref py py-class docutils literal notranslate"><span class="pre">eaopack.assets.Asset</span></code></a></p>
 <p>Storage Class in Python</p>
 <dl class="simple">
@@ -532,7 +535,8 @@ in which case it must have been set previously</p></li>
 <li><p><strong>end_level</strong> (<em>float</em><em>, </em><em>optional</em>) – Level of storage at end of optimization. Defaults to zero.</p></li>
 <li><p><strong>cost_out</strong> (<em>float</em><em>, </em><em>optional</em>) – Cost for taking out volumes ($/volume). Defaults to 0.</p></li>
 <li><p><strong>cost_in</strong> (<em>float</em><em>, </em><em>optional</em>) – Cost for taking in volumes ($/volume). Defaults to 0.</p></li>
-<li><p><strong>block_size</strong> (<em>int</em><em>, </em><em>optional</em>) – Mainly to speed optimization, optimize the storage in time blocks. Defaults to zero (no blocks).</p></li>
+<li><p><strong>block_size</strong> (<em>str</em><em>, </em><em>optional</em>) – Mainly to speed optimization, optimize the storage in time blocks. Defaults None (no blocks).
+Using pandas type frequency strings (e.g. ‘d’ to have a block each day)</p></li>
 <li><p><strong>eff_in</strong> (<em>float</em><em>, </em><em>optional</em>) – Efficiency taking in the commodity. Means e.g. at 90%: 1MWh in –&gt; 0,9 MWh in storage. Defaults to 1 (=100%).</p></li>
 <li><p><strong>inflow</strong> (<em>float</em><em>, </em><em>optional</em>) – Constant rate of inflow volumes (flow in each time step. E.g. water inflow in hydro storage). Defaults to 0.</p></li>
 </ul>
@@ -613,6 +617,120 @@ in which case it must have been set previously</p></li>
 <dt class="sig sig-object py" id="eaopack.assets.define_restr">
 <span class="sig-name descname"><span class="pre">define_restr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">my_take</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">my_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">my_n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">map</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.assets.define_restr" title="Permalink to this definition">¶</a></dt>
 <dd><p>encapsulates the generation of restriction from given min/max take or similar</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-eaopack.portfolio">
+<span id="portfolio"></span><h2>Portfolio<a class="headerlink" href="#module-eaopack.portfolio" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="eaopack.portfolio.Portfolio">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">Portfolio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">assets</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.assets.Asset" title="eaopack.assets.Asset"><span class="pre">eaopack.assets.Asset</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.portfolio.Portfolio" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>The portfolio class allows for collecting several assets in a network of nodes
+and optimizing them jointly. In terms of setting up the problem, the portfolio
+collects the assets and imposes the restriction of forcing the flows of a commodity
+in each node to be zero in each time step</p>
+<p>The portfolio class allows for collecting several assets in a network of nodes
+and optimizing them jointly. In terms of setting up the problem, the portfolio
+collects the assets and imposes the restriction of forcing the flows of a commodity
+in each node to be zero in each time step.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>assets</strong> (<em>List</em><em>[</em><a class="reference internal" href="#eaopack.assets.Asset" title="eaopack.assets.Asset"><em>Asset</em></a><em>]</em>) – Collection of the assets. The assets are assigned to nodes, which,
+together with ‘Transport’ assets define the network of the portfolio.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="eaopack.portfolio.Portfolio.create_cost_samples">
+<span class="sig-name descname"><span class="pre">create_cost_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">price_samples</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><span class="pre">eaopack.basic_classes.Timegrid</span></a><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">List</span><a class="headerlink" href="#eaopack.portfolio.Portfolio.create_cost_samples" title="Permalink to this definition">¶</a></dt>
+<dd><p>create costs vectors for LP on basis of price samples
+:param price_samples: List of dicts of price arrays
+:type price_samples: list
+:param timegrid: Discretization grid for portfolio and all assets within.</p>
+<blockquote>
+<div><p>Defaults to None, in which case it must have been set previously</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>list of costs vectors for use in OptimProblem (e.g. for robust optimization)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eaopack.portfolio.Portfolio.set_timegrid">
+<span class="sig-name descname"><span class="pre">set_timegrid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timegrid</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><span class="pre">eaopack.basic_classes.Timegrid</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.portfolio.Portfolio.set_timegrid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the timegrid for the portfolio. The timegrid will be used for all asset in the portfolio.
+:param timegrid: The timegrid to be set
+:type timegrid: Timegrid</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eaopack.portfolio.Portfolio.setup_optim_problem">
+<span class="sig-name descname"><span class="pre">setup_optim_problem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prices</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><span class="pre">eaopack.basic_classes.Timegrid</span></a><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">costs_only</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_nodes</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">list</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fix_time_window</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">eaopack.optimization.OptimProblem</span></a><a class="headerlink" href="#eaopack.portfolio.Portfolio.setup_optim_problem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set up optimization problem for portfolio</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>prices</strong> (<em>dict</em>) – Dictionary of price arrays needed by assets in portfolio. Defaults to None</p></li>
+<li><p><strong>timegrid</strong> (<a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><em>Timegrid</em></a><em>, </em><em>optional</em>) – Discretization grid for portfolio and all assets within.
+Defaults to None, in which case it must have been set previously</p></li>
+<li><p><strong>costs_only</strong> (<em>bool</em>) – Only create costs vector (speed up e.g. for sampling prices). Defaults to False</p></li>
+<li><p><strong>skip_nodes</strong> (<em>List</em>) – Nodes to be skipped in nodal restrictions (defaults to [])</p></li>
+<li><p><strong>fix_time_window</strong> (<em>Dict</em>) – Fix results for given indices on time grid to given values. Defaults to None
+fix_time_window[‘I’]: Indices on timegrid or alternatively date (all dates before date taken)
+fix_time_window[‘x’]: Results.x that results are to be fixed to in time window(full array, all times)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Optimization problem to be used by optimizer</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem">OptimProblem</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="eaopack.portfolio.StructuredAsset">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">StructuredAsset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">portfolio</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="#eaopack.portfolio.Portfolio" title="eaopack.portfolio.Portfolio"><span class="pre">eaopack.portfolio.Portfolio</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.portfolio.StructuredAsset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#eaopack.assets.Asset" title="eaopack.assets.Asset"><code class="xref py py-class docutils literal notranslate"><span class="pre">eaopack.assets.Asset</span></code></a></p>
+<p>Structured asset that wraps a portfolio in one asset
+Example: hydro storage with inflow consisting of several linked storage levels</p>
+<p>Structured asset that wraps a portfolio</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>portf</strong> (<a class="reference internal" href="#eaopack.portfolio.Portfolio" title="eaopack.portfolio.Portfolio"><em>Portfolio</em></a>) – Portfolio to be wrapped</p></li>
+<li><p><strong>nodes</strong> (<em>nodes as in std. asset</em>) – where to connect the asset to the outside.
+Must correspond to (a) node(s) of the internal structure</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="eaopack.portfolio.StructuredAsset.setup_optim_problem">
+<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">setup_optim_problem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prices</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><span class="pre">eaopack.basic_classes.Timegrid</span></a><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">costs_only</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">eaopack.optimization.OptimProblem</span></a><a class="headerlink" href="#eaopack.portfolio.StructuredAsset.setup_optim_problem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set up optimization problem for asset</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>prices</strong> (<em>dict</em>) – Dictionary of price arrays needed by assets in portfolio</p></li>
+<li><p><strong>timegrid</strong> (<a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><em>Timegrid</em></a><em>, </em><em>optional</em>) – Discretization grid for asset. Defaults to None,
+in which case it must have been set previously</p></li>
+<li><p><strong>costs_only</strong> (<em>bool</em>) – Only create costs vector (speed up e.g. for sampling prices). Defaults to False</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Optimization problem to be used by optimizer</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem">OptimProblem</a></p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -708,7 +826,7 @@ Examples are MWh and MW or liters and liters per minute.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="eaopack.basic_classes.Timegrid">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">Timegrid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">datetime.datetime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">datetime.datetime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">'h'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">main_time_unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'h'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_timegrid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.basic_classes.Timegrid" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">Timegrid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">datetime.datetime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">datetime.datetime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">'h'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">main_time_unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'h'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_timegrid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timezone</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.basic_classes.Timegrid" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Manage the timegrid used for optimization.</p>
 <dl class="field-list simple">
@@ -718,6 +836,7 @@ Examples are MWh and MW or liters and liters per minute.</p>
 <li><p><strong>end</strong> (<em>dt.datetime</em>) – End datetime</p></li>
 <li><p><strong>freq_discr</strong> (<em>str</em><em>, </em><em>optional</em>) – Frequency for discretization according to pandas notation (‘15min’, ‘h’, ‘d’, …). Defaults to ‘h’</p></li>
 <li><p><strong>main_time_unit</strong> (<em>str</em><em>, </em><em>optional</em>) – All times in the optimization problem are measured in the main_time_unit. Pandas notation. Defaults to ‘h’</p></li>
+<li><p><strong>timezone</strong> – Timezone for times. String according to pandas tz definitions (e.g. CET). Defaults to None (naive timezone)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -730,6 +849,24 @@ Dt (np.array): cummulative time steps (total duration since start)</p>
 <dd class="field-odd"><p>timepoints (daterange)</p>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="eaopack.basic_classes.Timegrid.prep_date_dict">
+<span class="sig-name descname"><span class="pre">prep_date_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dd</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.basic_classes.Timegrid.prep_date_dict" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Using dicts with keys “start”, “end” and “values” throughout. Could change to an own classe</dt><dd><p>but so far sticking to this definition. This function converts the dict e.g. by changing to timegrid
+time zone</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dd</strong> (<em>dict</em>) – date dict – dict with keys “start’, “end”, “values”</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>date dict with same keys</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="eaopack.basic_classes.Timegrid.set_restricted_grid">
 <span class="sig-name descname"><span class="pre">set_restricted_grid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime.datetime</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime.datetime</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.basic_classes.Timegrid.set_restricted_grid" title="Permalink to this definition">¶</a></dt>
@@ -792,7 +929,7 @@ It is the value of (volume/flow). Defaults to 1 &lt;basic time unit&gt;.</p></li
 <span id="input-and-output"></span><h2>Input and output<a class="headerlink" href="#module-eaopack.io" title="Permalink to this headline">¶</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="eaopack.io.extract_output">
-<span class="sig-name descname"><span class="pre">extract_output</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">portf</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">eaopack.portfolio.Portfolio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">op</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">eaopack.optimization.OptimProblem</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">res</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="#eaopack.optimization.Results" title="eaopack.optimization.Results"><span class="pre">eaopack.optimization.Results</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">prices</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">dict</span><a class="headerlink" href="#eaopack.io.extract_output" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">extract_output</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">portf</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="#eaopack.portfolio.Portfolio" title="eaopack.portfolio.Portfolio"><span class="pre">eaopack.portfolio.Portfolio</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">op</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">eaopack.optimization.OptimProblem</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">res</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="#eaopack.optimization.Results" title="eaopack.optimization.Results"><span class="pre">eaopack.optimization.Results</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">prices</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">dict</span><a class="headerlink" href="#eaopack.io.extract_output" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="simple">
 <dt>extract results into dataframes, containing readable</dt><dd><p>results such as asset dispatch and dcf</p>
 </dd>
@@ -800,7 +937,7 @@ It is the value of (volume/flow). Defaults to 1 &lt;basic time unit&gt;.</p></li
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>portf</strong> (<em>Portfolio</em>) – portfolio optimized</p></li>
+<li><p><strong>portf</strong> (<a class="reference internal" href="#eaopack.portfolio.Portfolio" title="eaopack.portfolio.Portfolio"><em>Portfolio</em></a>) – portfolio optimized</p></li>
 <li><p><strong>op</strong> (<a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><em>OptimProblem</em></a>) – optimization problem</p></li>
 <li><p><strong>res</strong> (<a class="reference internal" href="#eaopack.optimization.Results" title="eaopack.optimization.Results"><em>Results</em></a>) – result</p></li>
 <li><p><strong>prices</strong> (<em>dict</em>) – used prices. Defaults to None if not to be added to output</p></li>
@@ -924,13 +1061,13 @@ no file_name_out given: Results dict</p>
 <span id="stochastic-linear-program"></span><h2>Stochastic linear program<a class="headerlink" href="#module-eaopack.stoch_lin_prog" title="Permalink to this headline">¶</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="eaopack.stoch_lin_prog.make_slp">
-<span class="sig-name descname"><span class="pre">make_slp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optim_problem</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">eaopack.optimization.OptimProblem</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">portf</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">eaopack.portfolio.Portfolio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><span class="pre">eaopack.basic_classes.Timegrid</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_future</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">datetime.datetime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">eaopack.optimization.OptimProblem</span></a><a class="headerlink" href="#eaopack.stoch_lin_prog.make_slp" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">make_slp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optim_problem</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">eaopack.optimization.OptimProblem</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">portf</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="#eaopack.portfolio.Portfolio" title="eaopack.portfolio.Portfolio"><span class="pre">eaopack.portfolio.Portfolio</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><span class="pre">eaopack.basic_classes.Timegrid</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_future</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">datetime.datetime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">eaopack.optimization.OptimProblem</span></a><a class="headerlink" href="#eaopack.stoch_lin_prog.make_slp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a two stage SLP (stochastic linear program) from a given OptimProblem</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>optim_problem</strong> (<a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><em>OptimProblem</em></a>) – start problem</p></li>
-<li><p><strong>portf</strong> (<em>Portfolio</em>) – portfolio that is the basis of the optim_problem (e.g. to translate price samples to effect on LP)</p></li>
+<li><p><strong>portf</strong> (<a class="reference internal" href="#eaopack.portfolio.Portfolio" title="eaopack.portfolio.Portfolio"><em>Portfolio</em></a>) – portfolio that is the basis of the optim_problem (e.g. to translate price samples to effect on LP)</p></li>
 <li><p><strong>timegrid</strong> (<em>TimeGrid</em>) – timegrid consistent with optimproblem</p></li>
 <li><p><strong>start_future</strong> (<em>dt.datetime</em>) – divides timegrid into present with certain prices
 and future with uncertain prices, represented by samples</p></li>
@@ -952,12 +1089,12 @@ and future with uncertain prices, represented by samples</p></li>
 <span id="network-graphs"></span><h2>Network graphs<a class="headerlink" href="#module-eaopack.network_graphs" title="Permalink to this headline">¶</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="eaopack.network_graphs.create_graph">
-<span class="sig-name descname"><span class="pre">create_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">portf</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">eaopack.portfolio.Portfolio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.network_graphs.create_graph" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">create_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">portf</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="#eaopack.portfolio.Portfolio" title="eaopack.portfolio.Portfolio"><span class="pre">eaopack.portfolio.Portfolio</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.network_graphs.create_graph" title="Permalink to this definition">¶</a></dt>
 <dd><p>generate a network graph from a portfolio and save to pdf</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>portf</strong> (<em>Portfolio</em>) – portfolio object</p></li>
+<li><p><strong>portf</strong> (<a class="reference internal" href="#eaopack.portfolio.Portfolio" title="eaopack.portfolio.Portfolio"><em>Portfolio</em></a>) – portfolio object</p></li>
 <li><p><strong>file_name</strong> (<em>str</em>) – file name. Defaults to None (show plot)</p></li>
 </ul>
 </dd>
