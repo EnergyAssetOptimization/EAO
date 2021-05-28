@@ -110,7 +110,7 @@ class Storage(Asset):
                 end_level: float = 0., 
                 cost_out: float = 0., 
                 cost_in: float = 0., 
-                block_size: int = None,
+                block_size: str = None,
                 eff_in:float = 1.,
                 inflow: float = 0.,
                 price: str=None):
@@ -131,7 +131,8 @@ class Storage(Asset):
             end_level (float, optional):Level of storage at end of optimization. Defaults to zero.
             cost_out (float, optional): Cost for taking out volumes ($/volume). Defaults to 0.
             cost_in (float, optional): Cost for taking in volumes ($/volume). Defaults to 0.
-            block_size (int, optional): Mainly to speed optimization, optimize the storage in time blocks. Defaults to zero (no blocks).
+            block_size (str, optional): Mainly to speed optimization, optimize the storage in time blocks. Defaults None (no blocks).
+                                        Using pandas type frequency strings (e.g. 'd' to have a block each day)                        
             eff_in (float, optional): Efficiency taking in the commodity. Means e.g. at 90%: 1MWh in --> 0,9 MWh in storage. Defaults to 1 (=100%).
             inflow (float, optional): Constant rate of inflow volumes (flow in each time step. E.g. water inflow in hydro storage). Defaults to 0.
         """
@@ -152,7 +153,7 @@ class Storage(Asset):
         self.price = price
         self.block_size = None
         if block_size is not None:
-            self.block_size = int(block_size) # defines the block size (number of time steps to optimize the storage)        
+            self.block_size = block_size # defines the block size (as pandas frequency)
              
 
     def setup_optim_problem(self, prices: dict, timegrid:Timegrid = None, costs_only:bool = False) -> OptimProblem:
@@ -208,7 +209,7 @@ class Storage(Asset):
         if costs_only: 
             return c 
         # Storage restriction --  cumulative sums must fit into reservoir
-        if self.block_size==1 or self.block_size is None:
+        if self.block_size is None:
             A = -sp.tril(np.ones((n,n),float))
             # Maximum: max volume not exceeded
             b = (self.size-self.start_level)*np.ones(n) - inflow
@@ -222,7 +223,14 @@ class Storage(Asset):
             b.fill(np.nan)
             b_min = np.empty(n)
             b_min.fill(np.nan)
-            aa = np.arange(0,n,self.block_size)
+            ### identify blocks in time grid
+            indBlocks = pd.date_range(start = self.timegrid.restricted.start, end=self.timegrid.restricted.end, freq=self.block_size)
+            aa = []
+            for myd in indBlocks:
+                my_bool = self.timegrid.restricted.timepoints<=myd
+                aa.append(np.argwhere(my_bool)[-1,-1])
+                if all(my_bool): break # stop early
+            aa = np.asarray(aa)
             if aa[-1]!=n:
                 aa = np.append(aa,n)
             for i,a in enumerate(aa[0:-1]): # go through the blocks
@@ -507,8 +515,10 @@ class Transport(Asset):
 
 
 ########## SimpleContract and Transport extended with minTake and maxTake restrictions
+
 def define_restr(my_take, my_type, my_n, map, timegrid, node = None):
     """ encapsulates the generation of restriction from given min/max take or similar """
+    my_take = timegrid.prep_date_dict(my_take)
     # starting empty, adding rows
     my_A     = sp.lil_matrix((0, my_n)) 
     my_b     = np.empty(shape=(0))
