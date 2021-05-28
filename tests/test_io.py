@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.core.shape_base import block
 import pandas as pd
 import datetime as dt
 import json
@@ -140,12 +141,12 @@ class IOTests(unittest.TestCase):
         node_internal = eao.assets.Node(name = 'int')
         battery = eao.assets.Storage(name        = 'battery',
                                     nodes       = node_internal,
-                                    cap_out     = 1.,
-                                    cap_in      = 1.15,
-                                    size        = 5,
+                                    cap_out     = 3.,
+                                    cap_in      = 2.15,
+                                    size        = 11,
                                     start_level = 2.5,
                                     end_level   = 2.5,
-                                    block_size  = 24)     # optimization for each day independently
+                                    block_size  = '2d')  # 2 daily blocks
         # charging -- with maximum volume transported
         # since I have a daily restriction, I need to provide it for all days. I choose a validity for the asset
         # as "daily" is not implemented in the asset (yet)
@@ -157,18 +158,18 @@ class IOTests(unittest.TestCase):
                     'values' : [3]*(len(dates)-1)}
         charge = eao.assets.ExtendedTransport(name     = 'charge',
                                             min_cap  = 0.,
-                                            max_cap  = 2.,
+                                            max_cap  = 12.,
                                             nodes    = [node_main, node_internal],
                                             max_take = maxCharge)  
         # discharging -- no restriction
         discharge = eao.assets.ExtendedTransport(name     = 'discharge',
                                                 min_cap  = 0.,
-                                                max_cap  = 2.,
+                                                max_cap  = 23.,
                                                 nodes    = [node_internal, node_main])
 
         market = eao.assets.SimpleContract(max_cap=10, min_cap=-10, price='price', nodes = node_main, name = 'market')
         portf          = eao.portfolio.Portfolio([battery, charge, discharge])
-        struct_battery = eao.portfolio.StructuredAsset(name = 'lademngmt', portfolio= portf, nodes = node_main)
+        struct_battery = eao.portfolio.StructuredAsset(name = 'xxxxx', portfolio= portf, nodes = node_main)
         ## write to JSON
         eao.serialization.to_json(struct_battery, file_name=asset_file)
         ## get from JSON
@@ -181,13 +182,20 @@ class IOTests(unittest.TestCase):
         portf = eao.portfolio.Portfolio([market, myasset])
 
         ## now optimize
-        timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,2,1), freq = 'd')
+        timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,1,10), freq = 'd')
         prices ={'price': -(5+5*(np.cos(np.linspace(0.,10., timegrid.T)))) }
         
         optprob = portf.setup_optim_problem(prices = prices, timegrid=timegrid)
         res = optprob.optimize()
-       
-        self.assertAlmostEqual(res.value, 72.47901667940106, 5) ## calculated once. check for change
+        out = eao.io.extract_output(portf = portf, res = res, op = optprob)
+        ### assert every second day charging status is 2.5
+        fill_level = -out['dispatch']['xxxxx'].cumsum()+2.5
+        self.assertAlmostEqual(fill_level['2021-01-02'], 2.5, 5)
+        self.assertAlmostEqual(fill_level['2021-01-04'], 2.5, 5)
+        self.assertAlmostEqual(fill_level['2021-01-06'], 2.5, 5)
+        self.assertAlmostEqual(fill_level['2021-01-08'], 2.5, 5)
+        self.assertAlmostEqual(fill_level['2021-01-09'], 2.5, 5)        
+
 if __name__ == "__main__" :
     unittest.main()
 
