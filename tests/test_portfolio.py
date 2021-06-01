@@ -171,7 +171,6 @@ class PortfolioTests(unittest.TestCase):
         self.assertAlmostEqual(-df['trans (n2)'].sum()/df['trans (n1)'].sum(), 0.9, 5)
         # right monthly quantity?
         df['month'] = df.index.month
-        df.groupby('month').sum()
         for v in df.groupby('month').sum()['trans (n1)']:
             self.assertAlmostEqual(v, -22, 5)
         
