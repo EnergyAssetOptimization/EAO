@@ -63,7 +63,7 @@ def extract_output(portf: Portfolio, op: OptimProblem, res:Results, prices: dict
                     myCol = (a.name +' ('+  n.name + ')')
                 disp[myCol] = 0.
                 for i,r in my_mapping.iterrows():
-                    disp.loc[times[r.time_step], myCol] += res.x[i]
+                    disp.loc[times[r.time_step], myCol] += res.x[i]*r.disp_factor
         # extract duals from nodal restrictions
         # looping through nodes and their recorded nodal restrictions and extract dual
         for i_node, n in enumerate(portf.nodes):
