@@ -2,6 +2,11 @@ import numpy as np
 import pandas as pd
 import datetime as dt
 import unittest
+
+import os, sys
+mypath = (os.path.dirname(__file__))
+sys.path.append(os.path.join(mypath, '..'))
+
 import eaopack as eao
 
 
@@ -73,27 +78,20 @@ class PortfolioTests(unittest.TestCase):
         # transport constitutes the bottleneck
         x = np.around(res.x, 2)
         mapp = op.mapping
-        disp = pd.DataFrame()
-        disp['TR n1'] = x[mapp.index[(mapp.asset == 'Tr')&(mapp.type == 'd')&(mapp.node == 'node_1')]]
-        disp['TR n2'] = x[mapp.index[(mapp.asset == 'Tr')&(mapp.type == 'd')&(mapp.node == 'node_2')]]
-        check = all(disp['TR n1']+disp['TR n2']==0)  # transport with zero total dispatch in all steps
-        assert check
-        disp['SC n2'] = 0.
-        # extract dispatches of contracts from restricted time grids
-        I = (mapp.asset == 'SC_3')&(mapp.type == 'd')&(mapp.node == 'node_2')
-        for i,r in mapp[I].iterrows():
-            disp.loc[r.time_step, 'SC n2'] += x[mapp.index[i]]
-        disp['SC n1'] = 0.        
-        I = ( (mapp.asset == 'SC_1') | (mapp.asset == 'SC_2') )&(mapp.type == 'd')&(mapp.node == 'node_1')
-        for i,r in mapp[I].iterrows():
-            disp.loc[r.time_step, 'SC n1'] += x[mapp.index[i]]
-
-        check = check and all(disp['TR n2']+disp['SC n2']==0)  # dispatch of TR n2 and SC n2 need to sum to zero
-        assert check        
-        check = check and all(disp['TR n1']+disp['SC n1']==0)  # dispatch of TR n2 and SC n2 need to sum to zero
-        assert check            
-        return check
-
+        #### with several rows per variable not valid. Using extraction function
+        # disp = pd.DataFrame()
+        # II = mapp.index[(mapp.asset == 'Tr')&(mapp.type == 'd')&(mapp.node == 'node_1')]
+        # disp['TR n1'] = x[II]*mapp.loc[II, 'disp_factor']
+        # disp['TR n2'] = x[mapp.index[(mapp.asset == 'Tr')&(mapp.type == 'd')&(mapp.node == 'node_2')]]
+        # check = all(disp['TR n1']+disp['TR n2']==0)  # transport with zero total dispatch in all steps
+        out = eao.io.extract_output(portf= portf, op=op, res=res)
+        check = (out['dispatch']['Tr (node_1)']+out['dispatch']['Tr (node_2)']).sum()
+        self.assertAlmostEqual(check, 0., 5)
+        check = (out['dispatch']['Tr (node_2)']+out['dispatch']['SC_3 (node_2)']).sum()
+        self.assertAlmostEqual(check, 0., 5)
+        check = (out['dispatch']['Tr (node_1)']+out['dispatch']['SC_1 (node_1)']+out['dispatch']['SC_2 (node_1)']).sum()
+        self.assertAlmostEqual(check, 0., 5)        
+        return
 
     def test_structured_asset(self):
         """ test asset consisting of a portfolio """

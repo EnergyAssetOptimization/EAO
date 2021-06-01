@@ -57,11 +57,14 @@ def make_slp(optim_problem:OptimProblem, portf:Portfolio, timegrid:Timegrid,  st
     # have an effect on decisions for the present
     slp_col = 'slp_step_'+str(future_tg.I[0])
     optim_problem.mapping[slp_col] = np.nan 
-    If      = optim_problem.mapping['time_step'].isin(future_tg.I)   # does variable belong to future?
+    ### mapping may contain duplicate rows for variables. Drop those
+    temp_df = optim_problem.mapping[~optim_problem.mapping.index.duplicated(keep='first')]
+    If      = temp_df['time_step'].isin(future_tg.I)   # does variable belong to future?
+    del temp_df
     # future part of original cost vector gets number -1 
     optim_problem.mapping.loc[If,slp_col] = -1 
     map_f   = optim_problem.mapping.loc[If,:].copy()
-    n_f      = len(map_f) # number of future variables
+    n_f      = len(map_f.index.unique())  #### now allowing for duplicate rows ... before len(map_f) # number of future variables
     #n_p      = m-n_f       # number of present variables
     # concatenate for each sample
     for i in range(0,nS):
