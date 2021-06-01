@@ -99,7 +99,18 @@ class Portfolio:
         # new index refers to portfolio
         mapping.reset_index(inplace = True) 
         mapping.rename(columns={'index':'index_assets'}, inplace=True) 
-
+        #### version WITH ability to handle same variable in two rows
+        ## ensure in index that it refers to variables
+        ## go through assets and their index, count through
+        mapping['new_ind'] = np.zeros(len(mapping))*np.nan
+        counter = 0
+        for all_vars in zip(mapping['index_assets'], mapping['asset']):
+            I = (mapping['index_assets']==all_vars[0]) & (mapping['asset'] == all_vars[1])
+            if any(np.isnan(mapping['new_ind'][I])): # not covered yet
+                mapping.loc[I, 'new_ind'] = counter
+                counter += 1
+        mapping['new_ind'] = mapping['new_ind'].astype(int)   
+        mapping.set_index('new_ind', inplace = True)
         ################################################## put together asset restrictions
         A = sp.lil_matrix((0, n_vars)) # sparse format to incrementally change
         b = np.zeros(0)
@@ -107,7 +118,7 @@ class Portfolio:
         for a in self.assets:
             if not opt_probs[a.name].A  is None:
                 n,m = opt_probs[a.name].A.shape
-                ind = mapping.index[mapping['asset']==a.name]
+                ind = mapping.index[mapping['asset']==a.name].unique()
                 myA = sp.lil_matrix((n, n_vars))
                 myA[:,ind] = opt_probs[a.name].A
                 opt_probs[a.name].A = None # free storage
@@ -116,6 +127,11 @@ class Portfolio:
                 cType = cType + opt_probs[a.name].cType
         ################################################## create nodal restriction (flows add to zero)
         # record mapping for nodal restrictions to be able to assign e.g. duals to nodes and time steps
+        # some assets work with a mapping column "disp_factor" that allows to account for a disp variable
+        # only up to a factor (example transport; higher efficiency in setting up the problem)
+        if 'disp_factor' not in mapping.columns:
+            mapping['disp_factor'] = 1.
+        mapping['disp_factor'].fillna(1., inplace = True)
         n_restr = len(b) # so many restr so far
         mapping['nodal_restr'] = None
         # mapping['index_restr'] = None # index of the nodal restriction in the op (rows of A & b)  # Note: Not needed and probably not well defined
@@ -129,7 +145,8 @@ class Portfolio:
                         (mapping['time_step'] == t).values
                     if any(I): # only then restriction needed
                         myA = sp.lil_matrix((1, n_vars)) # one row only
-                        myA[0, I] = 1  # all filtered variables contribute
+                        #### myA[0, I] = 1  # all filtered variables contribute
+                        myA[0, mapping.index[I]] = mapping.loc[I, 'disp_factor'].values ## extended with disp_factor logic
                         mapping.loc[I, 'nodal_restr'] = n_nodal_restr
                         # mapping.loc[I, 'index_restr'] = n_nodal_restr+n_restr # Note: Not needed and probably not well defined
                         n_nodal_restr +=1

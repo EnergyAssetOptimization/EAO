@@ -483,35 +483,49 @@ class Transport(Asset):
         mapping = pd.DataFrame() ## mapping of variables for use in portfolio
 
         if (all(max_cap<=0.)) or (all(min_cap>=0.)):
-        # in this case no need one variable per time step and node needed
+        # in this case  one variable per time step and node needed
             # upper / lower bound for dispatch Node1 / Node2
-            l =  np.hstack( (-max_cap, min_cap ) )
-            u =  np.hstack( (-min_cap, max_cap ) )
+            ######  --> if implemented with two variables per time step
+            #### l =  np.hstack( (-max_cap, min_cap ) )
+            ####u =  np.hstack( (-min_cap, max_cap ) )
+            l =  min_cap
+            u =  max_cap
+
             # costs always act on abs(dispatch)
             if (all(max_cap<=0.)): # dispatch always negative
                 costs = - costs_time_series - self.costs_const
             if (all(min_cap>=0.)): # dispatch always positive
                 costs =   costs_time_series + self.costs_const
             c = costs * discount_factors # set costs and discount
-            c = np.hstack( (np.zeros(T),c) ) # linking two nodes, assigning costs only to receiving node
+            ######  --> if implemented with two variables per time step
+            #    c = np.hstack( (np.zeros(T),c) ) # linking two nodes, assigning costs only to receiving node
             if costs_only: 
                 return c 
-            mapping['time_step'] = np.hstack((I,I))
-            # first set belongs to node 1, second to node 2
-            mapping['node']      = np.vstack((np.tile(self.nodes[0].name, (T,1)),np.tile(self.nodes[1].name, (T,1))))
+            ######  --> if implemented with two variables per time step
             # restriction: in and efficiency*out must add to zero
-            A = sp.hstack(( self.efficiency*sp.identity(T), sp.identity(T)  ))
-            b = np.zeros(T)
-            cType = 'S'*T # equal type restriction
+            # A = sp.hstack(( self.efficiency*sp.identity(T), sp.identity(T)  ))
+            # b = np.zeros(T)
+            # cType = 'S'*T # equal type restriction
+
+            ##### creating the mapping
+            # one variable per time step, two rows in mapping (node 1 and node 2)
+            mapping['time_step']   = np.hstack((I,I))
+            # first set belongs to node 1, second to node 2
+            mapping['node']        = np.vstack((np.tile(self.nodes[0].name, (T,1)),np.tile(self.nodes[1].name, (T,1))))
+            # specific column that implements the efficiency  x (node 1) ---> eff.x (node 2)
+            mapping['disp_factor'] = np.hstack((-np.ones(T),np.ones(T)*self.efficiency))
         else:
             raise NotImplementedError('For transport all capacities mus be positive or all negative for clarity purpose. Please use two transport assets')
 
         ## other information (only here as this way we have the right length)
         mapping['asset']     = self.name
         mapping['type']      = 'd'   # only dispatch variables (needed to impose nodal restrictions in portfolio)
+        ### need to re-index (since two row blocks refer to the same variables)
+        mapping.index = np.hstack((np.arange(0,T), np.arange(0,T)))
+        ##
 
-
-        return OptimProblem(c = c, l = l, u = u, A = A, b = b, cType = cType, mapping = mapping)
+        #### return OptimProblem(c = c, l = l, u = u, A = A, b = b, cType = cType, mapping = mapping)
+        return OptimProblem(c = c, l = l, u = u,  mapping = mapping)
 
 
 ########## SimpleContract and Transport extended with minTake and maxTake restrictions
@@ -538,7 +552,7 @@ def define_restr(my_take, my_type, my_n, map, timegrid, node = None):
             my_A   = sp.vstack((my_A, a))
             # adjust quantity in case the restr. interval does not fully lie in timegrid
             # length of complete interval scaled down to interval within grid
-            my_v = v / ((e-s)/pd.Timedelta(1, timegrid.main_time_unit)) * timegrid.dt[map.loc[I, 'time_step']].sum()
+            my_v = v / ((e-s)/pd.Timedelta(1, timegrid.main_time_unit)) * timegrid.dt[map.loc[I, 'time_step'].unique()].sum()
             my_b  = np.hstack((my_b, my_v))
     return my_A, my_b, my_cType
 
