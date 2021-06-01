@@ -10,6 +10,13 @@ Assets
    :undoc-members:
    :show-inheritance:
 
+Portfolio
+------------------------------------
+
+.. automodule:: eaopack.portfolio
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 Optimization
 ------------------------------------

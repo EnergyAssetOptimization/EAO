@@ -171,9 +171,13 @@ class Timegrid:
                 array of values on the time grid
          """
         assert ('start' in inp)
+        if isinstance(inp['start'],pd.DatetimeIndex):
+            inp['start'] = inp['start'].tolist()
         if not isinstance(inp['start'], (list, np.ndarray)):
             inp['start'] = [inp['start']]
         if 'end' in inp:
+            if isinstance(inp['end'],pd.DatetimeIndex):
+                inp['end'] = inp['end'].tolist()            
             if not isinstance(inp['end'], (list, np.ndarray)):
                 inp['end'] = [inp['end']]
         assert ('values' in inp)

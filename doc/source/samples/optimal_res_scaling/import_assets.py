@@ -107,7 +107,7 @@ green_sales = Contract(name = 'green spot', price = 'spot', min_cap = -20.*max_l
 
 print(' ... a battery storage with 90% cycle efficiency and costs of 1 EUR/MWh ')
 storage_normed = Storage(name = 'battery', cap_in= 1, cap_out=1, size = 4, \
-                  eff_in=0.9, nodes = node_green, cost_in=1., cost_out=0, block_size = 72)
+                  eff_in=0.9, nodes = node_green, cost_in=1., cost_out=0, block_size = '4d')
 
 
 print(' ... links from load to  green and grey sources to implement minimimum green share')

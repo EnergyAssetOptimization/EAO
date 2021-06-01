@@ -79,17 +79,49 @@ class StorageTest(unittest.TestCase):
     def test_optim_trivial_blocks(self):
         """Simple test where first ten times price is zero and afterwards price is one, zero costs
         """
+        #### case 1: with days (same block length)
         node = eao.assets.Node('testNode')
         timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,2,1), freq = 'd')
+        #a = eao.assets.Storage('STORAGE', node, start=dt.date(2021,1,1), end=dt.date(2021,2,1),size=10, \
+        #                       cap_in=1, cap_out=1, start_level=0, end_level=0, block_size= 7*24 ,price='price')
         a = eao.assets.Storage('STORAGE', node, start=dt.date(2021,1,1), end=dt.date(2021,2,1),size=10, \
-                               cap_in=1, cap_out=1, start_level=0, end_level=0, block_size= 7 ,price='price')
+                               cap_in=1, cap_out=1, start_level=0, end_level=0, block_size= '7d' ,price='price')
+
+        # in timegrid, main_time_unit is std. set to 'h'- means to obtain a day it needs be 24
         price = np.ones([timegrid.T])
         price[:10] = 0
         prices ={ 'price': price}
         op = a.setup_optim_problem(prices, timegrid=timegrid)
         res = op.optimize()
         self.assertAlmostEqual(res.value, 10, 5)
-        print(res)
+        # every 10th fill level must be zero
+        self.assertAlmostEqual(res.x.cumsum()[6], 0, 5)
+        self.assertAlmostEqual(res.x.cumsum()[13], 0, 5)
+        self.assertAlmostEqual(res.x.cumsum()[20], 0, 5)
+        self.assertAlmostEqual(res.x.cumsum()[27], 0, 5)        
+
+        #### case 2: with months (varying block length)
+        node = eao.assets.Node('testNode')
+        timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,7,1), freq = '1d')
+        #a = eao.assets.Storage('STORAGE', node, start=dt.date(2021,1,1), end=dt.date(2021,2,1),size=10, \
+        #                       cap_in=1, cap_out=1, start_level=0, end_level=0, block_size= 7*24 ,price='price')
+        a = eao.assets.Storage('STORAGE', node, start=dt.date(2021,1,1), end=dt.date(2021,12,2),size=10, \
+                               cap_in=1, cap_out=1, start_level=0, end_level=0, block_size= 'MS' ,price='price')
+
+        # in timegrid, main_time_unit is std. set to 'h'- means to obtain a day it needs be 24
+        price = np.sin(np.linspace(0,20,timegrid.T))
+        price[:10] = 0
+        prices ={ 'price': price}
+        op = a.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        # every 10th fill level must be zero
+        i = 0
+        for myd in timegrid.timepoints:
+            if myd.day == 1:
+                if i !=0:
+                 self.assertAlmostEqual(res.x.cumsum()[i-1], 0, 5)
+            i +=1
+
 
     def test_optim_trivial_costs(self):
         """Simple test where first ten times price is zero and afterwards price is one but with different costs

@@ -130,6 +130,9 @@ def output_to_file(output, file_name:str, format_output:str = 'xlsx',csv_ger:boo
     if (format_output.lower() == 'xlsx') or (format_output.lower() == 'xls'):
         writer = pd.ExcelWriter(file_name)
         for myk in output:
+            if isinstance(output[myk].index, pd.DatetimeIndex):
+                if not output[myk].index.tzinfo is None:
+                    output[myk].index = output[myk].index.tz_localize(None)
             output[myk].to_excel(writer, sheet_name = myk)
         writer.close()
     elif (format_output.lower() == 'csv'):
