@@ -139,6 +139,42 @@ class PortfolioTests(unittest.TestCase):
         outp = eao.io.extract_output(portfStr2, opStr, res_struct)
         eao.io.output_to_file(output=outp, file_name= 'test.xlsx')
 
+
+    def test_various_vars_in_mapping(self):
+        """ testing more efficient approach where more than one row in mapping
+        can exist per variable """
+        #unit = eao.assets.Unit(volume='MJ', flow = 'W', factor = 1000) # physically not correct, for testing
+        unit = eao.assets.Unit()
+        node1 = eao.assets.Node('n1', commodity = 'com', unit = unit)
+        node2 = eao.assets.Node('n2', commodity = 'com', unit = unit)
+
+        tg = eao.assets.Timegrid(start = pd.Timestamp(1980, 1, 1), end = pd.Timestamp(1981, 1, 1), freq = 'd', main_time_unit='d')
+        b = eao.assets.SimpleContract(name = 'b', nodes = node1, min_cap= -100, max_cap=100, price = 'Z')
+        s = eao.assets.SimpleContract(name = 's', nodes = node2, min_cap= -100, max_cap=100, price = 'P')        
+
+        take = {'start': pd.date_range(start = pd.Timestamp(1980, 1, 1), end = pd.Timestamp(1982, 1, 1), freq = 'MS'),
+                   'end': pd.date_range(start = pd.Timestamp(1980, 2, 1), end = pd.Timestamp(1982, 2, 1), freq = 'MS'),
+                   }
+        take['values'] = np.ones(len(take['start']))*22
+        t = eao.assets.ExtendedTransport(name = 'trans',  max_cap = 100,  max_take = take, efficiency = 0.9, nodes = [node1, node2])
+
+        price = {'Z': np.zeros(tg.T),
+                 'P': np.ones(tg.T)*1}
+
+        portf = eao.portfolio.Portfolio([b, s, t])
+        op = portf.setup_optim_problem(timegrid = tg, prices = price)
+        res = op.optimize()
+        out = eao.io.extract_output(portf = portf, op = op, res = res)
+        df = out['dispatch']
+
+        # efficiency right?
+        self.assertAlmostEqual(-df['trans (n2)'].sum()/df['trans (n1)'].sum(), 0.9, 5)
+        # right monthly quantity?
+        df['month'] = df.index.month
+        df.groupby('month').sum()
+        for v in df.groupby('month').sum()['trans (n1)']:
+            self.assertAlmostEqual(v, -22, 5)
+        
 ###########################################################################################################
 
 ###########################################################################################################

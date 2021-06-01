@@ -45,7 +45,7 @@ class Timegrid:
         Args:
             start (dt.datetime): Start datetime
             end (dt.datetime): End datetime
-            freq_discr (str, optional): Frequency for discretization according to pandas notation ('15min', 'h', 'd', ...). Defaults to 'h'
+            freq (str, optional): Frequency for discretization according to pandas notation ('15min', 'h', 'd', ...). Defaults to 'h'
             main_time_unit (str, optional): All times in the optimization problem are measured in the main_time_unit. Pandas notation. Defaults to 'h'
             timezone: Timezone for times. String according to pandas tz definitions (e.g. CET). Defaults to None (naive timezone)
 
