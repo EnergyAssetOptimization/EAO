@@ -14,11 +14,14 @@ class Unit:
             flow (str, optional): 'flow' is a quantity per time unit, typically MW (J/s) for energy. Defaults to 'MW'.
             factor (float, optional): 'factor' is measured in the <main time unit> of the optimization problem (default 'h'). 
                                        It is the value of (volume/flow). Defaults to 1 <basic time unit>.
+                                       The factor for conversions may prove very handy, particularly with multi commodity models
+                                       however, it is not implemented yet. We included the factor to ensure at the start that 
+                                       only unit valid choices with factor 1 are used. Conversion to be added in later version 
         """
         self.volume = volume
         self.flow   = flow
         self.factor = factor
-
+        assert (factor == 1.), 'conversion of volume/flow units using factor not implemented. please choose units with conversion factor 1'
 
 class Node:
     def __init__(self, name: str, commodity:str = None, unit: Unit = Unit()) :

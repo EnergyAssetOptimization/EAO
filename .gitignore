@@ -21,3 +21,6 @@ doc/source/samples/simple_start/results_simple_start.xlsx
 tests/test_result_asset.JSON
 test_output.xlsx
 
+doc/source/samples/optimal_res_scaling/loop_results55.xlsx
+doc/source/samples/optimal_res_scaling/results_scaled.xlsx
+doc/source/samples/optimal_res_scaling/results_vol_matched.xlsx
