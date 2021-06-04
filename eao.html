@@ -918,7 +918,10 @@ time zone</p>
 <li><p><strong>volume</strong> (<em>str</em><em>, </em><em>optional</em>) – ‘volume’ is a quantity unit, typically MWh or MJ for energy. Defaults to ‘MWh’.</p></li>
 <li><p><strong>flow</strong> (<em>str</em><em>, </em><em>optional</em>) – ‘flow’ is a quantity per time unit, typically MW (J/s) for energy. Defaults to ‘MW’.</p></li>
 <li><p><strong>factor</strong> (<em>float</em><em>, </em><em>optional</em>) – ‘factor’ is measured in the &lt;main time unit&gt; of the optimization problem (default ‘h’).
-It is the value of (volume/flow). Defaults to 1 &lt;basic time unit&gt;.</p></li>
+It is the value of (volume/flow). Defaults to 1 &lt;basic time unit&gt;.
+The factor for conversions may prove very handy, particularly with multi commodity models
+however, it is not implemented yet. We included the factor to ensure at the start that
+only unit valid choices with factor 1 are used. Conversion to be added in later version</p></li>
 </ul>
 </dd>
 </dl>
