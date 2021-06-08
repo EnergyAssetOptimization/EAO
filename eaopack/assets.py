@@ -110,6 +110,7 @@ class Storage(Asset):
                 end_level: float = 0., 
                 cost_out: float = 0., 
                 cost_in: float = 0., 
+                cost_store: float = 0.,
                 block_size: str = None,
                 eff_in:float = 1.,
                 inflow: float = 0.,
@@ -131,6 +132,8 @@ class Storage(Asset):
             end_level (float, optional):Level of storage at end of optimization. Defaults to zero.
             cost_out (float, optional): Cost for taking out volumes ($/volume). Defaults to 0.
             cost_in (float, optional): Cost for taking in volumes ($/volume). Defaults to 0.
+            cost_store (float, optional): Cost for keeping in storage ($/volume/main time unit). Defaults to 0.
+                                          Note: Cost for stored inflow is correctly optimized, but constant contribution not part of output NPV
             block_size (str, optional): Mainly to speed optimization, optimize the storage in time blocks. Defaults None (no blocks).
                                         Using pandas type frequency strings (e.g. 'd' to have a block each day)                        
             eff_in (float, optional): Efficiency taking in the commodity. Means e.g. at 90%: 1MWh in --> 0,9 MWh in storage. Defaults to 1 (=100%).
@@ -150,6 +153,7 @@ class Storage(Asset):
         self.inflow = inflow
         self.cost_out = cost_out
         self.cost_in = cost_in
+        self.cost_store = cost_store
         self.price = price
         self.block_size = None
         if block_size is not None:
@@ -188,22 +192,38 @@ class Storage(Asset):
             price = prices[self.price].copy()
             if not (len(price) == self.timegrid.T): # price vector must have right size for discretization
                 raise ValueError('Length of price array must be equal to length of time grid. Asset: '+ self.name)
-        # separation in/out needed?  Only one or two dispatch variable per time step
+        # separation into in/out needed?  Only one or two dispatch variables per time step
         sep_needed =  (self.eff_in != 1) or (self.cost_in !=0) or (self.cost_out !=0)
 
+        # cost_store -- costs for keeping quantity in storage
+        # effectively, for each time step t we have:   cost_store * sum_{i<t}(disp_i)
+        # and after summing ofer time steps t we get   cost_store * sum_t(disp_t * N_t)  
+        #       where N_t is the number of time steps after (t)
+        # convert to costs per main time unit
+
+        if self.cost_store != 0:
+            cost_store = self.cost_store * dt
+            cost_store = np.cumsum(cost_store[::-1])[::-1]-cost_store[-1]
+        # costs in and out
         if sep_needed:
             u = np.hstack(( np.zeros(n,float), ct))
             l = np.hstack((-cp, np.zeros(n,float)))
             c = np.ones((2,n), float)
             c[0,:] = -c[0,:]*self.cost_in
             c[1,:] =  c[1,:]*self.cost_out            
+            if self.cost_store != 0:
+                c -= (np.vstack((cost_store*self.eff_in, cost_store))) 
+            if self.price is not None:
+                c -= np.asarray(price[self.timegrid.restricted.I])
             c = c * (np.tile(discount, (2,1))) 
         else:
             u = ct
             l = -cp
             c = np.zeros(n)
-        if self.price is not None:
-            c -= np.asarray(price[self.timegrid.restricted.I])*discount
+            if self.cost_store != 0:
+                c -= cost_store * discount
+            if self.price is not None:
+                c -= np.asarray(price[self.timegrid.restricted.I])*discount
         c  = c.flatten('C') # make all one columns
         # switch to return costs only
         if costs_only: 

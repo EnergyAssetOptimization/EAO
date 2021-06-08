@@ -183,7 +183,59 @@ class StorageTest(unittest.TestCase):
         # result should be exactly the inflow
         self.assertAlmostEqual((d-1).sum(), 0, 5)
        
+    def test_store_cost_with_cap_costs(self):
+        """ Test on storage costs for stored volume - with efficiency
+        """
+        node = eao.assets.Node('testNode')
+        timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,1,2), freq = 'h')
+        a = eao.assets.Storage('STORAGE', node, start=dt.date(2021,1,1), end=dt.date(2021,2,1),size=10,\
+             cap_in=5, cap_out=5, start_level=0, end_level=0, price='price',
+             cost_store= .5, eff_in= 1, cost_in=1, cost_out=2)
+        price = 1e5*np.ones([timegrid.T])
+        price[:10] = 0
+        prices ={ 'price': price}
+        op = a.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        ### charge / discharge should be close to each other to avoid charged storage
+        for ii in range(0,8):
+            self.assertAlmostEqual(res.x[ii], 0, 3)
+        for ii in range(8,10):
+            self.assertAlmostEqual(res.x[ii], -5, 3)
+        for ii in range(34,36):
+            self.assertAlmostEqual(res.x[ii], 5, 3)
+        for ii in range(36,48):
+            self.assertAlmostEqual(res.x[ii], 0, 3)                   
+        # total value: earnung 10+1e5, costs for storage .5 per MWh in storage     
+        self.assertAlmostEqual(res.value, 1e6-(5+10+5)*.5-10*1-10*2, 3)
+        print(res)
 
+    def test_store_cost_eff(self):
+        """ Test on storage costs for stored volume - with efficiency
+        """
+        node = eao.assets.Node('testNode')
+        timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,1,2), freq = 'h')
+        a = eao.assets.Storage('STORAGE', node, start=dt.date(2021,1,1), end=dt.date(2021,2,1),size=10,\
+             cap_in=5, cap_out=5, start_level=0, end_level=0, price='price',
+             cost_store= .5, eff_in= .8, cost_in=1, cost_out=1)
+        price = 1e5*np.ones([timegrid.T])
+        price[:10] = 0
+        prices ={ 'price': price}
+        op = a.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        ### charge / discharge should be close to each other to avoid charged storage
+        for ii in range(0,7):
+            self.assertAlmostEqual(res.x[ii], 0, 3)
+        # lost must be met by dispatch before full loading
+        self.assertAlmostEqual(res.x[7], -(10*.2)/.8, 3)
+        for ii in range(8,10):
+            self.assertAlmostEqual(res.x[ii], -5, 3)
+        for ii in range(34,36):
+            self.assertAlmostEqual(res.x[ii], 5, 3)
+        for ii in range(36,48):
+            self.assertAlmostEqual(res.x[ii], 0, 3)                   
+        # total value: earnung 10+1e5, costs for storage .5 per MWh in storage     
+        self.assertAlmostEqual(1e6-res.value, (+10+10/.8)+(((2.5+7.5+12.5)*.8 + 5)*.5), 3)
+        print(res)
 class TransportTest(unittest.TestCase):
     def test_transport(self):
         """ Unit test. Setting up transport with random costs
