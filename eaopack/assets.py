@@ -198,12 +198,13 @@ class Storage(Asset):
         # cost_store -- costs for keeping quantity in storage
         # effectively, for each time step t we have:   cost_store * sum_{i<t}(disp_i)
         # and after summing ofer time steps t we get   cost_store * sum_t(disp_t * N_t)  
+        # (discount needs to be accounted for as well)
         #       where N_t is the number of time steps after (t)
         # convert to costs per main time unit
 
         if self.cost_store != 0:
-            cost_store = self.cost_store * dt
-            cost_store = np.cumsum(cost_store[::-1])[::-1]-cost_store[-1]
+            cost_store = self.cost_store * dt * discount
+            cost_store = np.asarray([cost_store[ii:].sum() for ii in range(0,len(cost_store))] )
         # costs in and out
         if sep_needed:
             u = np.hstack(( np.zeros(n,float), ct))
@@ -211,19 +212,19 @@ class Storage(Asset):
             c = np.ones((2,n), float)
             c[0,:] = -c[0,:]*self.cost_in
             c[1,:] =  c[1,:]*self.cost_out            
-            if self.cost_store != 0:
-                c -= (np.vstack((cost_store*self.eff_in, cost_store))) 
             if self.price is not None:
                 c -= np.asarray(price[self.timegrid.restricted.I])
             c = c * (np.tile(discount, (2,1))) 
+            if self.cost_store != 0:
+                c -= (np.vstack((cost_store*self.eff_in, cost_store))) 
         else:
             u = ct
             l = -cp
             c = np.zeros(n)
-            if self.cost_store != 0:
-                c -= cost_store * discount
             if self.price is not None:
                 c -= np.asarray(price[self.timegrid.restricted.I])*discount
+            if self.cost_store != 0:
+                c -= cost_store
         c  = c.flatten('C') # make all one columns
         # switch to return costs only
         if costs_only: 

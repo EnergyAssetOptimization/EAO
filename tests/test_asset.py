@@ -235,7 +235,7 @@ class StorageTest(unittest.TestCase):
             self.assertAlmostEqual(res.x[ii], 0, 3)                   
         # total value: earnung 10+1e5, costs for storage .5 per MWh in storage     
         self.assertAlmostEqual(1e6-res.value, (+10+10/.8)+(((2.5+7.5+12.5)*.8 + 5)*.5), 3)
-        print(res)
+
 class TransportTest(unittest.TestCase):
     def test_transport(self):
         """ Unit test. Setting up transport with random costs
@@ -383,7 +383,70 @@ class ScaledAsset(unittest.TestCase):
         # zero costs and limit at original size -- same result
         self.assertAlmostEqual(res_std.value, res.value, 5)
 
+class DiscountRate(unittest.TestCase):
+    def test_discount_simple_contract(self):
+        """ Unit test. Simple contract with discount rate
+        """
+        node = eao.assets.Node('testNode')
+        timegrid = eao.assets.Timegrid(dt.date(1999,1,1), dt.date(2000,1,1), freq = 'd')
+        a = eao.assets.SimpleContract(name = 'SC', extra_costs=-1, price = 'pr', nodes = node ,
+                        min_cap= 0, max_cap=10., wacc = 0.1)
+        prices = {'pr':0.2*np.ones([timegrid.T])}
+        op = a.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        timegrid.set_wacc(0.1)
+        self.assertAlmostEqual(timegrid.discount_factors[-1], 1./1.1, 4)
+        check = 10*(1-0.2)*timegrid.discount_factors.sum()*24
+        self.assertAlmostEqual(check, res.value, 2)
 
+    def test_store_cost_with_cap_costs_discount(self):
+        """ Test on storage costs for stored volume - with efficiency
+        """
+        ### (A) without discount
+        node = eao.assets.Node('testNode')
+        timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,1,25), freq = 'd', main_time_unit='d')
+        a = eao.assets.Storage('STORAGE', node, start=dt.date(2021,1,1), end=dt.date(2021,2,1),size=10,\
+             cap_in=5, cap_out=5, start_level=0, end_level=0, price='price',
+             cost_store= .5, eff_in= 1, cost_in=1, cost_out=2, wacc = 0.)
+        price = 1e3*np.ones([timegrid.T])
+        price[:10] = 0
+        prices ={ 'price': price}
+        op = a.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        ### charge / discharge should be close to each other to avoid charged storage
+        for ii in range(0,8):
+            self.assertAlmostEqual(res.x[ii], 0, 3)
+        for ii in range(8,10):
+            self.assertAlmostEqual(res.x[ii], -5, 3)
+        for ii in range(34,36):
+            self.assertAlmostEqual(res.x[ii], 5, 3)
+        for ii in range(36,48):
+            self.assertAlmostEqual(res.x[ii], 0, 3)                   
+        # total value: earnung 10+1e5, costs for storage .5 per MWh in storage     
+        self.assertAlmostEqual(res.value, 1e4-(5+10+5)*.5-10*1-10*2, 3)
+
+        WACC = 0.8
+        ### (B) WITH discount
+        a2 = eao.assets.Storage('STORAGE', node, start=dt.date(2021,1,1), end=dt.date(2021,2,1),size=10,\
+             cap_in=5, cap_out=5, start_level=0, end_level=0, price='price',
+             cost_store= .5, eff_in= 1, cost_in=1, cost_out=2, wacc = WACC)
+        op2 = a2.setup_optim_problem(prices, timegrid=timegrid)
+        res2 = op2.optimize()
+        ### dispatch should not have changed due to discount
+        for ii in range(0,48):
+            self.assertAlmostEqual(res.x[ii]-res2.x[ii], 0., 3)        
+        # total value: earnung 10+1e5, costs for storage .5 per MWh in storage    
+        timegrid.set_wacc(WACC) 
+        disc = timegrid.discount_factors
+        fill_level = -(res2.x[0:24]+res2.x[24:48]).cumsum()
+        costs = -res2.x[0:24]*a.cost_in \
+                + res2.x[24:48]*a.cost_out \
+                + fill_level*a.cost_store
+        costs = (costs*disc).sum()
+        rev = ((res2.x[24:48])*1e3*disc).sum()
+        
+        self.assertAlmostEqual(res2.value, rev-costs, 3)        
+        pass
 
 ###########################################################################################################
 ###########################################################################################################
