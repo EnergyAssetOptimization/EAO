@@ -558,8 +558,16 @@ def define_restr(my_take, my_type, my_n, map, timegrid, node = None):
     my_A     = sp.lil_matrix((0, my_n)) 
     my_b     = np.empty(shape=(0))
     my_cType = ''
+
+    # need to alter mapping - create copy
+    map = map.copy()
+    map.reset_index(inplace = True)
+    # several rows per variable? if not add missing column
+    if 'disp_factor' not in map.columns:
+        map['disp_factor'] = 1.
+
     for (s,e,v) in zip(my_take['start'], my_take['end'], my_take['values']):
-        I = [] # row with all zeros, no connections to restriction
+        I = [] # collect indices of rows that match
         for i, t in enumerate(timegrid.restricted.timepoints):
             if (s <= t) and (e > t):
                 if node is None:
@@ -569,7 +577,11 @@ def define_restr(my_take, my_type, my_n, map, timegrid, node = None):
         if not len(I) == 0: # interval could be outside timegrid, then omit restriction
             my_cType  += my_type
             a      = sp.lil_matrix((1,my_n))
-            a[0,I] = 1.   
+            # effectively adding all dispatches with corresponding factor in the selected node
+            # sum over all rows per variable
+            for my_i in I: # iterate over rows
+                a[0, map.loc[my_i, 'index']] += map.loc[my_i, 'disp_factor']
+            # ... with several rows per variable not valid any more:  a[0, map.loc[I, 'index'].values] = map.loc[I, 'disp_factor'].values
             my_A   = sp.vstack((my_A, a))
             # adjust quantity in case the restr. interval does not fully lie in timegrid
             # length of complete interval scaled down to interval within grid
@@ -709,7 +721,7 @@ class ExtendedTransport(Transport):
             Extension of transport with more complex restrictions:
        
             - time dependent capacity restrictions
-            - MinTake & MaxTake for a list of periods. With efficiency, min/maxTake refer to the quantity delivered from/to node 2 
+            - MinTake & MaxTake for a list of periods. With efficiency, min/maxTake refer to the quantity delivered FROM node 1 
 
         Examples
             - with min_cap = max_cap and a detailed time series
@@ -767,7 +779,10 @@ class ExtendedTransport(Transport):
             # assert right sizes
             assert ( (len(max_take['start'])== (len(max_take['end']))) and (len(max_take['start'])== (len(max_take['values']))) )
             # restricting only output node. 
-            A1, b1, c1 = define_restr(max_take, 'U', n, op.mapping, timegrid, node = self.node_names[1])
+            ## lower bound, since we have a different sign (transporting FROM node 0)
+            my_take = max_take.copy() # need to alter
+            my_take['values'] = -np.asarray(my_take['values'])
+            A1, b1, c1 = define_restr(my_take, 'L', n, op.mapping, timegrid, node = self.node_names[0])
             A     = sp.vstack((A, A1))
             b     = np.hstack((b, b1))
             cType = cType+c1
@@ -775,7 +790,10 @@ class ExtendedTransport(Transport):
             # assert right sizes
             assert ( (len(min_take['start'])== (len(min_take['end']))) and (len(min_take['start'])== (len(min_take['values']))) )
             # restricting only output node
-            A1, b1, c1 = define_restr(min_take, 'L', n, op.mapping, timegrid, node = self.node_names[1])            
+            ## lower bound, since we have a different sign (transporting FROM node 0)
+            my_take = min_take.copy() # need to alter
+            my_take['values'] = -np.asarray(my_take['values'])
+            A1, b1, c1 = define_restr(my_take, 'U', n, op.mapping, timegrid, node = self.node_names[0])            
             A     = sp.vstack((A, A1))
             b     = np.hstack((b, b1))
             cType = cType+c1        

@@ -281,6 +281,41 @@ class TransportTest(unittest.TestCase):
         res = op.optimize()
         self.assertAlmostEqual(res.value,5., 5)
 
+    def test_extended_transport_max_min_take(self):
+        """ needed to define min/max take on transport"""
+        node1 = eao.assets.Node('N1')
+        node2 = eao.assets.Node('N2')
+        timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,1,20), freq = 'd', main_time_unit='d')
+        prices ={'buy': np.zeros(timegrid.T), 'sell': 1*np.ones(timegrid.T)}
+        max_take = {'start':[dt.date(2021,1,1), dt.date(2021,1,2), dt.date(2021,1,11)],
+                    'end':  [dt.date(2021,1,2), dt.date(2021,1,11), dt.date(2021,2,11)],
+                    'values' : [0,2.2,0]}
+        trans = eao.assets.ExtendedTransport(name = 'TrB', nodes = [node1, node2],
+                        min_cap= 0., max_cap=10., max_take=max_take, min_take=max_take)                        
+
+        buy  = eao.assets.SimpleContract(name = 'buya', price = 'buy', max_cap = 2, nodes = node1  )
+        sell = eao.assets.SimpleContract(name = 'sell', price = 'sell', min_cap = -1, nodes = node2  )
+
+        portf = eao.portfolio.Portfolio([trans, buy, sell])
+
+        ## check max_take
+        op = portf.setup_optim_problem(prices, timegrid)
+        res = op.optimize()
+        out = eao.io.extract_output(portf=portf, op = op, res = res)
+        self.assertAlmostEqual(out['dispatch'].loc[pd.Timestamp(2021,1,1):pd.Timestamp(2021,1,1),'buya (N1)'].sum(),0., 5)
+        self.assertAlmostEqual(out['dispatch'].loc[pd.Timestamp(2021,1,2):pd.Timestamp(2021,1,10),'buya (N1)'].sum(),2.2, 5)        
+        self.assertAlmostEqual(out['dispatch'].loc[pd.Timestamp(2021,1,11):pd.Timestamp(2021,2,10),'buya (N1)'].sum(),0, 5)          
+        self.assertAlmostEqual(res.value, 2.2, 5)
+        ## check min_take
+        prices ={'buy': np.zeros(timegrid.T), 'sell': -1*np.ones(timegrid.T)}
+        op = portf.setup_optim_problem(prices, timegrid)
+        res = op.optimize()
+        out = eao.io.extract_output(portf=portf, op = op, res = res)
+        self.assertAlmostEqual(out['dispatch'].loc[pd.Timestamp(2021,1,1):pd.Timestamp(2021,1,1),'buya (N1)'].sum(),0., 5)
+        self.assertAlmostEqual(out['dispatch'].loc[pd.Timestamp(2021,1,2):pd.Timestamp(2021,1,10),'buya (N1)'].sum(),2.2, 5)        
+        self.assertAlmostEqual(out['dispatch'].loc[pd.Timestamp(2021,1,11):pd.Timestamp(2021,2,10),'buya (N1)'].sum(),0, 5)          
+        self.assertAlmostEqual(res.value, -2.2, 5)
+
     def test_transport_efficiency(self):
         """ check efficiency in transport """
         node1a = eao.assets.Node('N1a')
@@ -353,9 +388,6 @@ class ContractTest(unittest.TestCase):
         res = op.optimize()
         sdisp = res.x.sum() * (End-Start)/(End-startA) - 20.        
         self.assertAlmostEqual(sdisp, 0., 5)
-
-
-
 
 class ScaledAsset(unittest.TestCase):
     def test_scaled_asset(self):
