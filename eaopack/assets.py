@@ -123,6 +123,7 @@ class Storage(Asset):
         Args:
             name (str): Unique name of the asset (asset parameter)
             node (Node): Node, the storage is located in (asset parameter)
+                         Two nodes may be defined in case input and output are located in different nodes [node_input, node_output]
             timegrid (Timegrid): Timegrid for discretization (asset parameter)
             wacc (float): Weighted average cost of capital to discount cash flows in target (asset parameter)
             size (float): maximum volume of commodity in storage.
@@ -144,11 +145,11 @@ class Storage(Asset):
         self.size = size
         self.start_level = start_level
         self.end_level= end_level
-        if start_level > size: raise ValueError('Asset --'+self.name+'--: start level must be smaller than the storage size')
+        assert start_level <= size, 'Storage --'+self.name+'--: start level must be <=  storage size'
         self.cap_in = cap_in
         self.cap_out = cap_out
-        if cap_in <0 : raise ValueError('Asset --'+self.name+'--: cap_in must not be negative')
-        if cap_out <0 : raise ValueError('Asset --'+self.name+'--: cap_out must not be negative')        
+        assert cap_in  >=0, 'Storage --'+self.name+'--: cap_in must not be negative'
+        assert cap_out >=0, 'Storage --'+self.name+'--: cap_out must not be negative'
         self.eff_in = eff_in
         self.inflow = inflow
         self.cost_out = cost_out
@@ -158,7 +159,7 @@ class Storage(Asset):
         self.block_size = None
         if block_size is not None:
             self.block_size = block_size # defines the block size (as pandas frequency)
-             
+        assert len(self.nodes)<=2, 'for storage only one or two nodes valid'
 
     def setup_optim_problem(self, prices: dict, timegrid:Timegrid = None, costs_only:bool = False) -> OptimProblem:
         """ Set up optimization problem for asset
@@ -176,8 +177,7 @@ class Storage(Asset):
         if not timegrid is None:
             self.set_timegrid(timegrid)
         # check: timegrid set?                    
-        if not hasattr(self, 'timegrid'): 
-            raise ValueError('Set timegrid of asset before creating optim problem. Asset: '+ self.name)
+        assert hasattr(self, 'timegrid'), 'Set timegrid of asset before creating optim problem. Asset: '+ self.name
 
         dt =  self.timegrid.restricted.dt
         n = self.timegrid.restricted.T # moved to Timegrid
@@ -193,8 +193,8 @@ class Storage(Asset):
             if not (len(price) == self.timegrid.T): # price vector must have right size for discretization
                 raise ValueError('Length of price array must be equal to length of time grid. Asset: '+ self.name)
         # separation into in/out needed?  Only one or two dispatch variables per time step
-        sep_needed =  (self.eff_in != 1) or (self.cost_in !=0) or (self.cost_out !=0)
-
+        # new separation reason: separate nodes in and out
+        sep_needed =  (self.eff_in != 1) or (self.cost_in !=0) or (self.cost_out !=0) or (len(self.nodes)==2)
         # cost_store -- costs for keeping quantity in storage
         # effectively, for each time step t we have:   cost_store * sum_{i<t}(disp_i)
         # and after summing ofer time steps t we get   cost_store * sum_t(disp_t * N_t)  
@@ -249,7 +249,10 @@ class Storage(Asset):
             aa = []
             for myd in indBlocks:
                 my_bool = self.timegrid.restricted.timepoints<=myd
-                aa.append(np.argwhere(my_bool)[-1,-1])
+                if any(my_bool):
+                    aa.append(np.argwhere(my_bool)[-1,-1])
+                else:
+                    aa.append(0)                    
                 if all(my_bool): break # stop early
             aa = np.asarray(aa)
             if aa[-1]!=n:
@@ -274,9 +277,15 @@ class Storage(Asset):
         mapping = pd.DataFrame()
         if sep_needed:
             mapping['time_step'] = np.hstack((self.timegrid.restricted.I, self.timegrid.restricted.I))
+            if len(self.nodes)==1:
+                mapping['node']      = self.nodes[0].name
+            else: # separate nodes in / out.
+                mapping['node']  = np.nan
+                mapping.loc[0:n,'node']      = self.nodes[0].name
+                mapping.loc[n:2*n,'node']      = self.nodes[1].name
         else:
             mapping['time_step'] = self.timegrid.restricted.I
-        mapping['node']      = self.nodes[0].name
+            mapping['node']      = self.nodes[0].name
         mapping['asset']     = self.name
         mapping['type']      = 'd'
         return OptimProblem(c=c,l=l, u=u, A=A, b=b, cType=cType, mapping = mapping)
