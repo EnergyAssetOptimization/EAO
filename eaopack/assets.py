@@ -254,7 +254,7 @@ class Storage(Asset):
                 else:
                     aa.append(0)                    
                 if all(my_bool): break # stop early
-            aa = np.asarray(aa)
+            aa = np.unique(np.asarray(aa))
             if aa[-1]!=n:
                 aa = np.append(aa,n)
             for i,a in enumerate(aa[0:-1]): # go through the blocks
