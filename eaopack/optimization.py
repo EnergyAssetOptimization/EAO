@@ -81,8 +81,19 @@ class OptimProblem:
             # Construct the problem
 
             # variable to optimize. Note: may add differentiation of variables and constants in case lower and upper bounds are equal
-            x = CVX.Variable(self.c.size)
-
+            map = self.mapping # abbreviation
+            isMIP = False
+            if 'bool' in map:
+                my_bools = map.loc[(~map.index.duplicated(keep='first'))&(map['bool'])].index.values.tolist()
+                my_bools = [(bb,) for bb in my_bools]
+                if len(my_bools)==0: 
+                    my_bools = False
+                else:
+                    isMIP = True ### !!! Need to change solver
+                    print('...MIP problem configured. Beware of potentially long optimization and other issues inherent to MIP')
+            else:
+                my_bools = False
+            x = CVX.Variable(self.c.size, boolean = my_bools)
             ##### put together constraints
             constr_types = {}   # dict to remember constraint type and numbering to extract duals
             # lower and upper bound  constraints # 0 & 1
@@ -161,15 +172,19 @@ class OptimProblem:
 
             prob = CVX.Problem(CVX.Maximize(objective), constraints)
             prob.solve(solver = getattr(CVX, solver), max_iters = iterations) # no rel_tol parameter here
+                
 
             if prob.status == 'optimal':
                 # print("Status: " +prob.status)
                 # print('Portfolio Value: ' +  '% 6.0f' %prob.value)
 
-                # collect duals in dictionary according to cTypes
-                myduals = {}
-                for myt in constr_types:
-                    myduals[myt] = constraints[constr_types[myt]].dual_value
+                if not isMIP:
+                    # collect duals in dictionary according to cTypes
+                    myduals = {}
+                    for myt in constr_types:
+                        myduals[myt] = constraints[constr_types[myt]].dual_value
+                else:
+                    myduals = None
                 results = Results(value       = prob.value,
                                   x           = x.value,
                                   duals = myduals)
