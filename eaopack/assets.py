@@ -98,22 +98,23 @@ class Asset:
 class Storage(Asset):
     """ Storage Class in Python"""
     def __init__(self, 
-                name: str,
-                nodes: Node,
-                start: dt.datetime = None,
-                end:   dt.datetime = None,
-                wacc: float = 0.,
-                size:float = None, 
-                cap_in:float = None, 
-                cap_out: float = None, 
+                name    : str,
+                nodes   : Node,
+                start   : dt.datetime = None,
+                end     : dt.datetime = None,
+                wacc    : float = 0.,
+                size    : float = None, 
+                cap_in  : float = None, 
+                cap_out : float = None, 
                 start_level: float = 0.,
-                end_level: float = 0., 
+                end_level  : float = 0., 
                 cost_out: float = 0., 
-                cost_in: float = 0., 
-                cost_store: float = 0.,
-                block_size: str = None,
-                eff_in:float = 1.,
-                inflow: float = 0.,
+                cost_in : float = 0., 
+                cost_store : float = 0.,
+                block_size : str = None,
+                eff_in  : float = 1.,
+                inflow  : float = 0.,
+                no_simult_in_out: bool = False,
                 price: str=None):
         """ Specific storage asset. A storage has the basic capability to
             (1) take in a commodity within a limited flow rate (capacity)
@@ -139,9 +140,11 @@ class Storage(Asset):
                                         Using pandas type frequency strings (e.g. 'd' to have a block each day)                        
             eff_in (float, optional): Efficiency taking in the commodity. Means e.g. at 90%: 1MWh in --> 0,9 MWh in storage. Defaults to 1 (=100%).
             inflow (float, optional): Constant rate of inflow volumes (flow in each time step. E.g. water inflow in hydro storage). Defaults to 0.
+            no_simult_in_out (boolean, optional): Enforce no simultaneous dispatch in/out in case of costs or efficiency!=1. Makes problem MIP. Defaults to False
         """
 
         super(Storage, self).__init__(name=name, nodes=nodes, start=start, end=end, wacc=wacc)        
+        assert size is not None, 'Storage --'+self.name+'--: size must be given'
         self.size = size
         self.start_level = start_level
         self.end_level= end_level
@@ -160,6 +163,7 @@ class Storage(Asset):
         if block_size is not None:
             self.block_size = block_size # defines the block size (as pandas frequency)
         assert len(self.nodes)<=2, 'for storage only one or two nodes valid'
+        self.no_simult_in_out = no_simult_in_out
 
     def setup_optim_problem(self, prices: dict, timegrid:Timegrid = None, costs_only:bool = False) -> OptimProblem:
         """ Set up optimization problem for asset
@@ -259,7 +263,7 @@ class Storage(Asset):
                 aa = np.append(aa,n)
             for i,a in enumerate(aa[0:-1]): # go through the blocks
                 diff = aa[i+1]-a
-                A[a:a+diff, a:a+diff] = - np.tril(np.ones((diff,diff),float))
+                A[a:a+diff, a:a+diff] = - sp.tril(np.ones((diff,diff),float))
                 # Maximum: max volume not exceeded
                 parts_b = (self.size-self.start_level)*np.ones(diff) - inflow[a:a+diff]
                 parts_b[-1] = self.end_level - self.start_level      - inflow[-1]
@@ -288,6 +292,44 @@ class Storage(Asset):
             mapping['node']      = self.nodes[0].name
         mapping['asset']     = self.name
         mapping['type']      = 'd'
+
+        ### in case of forcing no_simult_in_out - add binary variables and restrictions
+        if (self.no_simult_in_out) and (sep_needed): # without sep_needed no need for forcing
+            mapping['bool']      = False
+            # n new binary variables
+            map_bool = pd.DataFrame()
+            map_bool['time_step'] = self.timegrid.restricted.I
+            map_bool['node']      = np.nan
+            map_bool['asset']     = self.name
+            map_bool['type']      = 'i' # internal
+            map_bool['bool']      = True
+            mapping = pd.concat([mapping, map_bool])
+            mapping.reset_index(inplace=True, drop = True) # need to reset index (which enumerates variables)
+            # extend costs
+            c = np.hstack((c, np.zeros(n)))
+            l = np.hstack((l, np.zeros(n)))
+            u = np.hstack((u, np.ones(n)))
+            # extend A for binary variables (not relevant in exist. restrictions)
+            # in:  (1-b)*min <= in  <= 0
+            # out:        0  <= out <= (b) * max
+            A = sp.hstack((A, sp.lil_matrix((2*n,n)) ))
+            # create extra restrictions
+            myA = sp.lil_matrix((n,3*n))
+            # "0" means mode "in"
+            myA[0:n, 0:n]     = sp.eye(n)
+            myA[0:n, 2*n:3*n] = sp.diags(-cp, 0)
+            A                 = sp.vstack((A, myA))
+            b                 = np.hstack((b, -cp))
+            cType += 'L'*n
+            # "1" means mode "out"
+            myA = sp.lil_matrix((n,3*n))
+            myA[0:n, n:2*n]     = sp.eye(n)
+            myA[0:n, 2*n:3*n]   = sp.diags(-ct, 0)
+            A   = sp.vstack((A, myA))
+            b = np.hstack((b, np.zeros(n)))
+            cType += 'U'*n
+
+
         return OptimProblem(c=c,l=l, u=u, A=A, b=b, cType=cType, mapping = mapping)
 
 
@@ -350,8 +392,8 @@ class SimpleContract(Asset):
         # check: timegrid set?                    
         if not hasattr(self, 'timegrid'): 
             raise ValueError('Set timegrid of asset before creating optim problem. Asset: '+ self.name)
-
         if not self.price is None:
+            assert (isinstance(self.price, str)), 'Error in asset '+self.name+' --> price must be given as string'
             assert (self.price in prices)
             price = prices[self.price].copy()
         else: 

@@ -58,7 +58,7 @@ class OptimProblem:
     def optimize(self, target = 'value',
                        samples = None,
                        interface:str = 'cvxpy', 
-                       solver = 'ECOS', 
+                       solver = None, 
                        rel_tol:float = 1e-3, 
                        iterations:int = 5000)->Results:
         """ optimize the optimization problem
@@ -69,7 +69,7 @@ class OptimProblem:
             samples (List): Samples to be used in specific optimization targets
                             - Robust optimization: list of costs arrays (maximizing minimal DCF)
             interface (str, optional): Chosen interface architecture. Defaults to 'cvxpy'.
-            sover (str, optional): Solver for interface. Defaults to 'ECOS'
+            sover (str, optional): Solver for interface. Defaults to None
             rel_tol (float): relative tolerance for solver
             iterations (int): max number of iterations for solver
             decimals_res (int): rounding results to ... decimals. Defaults to 5
@@ -81,8 +81,19 @@ class OptimProblem:
             # Construct the problem
 
             # variable to optimize. Note: may add differentiation of variables and constants in case lower and upper bounds are equal
-            x = CVX.Variable(self.c.size)
-
+            map = self.mapping # abbreviation
+            isMIP = False
+            if 'bool' in map:
+                my_bools = map.loc[(~map.index.duplicated(keep='first'))&(map['bool'])].index.values.tolist()
+                my_bools = [(bb,) for bb in my_bools]
+                if len(my_bools)==0: 
+                    my_bools = False
+                else:
+                    isMIP = True ### !!! Need to change solver
+                    print('...MIP problem configured. Beware of potentially long optimization and other issues inherent to MIP')
+            else:
+                my_bools = False
+            x = CVX.Variable(self.c.size, boolean = my_bools)
             ##### put together constraints
             constr_types = {}   # dict to remember constraint type and numbering to extract duals
             # lower and upper bound  constraints # 0 & 1
@@ -160,16 +171,26 @@ class OptimProblem:
 
 
             prob = CVX.Problem(CVX.Maximize(objective), constraints)
-            prob.solve(solver = getattr(CVX, solver), max_iters = iterations) # no rel_tol parameter here
+
+            if solver is None:
+                prob.solve(max_iters = iterations) # no rel_tol parameter here
+            else:
+                prob.solve(solver = getattr(CVX, solver), max_iters = iterations) # no rel_tol parameter here
+#                if isMIP: solver = 'GLPK_MI'
+#                else:     solver = 'ECOS'
+                
 
             if prob.status == 'optimal':
                 # print("Status: " +prob.status)
                 # print('Portfolio Value: ' +  '% 6.0f' %prob.value)
 
-                # collect duals in dictionary according to cTypes
-                myduals = {}
-                for myt in constr_types:
-                    myduals[myt] = constraints[constr_types[myt]].dual_value
+                if not isMIP:
+                    # collect duals in dictionary according to cTypes
+                    myduals = {}
+                    for myt in constr_types:
+                        myduals[myt] = constraints[constr_types[myt]].dual_value
+                else:
+                    myduals = None
                 results = Results(value       = prob.value,
                                   x           = x.value,
                                   duals = myduals)
