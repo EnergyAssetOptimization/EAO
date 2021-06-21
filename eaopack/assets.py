@@ -304,26 +304,30 @@ class Storage(Asset):
             map_bool['type']      = 'i' # internal
             map_bool['bool']      = True
             mapping = pd.concat([mapping, map_bool])
+            mapping.reset_index(inplace=True, drop = True) # need to reset index (which enumerates variables)
             # extend costs
             c = np.hstack((c, np.zeros(n)))
             l = np.hstack((l, np.zeros(n)))
             u = np.hstack((u, np.ones(n)))
             # extend A for binary variables (not relevant in exist. restrictions)
-            A   = sp.hstack((A, sp.lil_matrix((2*n,n)) ))
+            # in:  (1-b)*min <= in  <= 0
+            # out:        0  <= out <= (b) * max
+            A = sp.hstack((A, sp.lil_matrix((2*n,n)) ))
             # create extra restrictions
             myA = sp.lil_matrix((n,3*n))
             # "0" means mode "in"
-            myA[0:n, 0:n]     = -sp.eye(n)
-            myA[0:n, 2*n:3*n] = sp.eye(n)*cp
-            A   = sp.vstack((A, myA))
-            b = np.hstack((b, np.ones(n)*cp))
-            cType += 'U'*n
+            myA[0:n, 0:n]     = sp.eye(n)
+            myA[0:n, 2*n:3*n] = sp.diags(-cp, 0)
+            A                 = sp.vstack((A, myA))
+            b                 = np.hstack((b, -cp))
+            cType += 'L'*n
             # "1" means mode "out"
-            myA[0:n, n:2*n]     =  sp.eye(n)
-            myA[0:n, 2*n:3*n]   = -sp.eye(n)*ct
+            myA = sp.lil_matrix((n,3*n))
+            myA[0:n, n:2*n]     = sp.eye(n)
+            myA[0:n, 2*n:3*n]   = sp.diags(-ct, 0)
             A   = sp.vstack((A, myA))
             b = np.hstack((b, np.zeros(n)))
-            cType += 'L'*n
+            cType += 'U'*n
 
 
         return OptimProblem(c=c,l=l, u=u, A=A, b=b, cType=cType, mapping = mapping)
