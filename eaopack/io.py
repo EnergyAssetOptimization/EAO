@@ -2,8 +2,6 @@ import numpy as np
 import pandas as pd
 import datetime as dt
 
-from pandas.core.frame import DataFrame
-
 from eaopack.portfolio import Portfolio
 from eaopack.optimization import Results, OptimProblem
 
