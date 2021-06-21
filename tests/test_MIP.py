@@ -91,6 +91,12 @@ class MIP(unittest.TestCase):
         res2 = op2.optimize()
         ## assert 1 == 2
         self.assertAlmostEqual(res1.value, res2.value , 5)
+        ### check dispatch
+        out1 = eao.io.extract_output(portf = portf1, op = op1, res = res1)
+        out2 = eao.io.extract_output(portf = portf2, op = op2, res = res2)
+        out2 = eao.io.extract_output(portf = portf2, op = op2, res = res2)
+        eao.io.output_to_file(out2, file_name= 'test_results.xlsx')
+        self.assertAlmostEqual((out1['dispatch']-out2['dispatch']).sum().sum(), 0, 5)
 
 ###########################################################################################################
 ###########################################################################################################
