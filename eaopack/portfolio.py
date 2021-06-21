@@ -244,7 +244,7 @@ class StructuredAsset(Asset):
             if n not in self.node_names:
                 In = op.mapping['node'] == n
                 ## store information for later extraction
-                op.mapping.loc[In, 'node'] = self.name+'_internal_'+n
+                op.mapping.loc[In, 'node'] = self.name+'_internal_'+str(n)
             # define variables as internal
                 op.mapping.loc[In, 'type'] = 'i'
         return op
