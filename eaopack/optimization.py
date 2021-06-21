@@ -58,7 +58,7 @@ class OptimProblem:
     def optimize(self, target = 'value',
                        samples = None,
                        interface:str = 'cvxpy', 
-                       solver = 'ECOS', 
+                       solver = None, 
                        rel_tol:float = 1e-3, 
                        iterations:int = 5000)->Results:
         """ optimize the optimization problem
@@ -69,7 +69,7 @@ class OptimProblem:
             samples (List): Samples to be used in specific optimization targets
                             - Robust optimization: list of costs arrays (maximizing minimal DCF)
             interface (str, optional): Chosen interface architecture. Defaults to 'cvxpy'.
-            sover (str, optional): Solver for interface. Defaults to 'ECOS'
+            sover (str, optional): Solver for interface. Defaults to None
             rel_tol (float): relative tolerance for solver
             iterations (int): max number of iterations for solver
             decimals_res (int): rounding results to ... decimals. Defaults to 5
@@ -171,7 +171,13 @@ class OptimProblem:
 
 
             prob = CVX.Problem(CVX.Maximize(objective), constraints)
-            prob.solve(solver = getattr(CVX, solver), max_iters = iterations) # no rel_tol parameter here
+
+            if solver is None:
+                prob.solve(max_iters = iterations) # no rel_tol parameter here
+            else:
+                prob.solve(solver = getattr(CVX, solver), max_iters = iterations) # no rel_tol parameter here
+#                if isMIP: solver = 'GLPK_MI'
+#                else:     solver = 'ECOS'
                 
 
             if prob.status == 'optimal':

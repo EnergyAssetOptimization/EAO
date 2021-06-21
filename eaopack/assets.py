@@ -392,8 +392,8 @@ class SimpleContract(Asset):
         # check: timegrid set?                    
         if not hasattr(self, 'timegrid'): 
             raise ValueError('Set timegrid of asset before creating optim problem. Asset: '+ self.name)
-
         if not self.price is None:
+            assert (isinstance(self.price, str)), 'Error in asset '+self.name+' --> price must be given as string'
             assert (self.price in prices)
             price = prices[self.price].copy()
         else: 
