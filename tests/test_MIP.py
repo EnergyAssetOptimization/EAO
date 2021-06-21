@@ -95,9 +95,61 @@ class MIP(unittest.TestCase):
         out1 = eao.io.extract_output(portf = portf1, op = op1, res = res1)
         out2 = eao.io.extract_output(portf = portf2, op = op2, res = res2)
         out2 = eao.io.extract_output(portf = portf2, op = op2, res = res2)
-        eao.io.output_to_file(out2, file_name= 'test_results.xlsx')
         self.assertAlmostEqual((out1['dispatch']-out2['dispatch']).sum().sum(), 0, 5)
+        ### functionality checks
+        eao.io.output_to_file(out2, file_name= 'test_results.xlsx')
+        test_string = eao.serialization.json_serialize_objects(portf2)
 
+    def test_MIP_storage_storage_duration(self):
+        """ MIP storage. addtl feature - limited storage duration
+        """
+        node = eao.assets.Node('N1')
+        timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,1,2), freq = 'h')
+        # (1) case one var per time step
+        a = eao.assets.Storage(name = 'c', cap_in=1, cap_out=1, size = 10, price='price', nodes = node, 
+                               no_simult_in_out= False, max_store_duration= 3)        
+        price = np.ones([timegrid.T])
+        price[:10] = -1
+        prices ={ 'price': price}
+        op = a.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        check = res.x.reshape((2,24)).T
+        fill_level = -check[:,0].cumsum()
+        for (f,b) in zip(fill_level, check[:,1]):
+            if (f>0) and (b==0):
+                raise ValueError('fill level non zero, but bool zero')
+        for ii in range(0,(24-4)):
+            assert (check[ii:ii+4,1]).sum()<=3
+        # (2) case two var per time step (with efficiency)
+        a = eao.assets.Storage(name = 'c', cap_in=1, cap_out=1, size = 10, price='price', nodes = node, eff_in= 0.8,
+                               no_simult_in_out= False, max_store_duration= 3)        
+        price = np.ones([timegrid.T])
+        price[:10] = -1
+        prices ={ 'price': price}
+        op = a.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        check = res.x.reshape((3,24)).T
+        fill_level = -(check[:,0]*0.8+check[:,1]).cumsum()
+        for (f,b) in zip(fill_level, check[:,2]):
+            if (f>1e-5) and (b==0):
+                raise ValueError('fill level non zero, but bool zero')
+        for ii in range(0,(24-4)):
+            assert (check[ii:ii+4,2]).sum()<=3        
+        # (3) case with ensure no ...
+        a = eao.assets.Storage(name = 'c', cap_in=1, cap_out=1, size = 10, price='price', nodes = node, eff_in= 0.8,
+                               no_simult_in_out= True, max_store_duration= 3)        
+        price = np.ones([timegrid.T])
+        price[:10] = -1
+        prices ={ 'price': price}
+        op = a.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        check = res.x.reshape((4,24)).T
+        fill_level = -(check[:,0]*0.8+check[:,1]).cumsum()
+        for (f,b) in zip(fill_level, check[:,3]):
+            if (f>1e-5) and (b==0):
+                raise ValueError('fill level non zero, but bool zero')
+        for ii in range(0,(24-4)):
+            assert (check[ii:ii+4,3]).sum()<=3        
 ###########################################################################################################
 ###########################################################################################################
 ###########################################################################################################
