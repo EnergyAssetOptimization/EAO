@@ -150,6 +150,41 @@ class MIP(unittest.TestCase):
                 raise ValueError('fill level non zero, but bool zero')
         for ii in range(0,(24-4)):
             assert (check[ii:ii+4,3]).sum()<=3        
+
+    def test_max_hold_in_portfolio(self):
+        node1 = eao.assets.Node('N1')
+        node2 = eao.assets.Node('N2')
+        timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,1,5), freq = '3h')
+        a = eao.assets.Storage('a1', [node1, node2], start=dt.datetime(2020,12,31,23), end=dt.date(2021,2,1),size=10,\
+             cap_in=1, cap_out=1, start_level=0, end_level=0, cost_in=.1, eff_in= 0.7,
+             no_simult_in_out=True, max_store_duration= 7)
+        buy  = eao.assets.SimpleContract(name = 'buy', nodes = node1, min_cap=-10, max_cap=10, price = 'price')
+        sell = eao.assets.SimpleContract(name = 'sell', nodes = node2, min_cap=-10, max_cap=10, price = 'price')        
+        # cannot be used, since storage can only BRING volumes from node1 to node2
+        portf = eao.portfolio.Portfolio([a, buy, sell])
+        test_string = eao.serialization.json_serialize_objects(portf)
+        price = -np.sin(np.linspace(0,12,timegrid.T))
+        prices ={ 'price': price, 'zero':np.zeros(timegrid.T), 'best':-np.ones(timegrid.T)}
+        op = portf.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        out = eao.io.extract_output(portf = portf, op = op, res = res, prices = prices)
+        out['dispatch']['fill_level'] = -(out['dispatch']['a1 (N2)']+out['dispatch']['a1 (N1)']*0.7).cumsum()
+        out['dispatch'] = out['dispatch'].round(5)
+        # basic checks
+        self.assertAlmostEqual(out['dispatch']['fill_level'][0],0,5)
+        assert out['dispatch']['fill_level'].max()<=10
+        assert out['dispatch']['fill_level'].min()>=0
+        # no simultaneaous
+        assert not any((out['dispatch']['a1 (N1)'] !=0) & (out['dispatch']['a1 (N2)'] !=0))
+        # duration fill level non zero smaller 7 hours
+        dur = 0
+        for i,r in out['dispatch'].iterrows():
+            if r.fill_level>0:
+                dur +=3
+            else:
+                dur = 0
+            assert dur <=7
+                 
 ###########################################################################################################
 ###########################################################################################################
 ###########################################################################################################

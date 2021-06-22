@@ -334,7 +334,7 @@ class Storage(Asset):
             cType += 'U'*n
 
         ### in case of max_store_duration - add binary variables and restrictions
-        if (self.max_store_duration): # without sep_needed no need for forcing
+        if not self.max_store_duration is None: # without sep_needed no need for forcing
             if 'bool' not in mapping:
                 mapping['bool']      = False
             # n new binary variables ... indicating that fill level is not equal to zero
@@ -366,7 +366,7 @@ class Storage(Asset):
                     myA = sp.lil_matrix((1,m + n))
                     myA[0,np.where(myI)[0]+m+myi] = 1
                     A   = sp.vstack((A, myA))
-                    b = np.hstack((b,self.max_store_duration))
+                    b = np.hstack((b,myA.sum()-1))
                     cType += 'U'   # at most md elements may be one == fill level not md+1 times non-zero)
         return OptimProblem(c=c,l=l, u=u, A=A, b=b, cType=cType, mapping = mapping)
 
