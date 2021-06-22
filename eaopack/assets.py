@@ -5,6 +5,7 @@ import abc
 import numpy as np
 import pandas as pd
 import scipy.sparse as sp
+from scipy.sparse.lil import lil_matrix
 
 from eaopack.basic_classes import Timegrid, Unit, Node
 from eaopack.optimization import OptimProblem          
@@ -115,6 +116,7 @@ class Storage(Asset):
                 eff_in  : float = 1.,
                 inflow  : float = 0.,
                 no_simult_in_out: bool = False,
+                max_store_duration : float = None,
                 price: str=None):
         """ Specific storage asset. A storage has the basic capability to
             (1) take in a commodity within a limited flow rate (capacity)
@@ -141,6 +143,7 @@ class Storage(Asset):
             eff_in (float, optional): Efficiency taking in the commodity. Means e.g. at 90%: 1MWh in --> 0,9 MWh in storage. Defaults to 1 (=100%).
             inflow (float, optional): Constant rate of inflow volumes (flow in each time step. E.g. water inflow in hydro storage). Defaults to 0.
             no_simult_in_out (boolean, optional): Enforce no simultaneous dispatch in/out in case of costs or efficiency!=1. Makes problem MIP. Defaults to False
+            max_store_duration (float, optional): Maximal duration in main time units that charged commodity can be held. Makes problem MIP. Defaults to none
         """
 
         super(Storage, self).__init__(name=name, nodes=nodes, start=start, end=end, wacc=wacc)        
@@ -163,7 +166,8 @@ class Storage(Asset):
         if block_size is not None:
             self.block_size = block_size # defines the block size (as pandas frequency)
         assert len(self.nodes)<=2, 'for storage only one or two nodes valid'
-        self.no_simult_in_out = no_simult_in_out
+        self.no_simult_in_out   = no_simult_in_out
+        self.max_store_duration = max_store_duration 
 
     def setup_optim_problem(self, prices: dict, timegrid:Timegrid = None, costs_only:bool = False) -> OptimProblem:
         """ Set up optimization problem for asset
@@ -329,7 +333,41 @@ class Storage(Asset):
             b = np.hstack((b, np.zeros(n)))
             cType += 'U'*n
 
-
+        ### in case of max_store_duration - add binary variables and restrictions
+        if not self.max_store_duration is None: # without sep_needed no need for forcing
+            if 'bool' not in mapping:
+                mapping['bool']      = False
+            # n new binary variables ... indicating that fill level is not equal to zero
+            map_bool = pd.DataFrame()
+            map_bool['time_step'] = self.timegrid.restricted.I
+            map_bool['node']      = np.nan
+            map_bool['asset']     = self.name
+            map_bool['type']      = 'i' # internal
+            map_bool['bool']      = True
+            mapping = pd.concat([mapping, map_bool])
+            mapping.reset_index(inplace=True, drop = True) # need to reset index (which enumerates variables)
+            # extend costs
+            c = np.hstack((c, np.zeros(n)))
+            l = np.hstack((l, np.zeros(n)))
+            u = np.hstack((u, np.ones(n)))
+            # extend A for binary variables (not relevant in exist. restrictions)
+            (n_exist,m) = A.shape
+            # (1) reformulate fill level restrictions and extend A with bool ("is filled") variables
+            #      replace   (Ax <= b)  by  (Ax)i - bool_i*b  <=  0 
+            #      n restrictions for max fill level
+            A = sp.hstack((A, sp.vstack((sp.diags(-b[0:n],0),sp.lil_matrix((n_exist-n,n)) )) )) 
+            b[0:n] = 0
+            # (2) create extra restrictions for booleans ("1 --> fill level non zero") - one for each time step
+            # -->  all windows of size max_duration (md) plus one, sum of vars is <= md
+            for myi in range(0,n):
+                myI = (dt[myi:].cumsum()<=self.max_store_duration) # those fall into time window
+                if len(np.where(~myI)[0])!=0: # full interval left
+                    myI[np.where(~myI)[0][0]] = True
+                    myA = sp.lil_matrix((1,m + n))
+                    myA[0,np.where(myI)[0]+m+myi] = 1
+                    A   = sp.vstack((A, myA))
+                    b = np.hstack((b,myA.sum()-1))
+                    cType += 'U'   # at most md elements may be one == fill level not md+1 times non-zero)
         return OptimProblem(c=c,l=l, u=u, A=A, b=b, cType=cType, mapping = mapping)
 
 
