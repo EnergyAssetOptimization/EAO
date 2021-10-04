@@ -7,6 +7,7 @@ from os.path import dirname, join
 import sys
 mypath = (dirname(__file__))
 sys.path.append(join(mypath, '..'))
+
 import eaopack as eao
 
 class SimpleContractTest(unittest.TestCase):
@@ -479,6 +480,7 @@ class DiscountRate(unittest.TestCase):
         
         self.assertAlmostEqual(res2.value, rev-costs, 3)        
         pass
+
 
 ###########################################################################################################
 ###########################################################################################################

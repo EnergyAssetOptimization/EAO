@@ -149,7 +149,7 @@ class MIP(unittest.TestCase):
             if (f>1e-5) and (b==0):
                 raise ValueError('fill level non zero, but bool zero')
         for ii in range(0,(24-4)):
-            assert (check[ii:ii+4,3]).sum()<=3        
+            assert (check[ii:ii+4,3]).sum()<=3 + 1e-4
 
     def test_max_hold_in_portfolio(self):
         node1 = eao.assets.Node('N1')
