@@ -1,76 +1,37 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>Stochastic linear program (SLP) to take into account uncertainty &mdash; EAO  documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-
-  
-  
-
-  
-  
-
-  
-
-  
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
         <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
         <script src="../../_static/jquery.js"></script>
         <script src="../../_static/underscore.js"></script>
         <script src="../../_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "document", "processHtmlClass": "math|output_area"}}</script>
-    
-    <script type="text/javascript" src="../../_static/js/theme.js"></script>
-
-    
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Robust optimization - example with szenario analysis" href="../robust_optimization/robust_optimization_szenarios.html" />
     <link rel="prev" title="Marginal costs - basic concept and example" href="../marginal_costs/marginal_costs.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../index.html" class="icon icon-home"> EAO
-          
-
-          
           </a>
-
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -78,19 +39,8 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Contents:</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../eao.html">EAO package</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../../samples.html">Samples</a><ul class="current">
@@ -117,73 +67,31 @@
 </li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../index.html">EAO</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
       <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
           <li><a href="../../samples.html">Samples</a> &raquo;</li>
-        
       <li>Stochastic linear program (SLP) to take into account uncertainty</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
-          
             <a href="../../_sources/samples/stochastic_optimization/slp_sample.ipynb.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   
 <style>
 /* CSS for nbsphinx extension */
@@ -454,14 +362,14 @@ div.rendered_html tbody tr:hover {
     text-align: unset;
 }
 </style>
-<div class="section" id="Stochastic-linear-program-(SLP)-to-take-into-account-uncertainty">
-<h1>Stochastic linear program (SLP) to take into account uncertainty<a class="headerlink" href="#Stochastic-linear-program-(SLP)-to-take-into-account-uncertainty" title="Permalink to this headline">¶</a></h1>
+<section id="Stochastic-linear-program-(SLP)-to-take-into-account-uncertainty">
+<h1>Stochastic linear program (SLP) to take into account uncertainty<a class="headerlink" href="#Stochastic-linear-program-(SLP)-to-take-into-account-uncertainty" title="Permalink to this headline"></a></h1>
 <p>In this sample we illustrate the usage of SLP for energy portfolios. Our demonstration implements a two-stage problem for a simple portfolio. It may be extended to any portfolio.</p>
-</div>
-<div class="section" id="Some-prerequisites">
-<h1>Some prerequisites<a class="headerlink" href="#Some-prerequisites" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="Basics">
-<h2>Basics<a class="headerlink" href="#Basics" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="Some-prerequisites">
+<h1>Some prerequisites<a class="headerlink" href="#Some-prerequisites" title="Permalink to this headline"></a></h1>
+<section id="Basics">
+<h2>Basics<a class="headerlink" href="#Basics" title="Permalink to this headline"></a></h2>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
@@ -489,9 +397,9 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 </div>
-</div>
-<div class="section" id="Parameter-setting">
-<h2>Parameter setting<a class="headerlink" href="#Parameter-setting" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="Parameter-setting">
+<h2>Parameter setting<a class="headerlink" href="#Parameter-setting" title="Permalink to this headline"></a></h2>
 <p>Defining timegrid and main portfolio settings as well as settings for SLP. Note that we do not explain the setup in detail. Please refer to the basic samples to understand the concepts and parameters</p>
 <p>For the SLP part we define the number of samples to be used. Using the parameter ‘sigma’ we can adjust uncertainty in price samples. The parameter ‘start_future’ defines the transition between the two stages of the SLP - present and future. In the two-stage setup we determine the optimal steps in the present given an uncertain future</p>
 <div class="nbinput nblast docutils container">
@@ -509,10 +417,10 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 </div>
-</div>
-</div>
-<div class="section" id="Set-up-portfolio">
-<h1>Set up portfolio<a class="headerlink" href="#Set-up-portfolio" title="Permalink to this headline">¶</a></h1>
+</section>
+</section>
+<section id="Set-up-portfolio">
+<h1>Set up portfolio<a class="headerlink" href="#Set-up-portfolio" title="Permalink to this headline"></a></h1>
 <ol class="arabic simple">
 <li><p>defining the assets of the portfolio (here a battery and a market with uncertain prices)</p></li>
 <li><p>definition of how prices are sampled</p></li>
@@ -569,9 +477,9 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 </div>
-</div>
-<div class="section" id="Perform-the-optimization">
-<h1>Perform the optimization<a class="headerlink" href="#Perform-the-optimization" title="Permalink to this headline">¶</a></h1>
+</section>
+<section id="Perform-the-optimization">
+<h1>Perform the optimization<a class="headerlink" href="#Perform-the-optimization" title="Permalink to this headline"></a></h1>
 <p>For comparison we perform a deterministic optimization on the ‘mean price’ and an SLP on given samples for the future</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
@@ -589,9 +497,9 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 </div>
-</div>
-<div class="section" id="Create-charts-and-interpret-the-results">
-<h1>Create charts and interpret the results<a class="headerlink" href="#Create-charts-and-interpret-the-results" title="Permalink to this headline">¶</a></h1>
+</section>
+<section id="Create-charts-and-interpret-the-results">
+<h1>Create charts and interpret the results<a class="headerlink" href="#Create-charts-and-interpret-the-results" title="Permalink to this headline"></a></h1>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
@@ -628,64 +536,47 @@ div.rendered_html tbody tr:hover {
 <div class="output_area docutils container">
 <img alt="../../_images/samples_stochastic_optimization_slp_sample_11_0.svg" src="../../_images/samples_stochastic_optimization_slp_sample_11_0.svg" /></div>
 </div>
-<div class="section" id="Interpretation">
-<h2>Interpretation<a class="headerlink" href="#Interpretation" title="Permalink to this headline">¶</a></h2>
+<section id="Interpretation">
+<h2>Interpretation<a class="headerlink" href="#Interpretation" title="Permalink to this headline"></a></h2>
 <p>The red line indicates the start of the uncertain future (Jan 3). While for the pending decision (stage 1) prices are certain, for the future (stage 2) we have five price samples that encode the uncertainty. Solutions in this example are relatively similar – but note that the deterministic optimization charges the storage maximally undil Jan 03 as future prices are higher than present prices. Since uncertainty is high, the SLP solution starts discharching earlier, as future prices may be higher
 today but are uncertain.</p>
-</div>
-</div>
-<div class="section" id="Notes:">
-<h1>Notes:<a class="headerlink" href="#Notes:" title="Permalink to this headline">¶</a></h1>
+</section>
+</section>
+<section id="Notes:">
+<h1>Notes:<a class="headerlink" href="#Notes:" title="Permalink to this headline"></a></h1>
 <p>In our implementation we provide a formulation of a two-stage SLP generically for any portfolio structure. For the two-stage case problems can typically be handled and often already provide a good appoximation. For the multi-stage case we believe that it will be necessary to resort to numerical approximations, strategies that are specific to the given portfolio or others such as methods from machine learning. Providing a solution to the SLP for a relevant problem class could be a valuable
 research thread for further work.</p>
-</div>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="../robust_optimization/robust_optimization_szenarios.html" class="btn btn-neutral float-right" title="Robust optimization - example with szenario analysis" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="../marginal_costs/marginal_costs.html" class="btn btn-neutral float-left" title="Marginal costs - basic concept and example" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../robust_optimization/robust_optimization_szenarios.html" class="btn btn-neutral float-right" title="Robust optimization - example with szenario analysis" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2021.
-
-    </p>
+    <p>&#169; Copyright 2021.</p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>
