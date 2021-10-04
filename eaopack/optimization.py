@@ -69,10 +69,10 @@ class OptimProblem:
             samples (List): Samples to be used in specific optimization targets
                             - Robust optimization: list of costs arrays (maximizing minimal DCF)
             interface (str, optional): Chosen interface architecture. Defaults to 'cvxpy'.
-            sover (str, optional): Solver for interface. Defaults to None
-            rel_tol (float): relative tolerance for solver
-            iterations (int): max number of iterations for solver
-            decimals_res (int): rounding results to ... decimals. Defaults to 5
+            solver (str, optional): Solver for interface. Defaults to None
+            INACTIVE   rel_tol (float): relative tolerance for solver
+            INACTIVE   iterations (int): max number of iterations for solver
+            INACTIVE   decimals_res (int): rounding results to ... decimals. Defaults to 5
         """
         # check optim problem
         if interface == 'cvxpy':
@@ -173,9 +173,9 @@ class OptimProblem:
             prob = CVX.Problem(CVX.Maximize(objective), constraints)
 
             if solver is None:
-                prob.solve(max_iters = iterations) # no rel_tol parameter here
+                prob.solve() # no rel_tol parameter here
             else:
-                prob.solve(solver = getattr(CVX, solver), max_iters = iterations) # no rel_tol parameter here
+                prob.solve(solver = getattr(CVX, solver)) 
 #                if isMIP: solver = 'GLPK_MI'
 #                else:     solver = 'ECOS'
                 
