@@ -13,7 +13,8 @@ from eaopack.assets import Node, \
                        Storage,  \
                        Contract,  \
                        ScaledAsset,  \
-                       ExtendedTransport
+                       ExtendedTransport, \
+                       MultiCommodityAsset
 from eaopack.portfolio import Portfolio, StructuredAsset
 from eaopack.io import extract_output, output_to_file
 
