@@ -1,4 +1,3 @@
-
 from typing import Union, List, Dict
 import datetime as dt
 import abc
@@ -781,6 +780,82 @@ class Contract(SimpleContract):
                 op.A     = sp.vstack((op.A, A))
                 op.b     = np.hstack((op.b, b))
                 op.cType = op.cType+cType
+        return op
+
+
+class MultiCommodityContract(Contract):
+    """ Multi commodity contract class - implements a Contract that generates two or more commoditites at a time.
+        The main idea is to implement a CHP generating unit that would generate power and heat at the same time.
+        Overall costs and prices relate directly (and only) to the dispatch variable.
+        The simplest way of defining the asset is to think of the main commodity as the main variable. In this case
+        define the first factor == 1 and add the other factors as "free side products" with the respective factor """
+    def __init__(self,
+                factors_commodities: list = None,
+                *args,
+                **kwargs): 
+        """ Contract: buy or sell (consume/produce) given price and limited capacity in/out
+            Restrictions
+            - time dependent capacity restrictions
+            - MinTake & MaxTake for a list of periods
+            Examples
+            - with min_cap = max_cap and a detailed time series, implement must run RES assets such as wind
+            - with MinTake & MaxTake, implement structured gas contracts
+        Args:
+            name (str): Unique name of the asset                                              (asset parameter)
+            start (dt.datetime) : start of asset being active. defaults to none (-> timegrid start relevant)
+            end (dt.datetime)   : end of asset being active. defaults to none (-> timegrid start relevant)            
+            timegrid (Timegrid): Timegrid for discretization                                  (asset parameter)
+            wacc (float): Weighted average cost of capital to discount cash flows in target   (asset parameter)
+
+            min_cap (float) : Minimum flow/capacity for buying (negative) or selling (positive). Defaults to 0
+            max_cap (float) : Maximum flow/capacity for selling (positive). Defaults to 0
+            min_take (float) : Minimum volume within given period. Defaults to None
+            max_take (float) : Maximum volume within given period. Defaults to None
+                              float: constant value
+                              dict:  dict['start'] = np.array
+                                     dict['end']   = np.array
+                                     dict['value'] = np.array
+            price (str): Name of price vector for buying / selling
+            extra_costs (float, optional): extra costs added to price vector (in or out). Defaults to 0.
+
+            New in comparison to contract:
+            nodes (Node): different nodes the contract delivers to (one node per commodity)
+            factors_commodities: list of floats - One factor for each commodity/node. 
+                                 There is only one dispatch variable, factor[i]*var is the dispatch per commodity
+        """
+        super(MultiCommodityContract, self).__init__(*args, **kwargs)
+        if not factors_commodities is None:
+            assert isinstance(factors_commodities, (list, np.array)), 'factors_commodities must be given as list'
+            assert len(factors_commodities) == len(self.nodes), 'number of factors_commodities must equal number of nodes'
+        self.factors_commodities = factors_commodities
+
+    @abc.abstractmethod
+    def setup_optim_problem(self, prices: dict, timegrid:Timegrid = None, costs_only:bool = False) -> OptimProblem:
+        """ Set up optimization problem for asset
+
+        Args:
+            prices (dict): Dictionary of price arrays needed by assets in portfolio
+            timegrid (Timegrid, optional): Discretization grid for asset. Defaults to None, 
+                                           in which case it must have been set previously
+            costs_only (bool): Only create costs vector (speed up e.g. for sampling prices). Defaults to False                                            
+
+        Returns:
+            OptimProblem: Optimization problem to be used by optimizer
+        """
+
+        # set up Contract optimProblem
+        op = super().setup_optim_problem(prices= prices, timegrid=timegrid, costs_only = costs_only)
+        # the optimization problem remains basically the same
+        # only the mapping needs to be amended
+        ##### adjusting the mapping
+        # (1) the contract mapping is the starting point
+        new_map     = pd.DataFrame()
+        for i, mynode in enumerate(self.nodes):
+            initial_map = op.mapping.copy()
+            initial_map['disp_factor'] = self.factors_commodities[i]
+            initial_map['node']        = mynode.name
+            new_map = pd.concat([new_map, initial_map.copy()])
+        op.mapping = new_map
         return op
 
 
