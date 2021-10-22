@@ -196,6 +196,10 @@ class Timegrid:
                 inp['end'] = [pd.Timestamp.max]
         grid = np.empty(self.T)
         grid[:] = np.nan
+        # catch and heal potential timezone mismatch in input data
+        if (pd.to_datetime(portf.assets[5].min_cap['start']).tz is None) and (self.timezone is not None):
+            inp['start'] = pd.to_datetime(inp['start']).tz_localize(self.timezone)
+            inp['end']   = pd.to_datetime(inp['end']).tz_localize(self.timezone)        
         for s, e, v in zip(inp['start'], inp['end'], inp['values']):
             I = (self.timepoints >= pd.to_datetime(s)) & (self.timepoints < pd.to_datetime(e))
             if not all(np.isnan(grid[I])):
