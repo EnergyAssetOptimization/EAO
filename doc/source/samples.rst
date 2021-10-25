@@ -16,6 +16,13 @@ Marginal costs in portfolio optimization
 
    samples/marginal_costs/marginal_costs
 
+Multi commodity optimization
+--------------------------
+
+.. toctree:: 
+
+   samples/cross_commodity/cross_commodity_sample
+
 
 Stochastic Linear Programs
 --------------------------

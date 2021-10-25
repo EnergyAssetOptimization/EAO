@@ -1,7 +1,6 @@
 ### capturesample portfolio and write to JSON
 
-from eaopack.assets import Contract
-from eaopack.basic_classes import Unit
+
 import pandas as pd
 import datetime as dt
 import numpy as np
@@ -9,10 +8,15 @@ import numpy as np
 import os, sys
 from os import path as ospath
 
+from os.path import dirname, join
+import sys
+mypath = (dirname(__file__))
+sys.path.append(join(mypath, '..'))
+
 from pandas.core.indexes.base import ensure_index
 
 ## in case paths have not been set correctly
-myDir = ospath.abspath(ospath.join(os.path.dirname(__file__),"../.."))
+myDir = ospath.abspath(ospath.join(os.path.dirname(__file__),"../../../.."))
 sys.path.insert(0, myDir)
 
 import eaopack as eao
@@ -45,7 +49,7 @@ def capture_asset():
     market   = eao.assets.SimpleContract(name = 'power_market', price='price', min_cap= -10, max_cap=10, nodes = node_power)
 
     Start = dt.date(2020,1,1)
-    End   = dt.date(2020,1,1)
+    End   = dt.date(2021,1,1)
     dates = pd.date_range(Start, End, freq = 'd').values
 
     heat_curve = {'start'  : dates, 
