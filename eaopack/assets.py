@@ -81,8 +81,10 @@ class Asset:
         ######### missing: mapping in optim problem
         dcf = np.zeros(self.timegrid.T)
         # filter for right asset in case larger problem is given
-
-        my_mapping =  optim_problem.mapping.loc[optim_problem.mapping['asset']==self.name]
+        my_mapping =  optim_problem.mapping.loc[optim_problem.mapping['asset']==self.name].copy()
+        # drop duplicate index - since mapping may contain several rows per varaible (indexes enumerate variables)
+        my_mapping = pd.DataFrame(my_mapping[~my_mapping.index.duplicated(keep = 'first')])
+        
         for i, r in my_mapping.iterrows():
             dcf[r['time_step']] += -optim_problem.c[i] * results.x[i]            
 

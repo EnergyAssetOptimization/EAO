@@ -390,6 +390,28 @@ class ContractTest(unittest.TestCase):
         sdisp = res.x.sum() * (End-Start)/(End-startA) - 20.        
         self.assertAlmostEqual(sdisp, 0., 5)
 
+class MultiCommodity(unittest.TestCase):
+
+    def test_predefined_multicommodity(self):
+        """ test to reproduce the results in the sample "capture_heat_portfolio.py """
+        portf = eao.serialization.load_from_json(file_name = join(mypath,'test_portf_multi_commodity.JSON'))
+        prices = pd.read_csv(join(mypath, '2020_price_sample.csv'))
+        # cast to timegrid
+        prices = {'price': portf.timegrid.values_to_grid({'start': pd.to_datetime(prices['start'].values), 'values': prices['price'].values})}
+        op = portf.setup_optim_problem(prices)
+        res = op.optimize()
+        # checking against known value --> no change
+        self.assertAlmostEqual(res.value, 3307.322231803014, 4)
+        out = eao.io.extract_output(portf, op, res, prices)
+        self.assertAlmostEqual(res.value, out['DCF'].sum().sum()) # check detailed - asset-wise DCF is equal to LP value
+        # values of heat demand
+        out['dispatch']['heat_demand (heat)'].sum()
+        heat_res = out['dispatch']['heat_demand (heat)'].values
+        self.assertAlmostEqual(heat_res.sum(), -287.6800669895399, 4)
+        self.assertAlmostEqual(heat_res[-1], -0.7309221113481956, 4)
+        self.assertAlmostEqual(heat_res[0], 0, 4)        
+        self.assertAlmostEqual(heat_res[71], -0.05461761740138421, 4)        
+        
 class ScaledAsset(unittest.TestCase):
     def test_scaled_asset(self):
         node = eao.assets.Node('testNode')
