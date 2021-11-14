@@ -15,8 +15,8 @@ class Asset:
         In particular 'setup_optim_problem' makes a particular asset such as storage or contract """
     
     def __init__(self, 
-                name: str, 
-                nodes: Union[Node, List[Node]],
+                name: str = 'default_name', 
+                nodes: Union[Node, List[Node]] = Node(name = 'default_node'),
                 start: dt.datetime = None,
                 end:   dt.datetime = None,
                 wacc: float = 0
@@ -25,7 +25,7 @@ class Asset:
 
         Args:
             name (str): Name of the asset. Must be unique in a portfolio
-            nodes (Union[str, List[str]]): Nodes, in which the asset has a dispatch
+            nodes (Union[str, List[str]]): Nodes, in which the asset has a dispatch. Defaults to "default node"
             start (dt.datetime) : start of asset being active. defaults to none (-> timegrid start relevant)
             end (dt.datetime)   : end of asset being active. defaults to none (-> timegrid start relevant)            
             timegrid (Timegrid): Grid for discretization
@@ -101,7 +101,7 @@ class Storage(Asset):
     """ Storage Class in Python"""
     def __init__(self, 
                 name    : str,
-                nodes   : Node,
+                nodes   : Node  = Node(name = 'default_node'),
                 start   : dt.datetime = None,
                 end     : dt.datetime = None,
                 wacc    : float = 0.,
@@ -146,7 +146,6 @@ class Storage(Asset):
             no_simult_in_out (boolean, optional): Enforce no simultaneous dispatch in/out in case of costs or efficiency!=1. Makes problem MIP. Defaults to False
             max_store_duration (float, optional): Maximal duration in main time units that charged commodity can be held. Makes problem MIP. Defaults to none
         """
-
         super(Storage, self).__init__(name=name, nodes=nodes, start=start, end=end, wacc=wacc)        
         assert size is not None, 'Storage --'+self.name+'--: size must be given'
         self.size = size
@@ -371,17 +370,18 @@ class Storage(Asset):
                     cType += 'U'   # at most md elements may be one == fill level not md+1 times non-zero)
         return OptimProblem(c=c,l=l, u=u, A=A, b=b, cType=cType, mapping = mapping)
 
-
-
 class SimpleContract(Asset):
     """ Contract Class """
     def __init__(self,
+                name: str  = 'default_name_simple_contract', 
+                nodes: Node = Node(name = 'default_node'),
+                start: dt.datetime = None,
+                end:   dt.datetime = None,
+                wacc: float = 0,
                 price:str = None, 
                 extra_costs:float = 0.,
                 min_cap: Union[float, Dict] = 0.,
-                max_cap: Union[float, Dict] = 0.,
-                *args,
-                **kwargs): 
+                max_cap: Union[float, Dict] = 0.): 
         """ Simple contract: given price and limited capacity in/out. No other constraints
             A simple contract is able to buy or sell (consume/produce) at given prices plus extra costs up to given capacity limits
 
@@ -402,7 +402,7 @@ class SimpleContract(Asset):
             price (str): Name of price vector for buying / selling. Defaults to None
             extra_costs (float, optional): extra costs added to price vector (in or out). Defaults to 0.
         """
-        super(SimpleContract, self).__init__(*args, **kwargs)
+        super(SimpleContract, self).__init__(name=name, nodes=nodes, start=start, end=end, wacc=wacc)        
         if isinstance(min_cap, (float, int)) and isinstance(max_cap, (float, int)):
             if min_cap > max_cap:
                 raise ValueError('Contract with min_cap > max_cap leads to ill-posed optimization problem')
@@ -502,22 +502,24 @@ class SimpleContract(Asset):
             return c 
         return OptimProblem(c = c, l = l, u = u, mapping = mapping)
 
-
 class Transport(Asset):
     """ Contract Class """
     def __init__(self,
+                name: str = 'default_name_transport', 
+                nodes: List[Node] = [Node(name = 'default_node_from'), Node(name = 'default_node_to')],
+                start: dt.datetime = None,
+                end:   dt.datetime = None,
+                wacc: float = 0,
                 costs_const:float = 0.,
                 costs_time_series:str = None, 
                 min_cap:float = 0.,
                 max_cap:float = 0.,
-                efficiency: float = 1.,
-                *args,
-                **kwargs): 
+                efficiency: float = 1.): 
         """ Transport: Link two nodes, transporting the commodity at given efficiency and costs
 
         Args:
             name (str): Unique name of the asset                                              (asset parameter)
-            nodes (Node): 2 nodes, the transport links                                        (asset parameter)
+            nodes (list of nodes): 2 nodes, the transport links                               (asset parameter)
             timegrid (Timegrid): Timegrid for discretization                                  (asset parameter)
             start (dt.datetime) : start of asset being active. defaults to none (-> timegrid start relevant)
             end (dt.datetime)   : end of asset being active. defaults to none (-> timegrid start relevant)            
@@ -529,16 +531,14 @@ class Transport(Asset):
             costs_time_series (str): Name of cost vector for transporting. Defaults to None
             costs_const (float, optional): extra costs added to price vector (in or out). Defaults to 0.
         """
-        super(Transport, self).__init__(*args, **kwargs)
-        if len(self.nodes) !=2: # need exactly two nodes
-            raise ValueError('Transport asset mus link exactly 2 nodes. Asset name: '+str(self.nodes))
-        if min_cap > max_cap: # otherwise optim problem cannot be solved
-            raise ValueError('Transport with min_cap >= max_cap leads to ill-posed optimization problem')
+        super(Transport, self).__init__(name=name, nodes=nodes, start=start, end=end, wacc=wacc)        
+        assert len(self.nodes) ==2, 'Transport asset mus link exactly 2 nodes. Asset name: '+name
+        assert min_cap <= max_cap, 'Transport with min_cap >= max_cap leads to ill-posed optimization problem. Asset name: '+name
         self.min_cap = min_cap
         self.max_cap = max_cap
         self.costs_const = costs_const
         self.costs_time_series = costs_time_series
-        assert efficiency > 0.
+        assert efficiency > 0., 'efficiency of transport must be chosen to be positive ('+name+')'
         self.efficiency = efficiency
 
 
@@ -638,7 +638,6 @@ class Transport(Asset):
         #### return OptimProblem(c = c, l = l, u = u, A = A, b = b, cType = cType, mapping = mapping)
         return OptimProblem(c = c, l = l, u = u,  mapping = mapping)
 
-
 ########## SimpleContract and Transport extended with minTake and maxTake restrictions
 
 def define_restr(my_take, my_type, my_n, map, timegrid, node = None):
@@ -679,15 +678,20 @@ def define_restr(my_take, my_type, my_n, map, timegrid, node = None):
             my_b  = np.hstack((my_b, my_v))
     return my_A, my_b, my_cType
 
-
-
 class Contract(SimpleContract):
     """ Contract Class, as an extension of the SimpleContract """
     def __init__(self,
+                name: str = 'default_name_contract', 
+                nodes: Node = Node(name = 'default_node_contract'),
+                start: dt.datetime = None,
+                end:   dt.datetime = None,
+                wacc: float = 0,
+                price:str = None, 
+                extra_costs:float = 0.,
+                min_cap: Union[float, Dict] = 0.,
+                max_cap: Union[float, Dict] = 0.,                
                 min_take:Union[float, List[float], Dict] = None,
-                max_take:Union[float, List[float], Dict] = None,
-                *args,
-                **kwargs): 
+                max_take:Union[float, List[float], Dict] = None): 
         """ Contract: buy or sell (consume/produce) given price and limited capacity in/out
             Restrictions
             - time dependent capacity restrictions
@@ -714,7 +718,15 @@ class Contract(SimpleContract):
             price (str): Name of price vector for buying / selling
             extra_costs (float, optional): extra costs added to price vector (in or out). Defaults to 0.
         """
-        super(Contract, self).__init__(*args, **kwargs)
+        super(Contract, self).__init__(name=name, 
+                                       nodes=nodes, 
+                                       start=start, 
+                                       end=end, 
+                                       wacc=wacc,
+                                       price = price, 
+                                       extra_costs = extra_costs,
+                                       min_cap = min_cap,
+                                       max_cap = max_cap)        
         if not min_take is None:
             assert 'values' in min_take, 'min_take must be of dict type with start, end & values (values missing)'
             assert 'start' in min_take, 'min_take must be of dict type with start, end & values (start missing)'
@@ -784,7 +796,6 @@ class Contract(SimpleContract):
                 op.cType = op.cType+cType
         return op
 
-
 class MultiCommodityContract(Contract):
     """ Multi commodity contract class - implements a Contract that generates two or more commoditites at a time.
         The main idea is to implement a CHP generating unit that would generate power and heat at the same time.
@@ -792,9 +803,18 @@ class MultiCommodityContract(Contract):
         The simplest way of defining the asset is to think of the main commodity as the main variable. In this case
         define the first factor == 1 and add the other factors as "free side products" with the respective factor """
     def __init__(self,
-                factors_commodities: list = None,
-                *args,
-                **kwargs): 
+                name: str = 'default_name_multi_commodity', 
+                nodes: Union[Node, List[Node]] = [Node(name = 'default_node_1'), Node(name = 'default_node_2')],
+                start: dt.datetime = None,
+                end:   dt.datetime = None,
+                wacc: float = 0,
+                price:str = None, 
+                extra_costs:float = 0.,
+                min_cap: Union[float, Dict] = 0.,
+                max_cap: Union[float, Dict] = 0.,                
+                min_take:Union[float, List[float], Dict] = None,
+                max_take:Union[float, List[float], Dict] = None,    
+                factors_commodities: list = [1,1]): 
         """ Contract: buy or sell (consume/produce) given price and limited capacity in/out
             Restrictions
             - time dependent capacity restrictions
@@ -825,7 +845,18 @@ class MultiCommodityContract(Contract):
             factors_commodities: list of floats - One factor for each commodity/node. 
                                  There is only one dispatch variable, factor[i]*var is the dispatch per commodity
         """
-        super(MultiCommodityContract, self).__init__(*args, **kwargs)
+        super(MultiCommodityContract, self).__init__(name=name, 
+                                       nodes=nodes, 
+                                       start=start, 
+                                       end=end, 
+                                       wacc=wacc,
+                                       price = price, 
+                                       extra_costs = extra_costs,
+                                       min_cap = min_cap,
+                                       max_cap = max_cap,
+                                       min_take = min_take,
+                                       max_take = max_take)
+
         if not factors_commodities is None:
             assert isinstance(factors_commodities, (list, np.array)), 'factors_commodities must be given as list'
             assert len(factors_commodities) == len(self.nodes), 'number of factors_commodities must equal number of nodes'
@@ -860,15 +891,21 @@ class MultiCommodityContract(Contract):
         op.mapping = new_map
         return op
 
-
-
 class ExtendedTransport(Transport):
     """ Extended Transport Class, as an extension of Transport """
     def __init__(self,
+                name: str = 'default_name_ext_transport', 
+                nodes: List[Node] = [Node(name = 'default_node_from'), Node(name = 'default_node_to')],
+                start: dt.datetime = None,
+                end:   dt.datetime = None,
+                wacc: float = 0,
+                costs_const:float = 0.,
+                costs_time_series:str = None, 
+                min_cap:float = 0.,
+                max_cap:float = 0.,
+                efficiency: float = 1.,    
                 min_take:Union[float, List[float], Dict] = None,
-                max_take:Union[float, List[float], Dict] = None,
-                *args,
-                **kwargs): 
+                max_take:Union[float, List[float], Dict] = None): 
         """ Transport:
 
             name (str): Unique name of the asset                                              (asset parameter)
@@ -902,7 +939,16 @@ class ExtendedTransport(Transport):
                                      dict['end']   = np.array
                                      dict['value'] = np.array
         """
-        super(ExtendedTransport, self).__init__(*args, **kwargs)
+        super(ExtendedTransport, self).__init__(name=name, 
+                                                nodes=nodes, 
+                                                start=start, 
+                                                end=end, 
+                                                wacc=wacc,
+                                                costs_const = costs_const,
+                                                costs_time_series = costs_time_series, 
+                                                min_cap = min_cap,
+                                                max_cap = max_cap,
+                                                efficiency = efficiency)
         if not min_take is None:
             if isinstance(min_take['values'], (float, int)):
                 min_take['values'] = [min_take['values']]
@@ -974,24 +1020,33 @@ class ExtendedTransport(Transport):
                 op.cType = op.cType+cType
         return op
 
-
 class ScaledAsset(Asset):
-    """ Scaled asset - this allows to incorporate fix costs coming with an asset
-        Assume we have an asset with OptimProblem   Ax < b;  l < x < u
-        The FlexAsset scales it to   y = s/S*x   where the   """
+    """ Scaled asset - this allows to incorporate fix costs coming with an asset,
+        optimally choosing the size of the asset
+    """
     def __init__(self,
-                base_asset: AssertionError,
-                min_scale:  float = 0.,
-                max_scale:  float = 1.,
-                norm_scale: float = 1.,
-                fix_costs:  float = 0.,
-                *args,
-                **kwargs):
+                 name    : str = 'default_name_scaled_asset',
+                # nodes   : Node = Node(name = 'dummy'),  ### ---> here taken from base asset
+                 base_asset: Asset = Asset(),
+                 start   : dt.datetime = None,
+                 end     : dt.datetime = None,
+                 wacc    : float = 0.,
+                 min_scale:  float = 0.,
+                 max_scale:  float = 1.,
+                 norm_scale: float = 1.,
+                 fix_costs:  float = 0.):
         """ Initialize scaled asset, which optimizes the scale of a given base asset
             and fix costs associated with it
 
         Args:
-            base_asset (AssertionError):  Any asset, that should be scaped
+            name (str): Name of the asset. Must be unique in a portfolio
+            nodes (Union[str, List[str]]): Nodes, in which the asset has a dispatch
+            start (dt.datetime) : start of asset being active. defaults to none (-> timegrid start relevant)
+            end (dt.datetime)   : end of asset being active. defaults to none (-> timegrid start relevant)            
+            timegrid (Timegrid): Grid for discretization
+            wacc (float, optional): WACC to discount the cash flows as the optimization target. Defaults to 0.
+
+            base_asset (Asset):  Any asset, that should be scaled
             min_scale (float, optional):  Minimum scale. Defaults to 0.
             max_scale (float, optional):  Maximum scale. Defaults to 1.
             norm_scale (float, optional): Normalization (i.e. size of base_asset is divided by norm_scale). 
@@ -999,8 +1054,7 @@ class ScaledAsset(Asset):
             fix_costs (float, optional):  Costs in currency per norm scale and per main_time_unit (in timegrid). 
                                           Defaults to 0.
         """
-        kwargs.pop('nodes', None) # double definition in case of serialization
-        super(ScaledAsset, self).__init__(nodes = base_asset.nodes, *args, **kwargs)
+        super(ScaledAsset, self).__init__(name=name, nodes = base_asset.nodes, start=start, end=end, wacc=wacc)        
         self.base_asset = base_asset
         assert min_scale <= max_scale, 'Problem not well defined. min_scale must be <= max_scale'
         self.min_scale  = min_scale
@@ -1030,7 +1084,6 @@ class ScaledAsset(Asset):
         self.set_timegrid(self.base_asset.timegrid)
         #n,m = op.A.shape
         # to scale the asset we do the following steps
-        
 
         # scale variable: s
         # (1) scale base restrictions
