@@ -10,7 +10,8 @@ def create_graph(portf: Portfolio, file_name: str = None, title = None):
 
     Args:
         portf (Portfolio): portfolio object
-        file_name (str): file name. Defaults to None (show plot)
+        file_name (str)  : file name. Defaults to None (show plot)
+        title (str)      : plot title. Defaults to -Network graph for portfolio-
     """
     node_size  = 500
     asset_size = 200
@@ -51,14 +52,12 @@ def create_graph(portf: Portfolio, file_name: str = None, title = None):
 
     if title is None: title = 'Network graph for portfolio'
     plt.title(title)
-
     plt.axis("off")
-
     if not file_name is None:
         plt.savefig(file_name)
     else:
         plt.show()
-    plt.close()
+        # plt.close()
 
 
 if __name__ == "__main__" :
