@@ -55,9 +55,10 @@ def create_graph(portf: Portfolio, file_name: str = None, title = None):
     plt.axis("off")
     if not file_name is None:
         plt.savefig(file_name)
+        plt.clf()
     else:
         plt.show()
-        # plt.close()
+        plt.close()
 
 
 if __name__ == "__main__" :
