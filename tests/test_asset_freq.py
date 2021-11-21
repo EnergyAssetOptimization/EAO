@@ -11,7 +11,7 @@ sys.path.append(join(mypath, '..'))
 import eaopack as eao
 
 class AssetFrequency(unittest.TestCase):
-    def test_optimization(self):
+    def test_freq_optimization(self):
         """ Unit test. Test asset with different granularity
         """
         node = eao.assets.Node('testNode')
