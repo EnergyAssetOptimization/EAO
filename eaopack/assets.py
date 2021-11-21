@@ -19,18 +19,25 @@ class Asset:
                 nodes: Union[Node, List[Node]] = Node(name = 'default_node'),
                 start: dt.datetime = None,
                 end:   dt.datetime = None,
-                wacc: float = 0
+                wacc: float = 0,
+                freq: str = None,
+                profile: pd.Series = None
                 ):
         """ The base class to define an asset.
 
         Args:
             name (str): Name of the asset. Must be unique in a portfolio
             nodes (Union[str, List[str]]): Nodes, in which the asset has a dispatch. Defaults to "default node"
-            start (dt.datetime) : start of asset being active. defaults to none (-> timegrid start relevant)
-            end (dt.datetime)   : end of asset being active. defaults to none (-> timegrid start relevant)            
-            timegrid (Timegrid): Grid for discretization
+            start (dt.datetime) :   start of asset being active. defaults to none (-> timegrid start relevant)
+            end (dt.datetime)   :   end of asset being active. defaults to none (-> timegrid start relevant)            
+            timegrid (Timegrid):    Grid for discretization
             wacc (float, optional): WACC to discount the cash flows as the optimization target. Defaults to 0.
+            freq (str, optional):   Frequency for optimization - in case different from portfolio (defaults to None, using portfolio's freq)
+                                    The more granular frequency of portf & asset is used
+            profile (pd.Series, optional):  If freq(asset) > freq(portf) assuming this profile for granular dispatch (e.g. scaling hourly profile to week).
+                                            Defaults to None, only relevant if freq is not none
         """
+        if not isinstance(name, str): name = str(name)
         self.name = name
         if isinstance(nodes,Node):
             self.nodes = [nodes]
@@ -41,6 +48,13 @@ class Asset:
         self.start = start
         self.end   = end
 
+        self.freq    = freq
+        if freq is None: self.profile = None
+        else:
+            self.profile = profile
+            if profile is not None:
+                assert isinstance(profile, pd.Series), 'Profile must be np.Series. Asset:'+str(name)
+
     def set_timegrid(self, timegrid: Timegrid):
         """ Set the timegrid for the asset
         Args:
@@ -48,7 +62,9 @@ class Asset:
         """
         self.timegrid = timegrid
         self.timegrid.set_wacc(self.wacc) # create discount factors for timegrid and asset's wacc
-        self.timegrid.set_restricted_grid(self.start, self.end) # restricted timegrid for asset lifetime
+        if self.freq  is not None:
+            assert (pd.Timedelta(1, self.freq) >= pd.Timedelta(1, timegrid.freq)), 'Asset timegrid must have less/equal granular frequency than portfolios. Asset:'+str(self.name)
+        self.timegrid.set_restricted_grid(self.start, self.end, self.freq) # restricted timegrid for asset lifetime and own freq
 
     @abc.abstractmethod
     def setup_optim_problem(self, prices: dict, timegrid:Timegrid = None, costs_only:bool = False) ->OptimProblem:
@@ -118,7 +134,9 @@ class Storage(Asset):
                 inflow  : float = 0.,
                 no_simult_in_out: bool = False,
                 max_store_duration : float = None,
-                price: str=None):
+                price: str=None,
+                freq: str = None,
+                profile: pd.Series = None ):
         """ Specific storage asset. A storage has the basic capability to
             (1) take in a commodity within a limited flow rate (capacity)
             (2) store a maximum volume of a commodity (size)
@@ -130,6 +148,11 @@ class Storage(Asset):
                          Two nodes may be defined in case input and output are located in different nodes [node_input, node_output]
             timegrid (Timegrid): Timegrid for discretization (asset parameter)
             wacc (float): Weighted average cost of capital to discount cash flows in target (asset parameter)
+            freq (str, optional):   Frequency for optimization - in case different from portfolio (defaults to None, using portfolio's freq)
+                                    The more granular frequency of portf & asset is used
+            profile (pd.Series, optional):  If freq(asset) > freq(portf) assuming this profile for granular dispatch (e.g. scaling hourly profile to week).
+                                            Defaults to None, only relevant if freq is not none
+
             size (float): maximum volume of commodity in storage.
             cap_in (float): Maximum flow rate for taking in a commodity
             cap_out (float): Maximum flow rate for taking in a commodity
@@ -146,7 +169,7 @@ class Storage(Asset):
             no_simult_in_out (boolean, optional): Enforce no simultaneous dispatch in/out in case of costs or efficiency!=1. Makes problem MIP. Defaults to False
             max_store_duration (float, optional): Maximal duration in main time units that charged commodity can be held. Makes problem MIP. Defaults to none
         """
-        super(Storage, self).__init__(name=name, nodes=nodes, start=start, end=end, wacc=wacc)        
+        super(Storage, self).__init__(name=name, nodes=nodes, start=start, end=end, wacc=wacc, freq = freq, profile=profile)        
         assert size is not None, 'Storage --'+self.name+'--: size must be given'
         self.size = size
         self.start_level = start_level
@@ -200,6 +223,17 @@ class Storage(Asset):
             price = prices[self.price].copy()
             if not (len(price) == self.timegrid.T): # price vector must have right size for discretization
                 raise ValueError('Length of price array must be equal to length of time grid. Asset: '+ self.name)
+            # check: if the restricted timegrid has minor and major grids, need
+            # to do average over prices across minor grids
+            if hasattr(self.timegrid.restricted, 'I_minor_in_major'):
+                myprice = []
+                if self.profile is not None: raise NotImplementedError('Need to extend to non flat profiles')
+                for myI in self.timegrid.restricted.I_minor_in_major:
+                    myprice.append(price[myI].mean())
+                price = np.asarray(myprice)
+            else: # simply restrict prices to  asset time window
+                price           = price[self.timegrid.restricted.I] 
+
         # separation into in/out needed?  Only one or two dispatch variables per time step
         # new separation reason: separate nodes in and out
         sep_needed =  (self.eff_in != 1) or (self.cost_in !=0) or (self.cost_out !=0) or (len(self.nodes)==2)
@@ -221,7 +255,7 @@ class Storage(Asset):
             c[0,:] = -c[0,:]*self.cost_in
             c[1,:] =  c[1,:]*self.cost_out            
             if self.price is not None:
-                c -= np.asarray(price[self.timegrid.restricted.I])
+                c -= np.asarray(price)
             c = c * (np.tile(discount, (2,1))) 
             if self.cost_store != 0:
                 c -= (np.vstack((cost_store*self.eff_in, cost_store))) 
@@ -230,7 +264,7 @@ class Storage(Asset):
             l = -cp
             c = np.zeros(n)
             if self.price is not None:
-                c -= np.asarray(price[self.timegrid.restricted.I])*discount
+                c -= np.asarray(price)*discount
             if self.cost_store != 0:
                 c -= cost_store
         c  = c.flatten('C') # make all one columns
@@ -381,7 +415,9 @@ class SimpleContract(Asset):
                 price:str = None, 
                 extra_costs:float = 0.,
                 min_cap: Union[float, Dict] = 0.,
-                max_cap: Union[float, Dict] = 0.): 
+                max_cap: Union[float, Dict] = 0.,
+                freq: str = None,
+                profile: pd.Series = None): 
         """ Simple contract: given price and limited capacity in/out. No other constraints
             A simple contract is able to buy or sell (consume/produce) at given prices plus extra costs up to given capacity limits
 
@@ -392,6 +428,10 @@ class SimpleContract(Asset):
             end (dt.datetime)   : end of asset being active. defaults to none (-> timegrid start relevant)            
             timegrid (Timegrid): Timegrid for discretization                                  (asset parameter)
             wacc (float): Weighted average cost of capital to discount cash flows in target   (asset parameter)
+            freq (str, optional):   Frequency for optimization - in case different from portfolio (defaults to None, using portfolio's freq)
+                                    The more granular frequency of portf & asset is used
+            profile (pd.Series, optional):  If freq(asset) > freq(portf) assuming this profile for granular dispatch (e.g. scaling hourly profile to week).
+                                            Defaults to None, only relevant if freq is not none            
 
             min_cap (float, dict) : Minimum flow/capacity for buying (negative) 
             max_cap (float, dict) : Maximum flow/capacity for selling (positive)
@@ -402,7 +442,7 @@ class SimpleContract(Asset):
             price (str): Name of price vector for buying / selling. Defaults to None
             extra_costs (float, optional): extra costs added to price vector (in or out). Defaults to 0.
         """
-        super(SimpleContract, self).__init__(name=name, nodes=nodes, start=start, end=end, wacc=wacc)        
+        super(SimpleContract, self).__init__(name=name, nodes=nodes, start=start, end=end, wacc=wacc, freq = freq, profile = profile)        
         if isinstance(min_cap, (float, int)) and isinstance(max_cap, (float, int)):
             if min_cap > max_cap:
                 raise ValueError('Contract with min_cap > max_cap leads to ill-posed optimization problem')
@@ -445,7 +485,16 @@ class SimpleContract(Asset):
         I                = self.timegrid.restricted.I # indices of restricted time grid
         T                = self.timegrid.restricted.T # length of restr. grid
         discount_factors = self.timegrid.restricted.discount_factors # disc fctrs of restr. grid
-        price           = price[I] # prices only in asset time window
+        # check: if the restricted timegrid has minor and major grids, need
+        # to do average over prices across minor grids
+        if hasattr(self.timegrid.restricted, 'I_minor_in_major'):
+            myprice = []
+            if self.profile is not None: raise NotImplementedError('Need to extend to non flat profiles')
+            for myI in self.timegrid.restricted.I_minor_in_major:
+                myprice.append(price[myI].mean())
+            price = np.asarray(myprice)
+        else: # simply restrict prices to  asset time window
+            price           = price[I] 
 
         ##### important distinction:
         ## if extra costs are given, we need dispatch IN and OUT
@@ -494,12 +543,31 @@ class SimpleContract(Asset):
             # mapping to be able to extract information later on
             # infos:             'asset', 'node', 'type' 
             mapping['time_step'] = np.hstack((I, I))
-        ## other information (only here as this way we have the right length)
+        # shortcut if only costs required
+        if costs_only: 
+            return c 
+        ## other information (at the very end, as this way we have the right length)
         mapping['asset']     = self.name
         mapping['node']      = self.nodes[0].name
         mapping['type']      = 'd'   # only dispatch variables (needed to impose nodal restrictions in portfolio)
-        if costs_only: 
-            return c 
+        # if we're using a less granular asset timegrid, add dispatch for every minor grid point
+        # Effectively we concat the mapping for each minor point (one row each)
+        # the volume is 1/n(minor)
+        if hasattr(self.timegrid.restricted, 'I_minor_in_major'):
+            mymap = mapping.copy()
+            mapping = pd.DataFrame()
+            # profile not yet implemented
+            if self.profile is not None: raise NotImplementedError('No profiles can be defined (yet)')
+            # iterate over all rows of orig. mapping (variable --> first minor grid item)
+            # and generate remaining minor grid items
+            for i, r in mymap.iterrows():
+                I = self.timegrid.restricted.I_minor_in_major[i]
+                for my_t in I:
+                    r['time_step']   = int(my_t)
+                    weight = self.timegrid.dt[r['time_step']]/self.timegrid.restricted.dt[i] # potentially to be refined with profile
+                    r['disp_factor'] = weight
+                    mapping = mapping.append(r)
+            mapping['time_step'] = mapping['time_step'].astype('int64')
         return OptimProblem(c = c, l = l, u = u, mapping = mapping)
 
 class Transport(Asset):
@@ -514,7 +582,9 @@ class Transport(Asset):
                 costs_time_series:str = None, 
                 min_cap:float = 0.,
                 max_cap:float = 0.,
-                efficiency: float = 1.): 
+                efficiency: float = 1.,
+                freq: str = None,
+                profile: pd.Series = None):
         """ Transport: Link two nodes, transporting the commodity at given efficiency and costs
 
         Args:
@@ -524,6 +594,10 @@ class Transport(Asset):
             start (dt.datetime) : start of asset being active. defaults to none (-> timegrid start relevant)
             end (dt.datetime)   : end of asset being active. defaults to none (-> timegrid start relevant)            
             wacc (float): Weighted average cost of capital to discount cash flows in target   (asset parameter)
+            freq (str, optional):   Frequency for optimization - in case different from portfolio (defaults to None, using portfolio's freq)
+                                    The more granular frequency of portf & asset is used
+            profile (pd.Series, optional):  If freq(asset) > freq(portf) assuming this profile for granular dispatch (e.g. scaling hourly profile to week).
+                                            Defaults to None, only relevant if freq is not none            
 
             min_cap (float) : Minimum flow/capacity for transporting (from node 1 to node 2)
             max_cap (float) : Minimum flow/capacity for transporting (from node 1 to node 2)
@@ -531,7 +605,7 @@ class Transport(Asset):
             costs_time_series (str): Name of cost vector for transporting. Defaults to None
             costs_const (float, optional): extra costs added to price vector (in or out). Defaults to 0.
         """
-        super(Transport, self).__init__(name=name, nodes=nodes, start=start, end=end, wacc=wacc)        
+        super(Transport, self).__init__(name=name, nodes=nodes, start=start, end=end, wacc=wacc, freq = freq, profile = profile)        
         assert len(self.nodes) ==2, 'Transport asset mus link exactly 2 nodes. Asset name: '+name
         assert min_cap <= max_cap, 'Transport with min_cap >= max_cap leads to ill-posed optimization problem. Asset name: '+name
         self.min_cap = min_cap
@@ -575,8 +649,16 @@ class Transport(Asset):
         T                = self.timegrid.restricted.T # length of restr. grid
         discount_factors = self.timegrid.restricted.discount_factors # disc fctrs of restr. grid
         if not len(costs_time_series)==1: # if not  scalar, restrict to time window
-            costs_time_series = costs_time_series[I] # prices only in asset time window
-
+            # check: if the restricted timegrid has minor and major grids, need
+            # to do average over prices across minor grids
+            if hasattr(self.timegrid.restricted, 'I_minor_in_major'):
+                myprice = []
+                if self.profile is not None: raise NotImplementedError('Need to extend to non flat profiles')
+                for myI in self.timegrid.restricted.I_minor_in_major:
+                    myprice.append(costs_time_series[myI].mean())
+                costs_time_series = np.asarray(myprice)
+            else: # simply restrict prices to  asset time window
+                costs_time_series           = costs_time_series[I] 
         # Make vector of single min/max capacities. 
         if isinstance(self.max_cap, (float, int)):
             max_cap = self.max_cap*np.ones(T) 
@@ -691,7 +773,9 @@ class Contract(SimpleContract):
                 min_cap: Union[float, Dict] = 0.,
                 max_cap: Union[float, Dict] = 0.,                
                 min_take:Union[float, List[float], Dict] = None,
-                max_take:Union[float, List[float], Dict] = None): 
+                max_take:Union[float, List[float], Dict] = None,
+                freq: str = None,
+                profile: pd.Series = None                ): 
         """ Contract: buy or sell (consume/produce) given price and limited capacity in/out
             Restrictions
             - time dependent capacity restrictions
@@ -706,6 +790,10 @@ class Contract(SimpleContract):
             end (dt.datetime)   : end of asset being active. defaults to none (-> timegrid start relevant)            
             timegrid (Timegrid): Timegrid for discretization                                  (asset parameter)
             wacc (float): Weighted average cost of capital to discount cash flows in target   (asset parameter)
+            freq (str, optional):   Frequency for optimization - in case different from portfolio (defaults to None, using portfolio's freq)
+                                    The more granular frequency of portf & asset is used
+            profile (pd.Series, optional):  If freq(asset) > freq(portf) assuming this profile for granular dispatch (e.g. scaling hourly profile to week).
+                                            Defaults to None, only relevant if freq is not none            
 
             min_cap (float) : Minimum flow/capacity for buying (negative) or selling (positive). Defaults to 0
             max_cap (float) : Maximum flow/capacity for selling (positive). Defaults to 0
@@ -723,6 +811,8 @@ class Contract(SimpleContract):
                                        start=start, 
                                        end=end, 
                                        wacc=wacc,
+                                       freq = freq,
+                                       profile = profile,
                                        price = price, 
                                        extra_costs = extra_costs,
                                        min_cap = min_cap,
@@ -814,7 +904,9 @@ class MultiCommodityContract(Contract):
                 max_cap: Union[float, Dict] = 0.,                
                 min_take:Union[float, List[float], Dict] = None,
                 max_take:Union[float, List[float], Dict] = None,    
-                factors_commodities: list = [1,1]): 
+                factors_commodities: list = [1,1],
+                freq: str = None,
+                profile: pd.Series = None                ): 
         """ Contract: buy or sell (consume/produce) given price and limited capacity in/out
             Restrictions
             - time dependent capacity restrictions
@@ -828,6 +920,10 @@ class MultiCommodityContract(Contract):
             end (dt.datetime)   : end of asset being active. defaults to none (-> timegrid start relevant)            
             timegrid (Timegrid): Timegrid for discretization                                  (asset parameter)
             wacc (float): Weighted average cost of capital to discount cash flows in target   (asset parameter)
+            freq (str, optional):   Frequency for optimization - in case different from portfolio (defaults to None, using portfolio's freq)
+                                    The more granular frequency of portf & asset is used
+            profile (pd.Series, optional):  If freq(asset) > freq(portf) assuming this profile for granular dispatch (e.g. scaling hourly profile to week).
+                                            Defaults to None, only relevant if freq is not none            
 
             min_cap (float) : Minimum flow/capacity for buying (negative) or selling (positive). Defaults to 0
             max_cap (float) : Maximum flow/capacity for selling (positive). Defaults to 0
@@ -850,6 +946,8 @@ class MultiCommodityContract(Contract):
                                        start=start, 
                                        end=end, 
                                        wacc=wacc,
+                                       freq = freq,
+                                       profile = profile,                                       
                                        price = price, 
                                        extra_costs = extra_costs,
                                        min_cap = min_cap,
@@ -905,7 +1003,9 @@ class ExtendedTransport(Transport):
                 max_cap:float = 0.,
                 efficiency: float = 1.,    
                 min_take:Union[float, List[float], Dict] = None,
-                max_take:Union[float, List[float], Dict] = None): 
+                max_take:Union[float, List[float], Dict] = None,
+                freq: str = None,
+                profile: pd.Series = None                ): 
         """ Transport:
 
             name (str): Unique name of the asset                                              (asset parameter)
@@ -914,6 +1014,10 @@ class ExtendedTransport(Transport):
             start (dt.datetime) : start of asset being active. defaults to none (-> timegrid start relevant)
             end (dt.datetime)   : end of asset being active. defaults to none (-> timegrid start relevant)            
             wacc (float): Weighted average cost of capital to discount cash flows in target   (asset parameter)
+            freq (str, optional):   Frequency for optimization - in case different from portfolio (defaults to None, using portfolio's freq)
+                                    The more granular frequency of portf & asset is used
+            profile (pd.Series, optional):  If freq(asset) > freq(portf) assuming this profile for granular dispatch (e.g. scaling hourly profile to week).
+                                            Defaults to None, only relevant if freq is not none            
 
             min_cap (float) : Minimum flow/capacity for transporting (from node 1 to node 2)
             max_cap (float) : Minimum flow/capacity for transporting (from node 1 to node 2)
@@ -944,6 +1048,8 @@ class ExtendedTransport(Transport):
                                                 start=start, 
                                                 end=end, 
                                                 wacc=wacc,
+                                                freq = freq,
+                                                profile = profile,                                                
                                                 costs_const = costs_const,
                                                 costs_time_series = costs_time_series, 
                                                 min_cap = min_cap,
@@ -1054,7 +1160,11 @@ class ScaledAsset(Asset):
             fix_costs (float, optional):  Costs in currency per norm scale and per main_time_unit (in timegrid). 
                                           Defaults to 0.
         """
-        super(ScaledAsset, self).__init__(name=name, nodes = base_asset.nodes, start=start, end=end, wacc=wacc)        
+        super(ScaledAsset, self).__init__(name=name, 
+                                          nodes = base_asset.nodes, 
+                                          start=start, 
+                                          end=end, 
+                                          wacc=wacc)        
         self.base_asset = base_asset
         assert min_scale <= max_scale, 'Problem not well defined. min_scale must be <= max_scale'
         self.min_scale  = min_scale
