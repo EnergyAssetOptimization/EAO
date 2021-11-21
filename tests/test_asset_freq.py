@@ -55,17 +55,17 @@ class AssetFrequency(unittest.TestCase):
                         min_cap= -20., max_cap=20., start = dt.date(2021,1,2), end = dt.date(2021,1,20))
         #a1.set_timegrid(timegrid)
         ######## OTHER FREQ !!!
-        a2 = eao.assets.SimpleContract(name = 'SC_2', price = 'rand_price_2', nodes = node1 ,
+        a2 = eao.assets.SimpleContract(name = 'SC_2', price = 'p2', nodes = node1 ,
                         min_cap= -5., max_cap=10., freq = 'd')
         #a2.set_timegrid(timegrid)
-        a3 = eao.assets.SimpleContract(name = 'SC_3', price = 'rand_price_2', nodes = node2 ,
-                        min_cap= -1., max_cap=10., extra_costs= 1.)
+        a3 = eao.assets.SimpleContract(name = 'SC_3', price = 'rand_price_1', nodes = node1 ,
+                        min_cap= -20., max_cap=20., extra_costs= 1.)
         a5 = eao.assets.Storage('storage', nodes = node1, \
              start=dt.date(2021,1,1), end=dt.date(2021,3,1),size=10, \
              cap_in=1.0/24.0, cap_out=1.0/24.0, start_level=5, end_level=5)
         #a3.set_timegrid(timegrid)
         prices ={'rand_price_1': np.random.rand(timegrid.T)-0.5,
-                'rand_price_2': 5.*(np.random.rand(timegrid.T)-0.5),
+                'p2': np.hstack((-100*np.ones(24), 100*np.ones(timegrid.T-24))),
                 }
         
         portf = eao.portfolio.Portfolio([a1, a2, a3, a5])
@@ -73,9 +73,15 @@ class AssetFrequency(unittest.TestCase):
         res = op.optimize()
         out = eao.io.extract_output(portf, op, res, prices)
         disp = out['dispatch']
-        eao.io.output_to_file(out, 'test_XXX.xlsx')
-        check = True # simple run-through test
-        return check
+        # eao.io.output_to_file(out, 'test_XXX.xlsx')
+        self.assertAlmostEqual(disp.sum(axis = 1).abs().sum(), 0., 5) # in each hour net zero
+        for t in a1.timegrid.restricted.timepoints:
+            assert (len(disp[disp.index.date == t]) == 24)
+            all(disp[disp.index.date == t]['SC_2'] == disp[disp.index.date == t].iloc[0,1])
+        assert all(disp['SC_2'].iloc[0:23].values.round(3)==10.)
+        assert all(disp['SC_2'].iloc[24:].values.round(3)==-5.)        
+        assert (out['DCF']['SC_2'].sum().round(4)==60000
+        return True
 
 
 

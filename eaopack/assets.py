@@ -128,15 +128,16 @@ class Asset:
         # iterate over all rows of orig. mapping (variable --> first minor grid item)
         # and generate remaining minor grid items
         for i, r in mymap.iterrows():
+            rr = r.copy()
             I = self.timegrid.restricted.I_minor_in_major[i]
             for my_t in I:
-                r['time_step']   = int(my_t)
+                rr['time_step']   = int(my_t)
                 weight = self.timegrid.dt[r['time_step']]/self.timegrid.restricted.dt[i] # potentially to be refined with profile
                 if 'disp_factor' in r:
-                    r['disp_factor'] = weight*r['disp_factor']
+                    rr['disp_factor'] = weight*rr['disp_factor']
                 else:
-                    r['disp_factor'] = weight
-                mapping = mapping.append(r)
+                    rr['disp_factor'] = weight
+                mapping = mapping.append(rr)
         mapping['time_step'] = mapping['time_step'].astype('int64')
         return mapping
 ##########################
