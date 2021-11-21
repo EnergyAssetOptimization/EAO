@@ -132,7 +132,10 @@ class Asset:
             for my_t in I:
                 r['time_step']   = int(my_t)
                 weight = self.timegrid.dt[r['time_step']]/self.timegrid.restricted.dt[i] # potentially to be refined with profile
-                r['disp_factor'] = weight
+                if 'disp_factor' in r:
+                    r['disp_factor'] = weight*r['disp_factor']
+                else:
+                    r['disp_factor'] = weight
                 mapping = mapping.append(r)
         mapping['time_step'] = mapping['time_step'].astype('int64')
         return mapping
@@ -427,6 +430,10 @@ class Storage(Asset):
                     A   = sp.vstack((A, myA))
                     b = np.hstack((b,myA.sum()-1))
                     cType += 'U'   # at most md elements may be one == fill level not md+1 times non-zero)
+        # if we're using a less granular asset timegrid, add dispatch for every minor grid point
+        # Effectively we concat the mapping for each minor point (one row each)
+        if hasattr(self.timegrid.restricted, 'I_minor_in_major'):
+            mapping = self.__extend_mapping_to_minor_grid__(mapping)                    
         return OptimProblem(c=c,l=l, u=u, A=A, b=b, cType=cType, mapping = mapping)
 
 class SimpleContract(Asset):
@@ -727,7 +734,10 @@ class Transport(Asset):
         ### need to re-index (since two row blocks refer to the same variables)
         mapping.index = np.hstack((np.arange(0,T), np.arange(0,T)))
         ##
-
+        # if we're using a less granular asset timegrid, add dispatch for every minor grid point
+        # Effectively we concat the mapping for each minor point (one row each)
+        if hasattr(self.timegrid.restricted, 'I_minor_in_major'):
+            mapping = self.__extend_mapping_to_minor_grid__(mapping)                    
         #### return OptimProblem(c = c, l = l, u = u, A = A, b = b, cType = cType, mapping = mapping)
         return OptimProblem(c = c, l = l, u = u,  mapping = mapping)
 
@@ -994,7 +1004,10 @@ class MultiCommodityContract(Contract):
         new_map     = pd.DataFrame()
         for i, mynode in enumerate(self.nodes):
             initial_map = op.mapping.copy()
-            initial_map['disp_factor'] = self.factors_commodities[i]
+            if 'disp_factor' in initial_map.columns:
+                initial_map['disp_factor'] *= self.factors_commodities[i]
+            else:
+                initial_map['disp_factor'] = self.factors_commodities[i]
             initial_map['node']        = mynode.name
             new_map = pd.concat([new_map, initial_map.copy()])
         op.mapping = new_map
