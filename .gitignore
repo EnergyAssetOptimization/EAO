@@ -24,3 +24,4 @@ tests/.coverage
 tests/htmlcov
 test_XXX.xlsx
 xxx.csv
+.~lock.test_XXX.xlsx#

@@ -316,10 +316,15 @@ class Storage(Asset):
             b_min = np.empty(n)
             b_min.fill(np.nan)
             ### identify blocks in time grid
-            indBlocks = pd.date_range(start = self.timegrid.restricted.start, end=self.timegrid.restricted.end, freq=self.block_size)
+            try:
+                buffer = pd.Timedelta(self.block_size)
+            except:
+                buffer = pd.Timedelta(1, self.block_size)
+            indBlocks = pd.date_range(start = self.timegrid.restricted.start - buffer,
+                                      end   = self.timegrid.restricted.end, freq=self.block_size)
             aa = []
             for myd in indBlocks:
-                my_bool = self.timegrid.restricted.timepoints<=myd
+                my_bool = self.timegrid.restricted.timepoints <= myd
                 if any(my_bool):
                     aa.append(np.argwhere(my_bool)[-1,-1])
                 else:
