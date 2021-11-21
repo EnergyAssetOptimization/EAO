@@ -22,3 +22,5 @@ doc/source/samples/simple_start/network_graph_simple_start.pdf
 tests/test_graph.png
 tests/.coverage
 tests/htmlcov
+test_XXX.xlsx
+xxx.csv

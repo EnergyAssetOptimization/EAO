@@ -113,6 +113,32 @@ class Asset:
             nn.append(n.name)
         return nn
 
+##########################
+def extend_mapping_to_minor_grid(self:Asset, mapping:pd.DataFrame):
+    """ Helper function, extending an OP to a more granular grid 
+        by creating an extra row in the mapping for each time step of the minor grid
+
+        Args:
+            self:    asset object
+            mapping (pd.DataFrame): original mapping
+    """
+    mymap = mapping.copy()
+    mapping = pd.DataFrame()
+    # profile not yet implemented
+    if self.profile is not None: raise NotImplementedError('No profiles can be defined (yet)')
+    # iterate over all rows of orig. mapping (variable --> first minor grid item)
+    # and generate remaining minor grid items
+    for i, r in mymap.iterrows():
+        I = self.timegrid.restricted.I_minor_in_major[i]
+        for my_t in I:
+            r['time_step']   = int(my_t)
+            weight = self.timegrid.dt[r['time_step']]/self.timegrid.restricted.dt[i] # potentially to be refined with profile
+            r['disp_factor'] = weight
+            mapping = mapping.append(r)
+    mapping['time_step'] = mapping['time_step'].astype('int64')
+    return mapping
+##########################
+
 class Storage(Asset):
     """ Storage Class in Python"""
     def __init__(self, 
@@ -552,22 +578,8 @@ class SimpleContract(Asset):
         mapping['type']      = 'd'   # only dispatch variables (needed to impose nodal restrictions in portfolio)
         # if we're using a less granular asset timegrid, add dispatch for every minor grid point
         # Effectively we concat the mapping for each minor point (one row each)
-        # the volume is 1/n(minor)
         if hasattr(self.timegrid.restricted, 'I_minor_in_major'):
-            mymap = mapping.copy()
-            mapping = pd.DataFrame()
-            # profile not yet implemented
-            if self.profile is not None: raise NotImplementedError('No profiles can be defined (yet)')
-            # iterate over all rows of orig. mapping (variable --> first minor grid item)
-            # and generate remaining minor grid items
-            for i, r in mymap.iterrows():
-                I = self.timegrid.restricted.I_minor_in_major[i]
-                for my_t in I:
-                    r['time_step']   = int(my_t)
-                    weight = self.timegrid.dt[r['time_step']]/self.timegrid.restricted.dt[i] # potentially to be refined with profile
-                    r['disp_factor'] = weight
-                    mapping = mapping.append(r)
-            mapping['time_step'] = mapping['time_step'].astype('int64')
+            mapping = extend_mapping_to_minor_grid(self, mapping)
         return OptimProblem(c = c, l = l, u = u, mapping = mapping)
 
 class Transport(Asset):
