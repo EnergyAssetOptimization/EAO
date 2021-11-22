@@ -103,7 +103,15 @@ class Timegrid:
                     self.discount_factors = ref_timegrid.discount_factors[I]
                 # if  frequency is different from reference do further filtering
             else:
-                assert (pd.Timedelta(1, freq) >= pd.Timedelta(1, ref_timegrid.freq)), 'timegrid must have less/equal granular frequency than reference'
+                try:
+                    freq_a = pd.Timedelta(1, freq)
+                except:
+                    freq_a = pd.Timedelta(freq)
+                try:
+                    freq_p = pd.Timedelta(1, ref_timegrid.freq)
+                except:
+                    freq_p = pd.Timedelta(ref_timegrid.freq)                    
+                assert (freq_a >= freq_p), 'timegrid must have less/equal granular frequency than reference'
                 # generate more granular timegrid - all minor grid points in "right interval"  |->|->|->|
                 pts  = (pd.date_range(start=self.start, end = self.end, freq = freq, tz = self.tz))
                 self.I          = []
