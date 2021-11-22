@@ -93,12 +93,12 @@ class AssetFrequency(unittest.TestCase):
         node1 = eao.assets.Node('node_1')
         timegrid = eao.assets.Timegrid(start, end, freq = 'd')
         a1 = eao.assets.SimpleContract(name = 'SC_1', price = 'p1', nodes = node1 ,
-                        min_cap= -10., max_cap=10., start = start, end = end)
+                        min_cap= -10., max_cap=10., start = start, end = end, extra_costs=.1)
         # daily flex
         st = eao.assets.Storage('st', nodes = node1, \
              start=start, end=end, size=10, \
              cap_in=5, cap_out=5, start_level=5, end_level=5, \
-             block_size= 'w')
+             block_size= 'w', cost_in = .1,cost_out = .1)
         # weekly flex
         lt = eao.assets.Storage('lt', nodes = node1, \
              start=start, end=end, size=10, \
@@ -121,7 +121,11 @@ class AssetFrequency(unittest.TestCase):
             weeks[disp.index.isocalendar().day==7]+=1
             weeks[weeks == 54] = 1            
             assert all(disp[weeks == t_week]['lt'] == disp[disp.index.date == t].iloc[0,2])
-            self.assertAlmostEqual(disp[weeks == t_week]['st'].sum(), 0., 4)        
+            self.assertAlmostEqual(disp[weeks == t_week]['st'].sum(), 0., 4)   
+        # check var naming
+        self.assertTrue(len(op.mapping[op.mapping['asset']=='lt']['var_name'].unique())==1)
+        self.assertTrue(len(op.mapping[op.mapping['asset']=='st']['var_name'].unique())==2) # costs generate more vars
+        self.assertTrue(len(op.mapping[op.mapping['asset']=='SC_1']['var_name'].unique())==2) # costs generate more vars
         pass
 
 

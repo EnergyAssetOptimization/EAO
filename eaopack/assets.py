@@ -353,15 +353,19 @@ class Storage(Asset):
         mapping = pd.DataFrame()
         if sep_needed:
             mapping['time_step'] = np.hstack((self.timegrid.restricted.I, self.timegrid.restricted.I))
+            mapping['var_name']  = np.nan # name variables for use e.g. in RI
+            mapping.loc[0:n,'var_name']      = 'disp_in'
+            mapping.loc[n:2*n,'var_name']    = 'disp_out'
             if len(self.nodes)==1:
                 mapping['node']      = self.nodes[0].name
             else: # separate nodes in / out.
                 mapping['node']  = np.nan
                 mapping.loc[0:n,'node']      = self.nodes[0].name
-                mapping.loc[n:2*n,'node']      = self.nodes[1].name
+                mapping.loc[n:2*n,'node']    = self.nodes[1].name
         else:
             mapping['time_step'] = self.timegrid.restricted.I
             mapping['node']      = self.nodes[0].name
+            mapping['var_name']  = 'disp'
         mapping['asset']     = self.name
         mapping['type']      = 'd'
 
@@ -566,6 +570,7 @@ class SimpleContract(Asset):
                     price = price + self.extra_costs                    
             c = price * discount_factors # set price and discount
             mapping['time_step'] = I
+            mapping['var_name']  = 'disp' # name variables for use e.g. in RI
         else:
             u =  np.hstack((np.minimum(0.,max_cap)  , np.maximum(0.,max_cap)))
             l =  np.hstack((np.minimum(0.,min_cap)  , np.maximum(0.,min_cap)))
@@ -581,6 +586,10 @@ class SimpleContract(Asset):
             # mapping to be able to extract information later on
             # infos:             'asset', 'node', 'type' 
             mapping['time_step'] = np.hstack((I, I))
+            mapping['var_name']  = np.nan # name variables for use e.g. in RI
+            mapping.loc[0:T,'var_name']      = 'disp_in'
+            mapping.loc[T:2*T,'var_name']    = 'disp_out'
+
         # shortcut if only costs required
         if costs_only: 
             return c 
@@ -731,6 +740,7 @@ class Transport(Asset):
             mapping['node']        = np.vstack((np.tile(self.nodes[0].name, (T,1)),np.tile(self.nodes[1].name, (T,1))))
             # specific column that implements the efficiency  x (node 1) ---> eff.x (node 2)
             mapping['disp_factor'] = np.hstack((-np.ones(T),np.ones(T)*self.efficiency))
+            mapping['var_name']  = 'disp' # name variables for use e.g. in RI
         else:
             raise NotImplementedError('For transport all capacities mus be positive or all negative for clarity purpose. Please use two transport assets')
 

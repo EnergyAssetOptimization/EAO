@@ -57,6 +57,9 @@ class SimpleContractTest(unittest.TestCase):
         tot_dcf = np.around((a.dcf(op, res)).sum(), decimals = 3) # asset dcf, calculated independently
         check = check and (tot_dcf == np.around(res.value , decimals = 3))
         self.assertTrue(check)
+        # test variable naming
+        self.assertTrue(op.mapping.loc[0].var_name == 'disp_in')
+        self.assertTrue(op.mapping.loc[22].var_name == 'disp_out')
 
 
 class StorageTest(unittest.TestCase):
@@ -145,6 +148,8 @@ class StorageTest(unittest.TestCase):
         op = a.setup_optim_problem(prices, timegrid=timegrid)
         res = op.optimize()
         self.assertAlmostEqual(res.value, 9.0, 5)
+        self.assertTrue(op.mapping.loc[33].var_name == 'disp_out')
+        self.assertTrue(op.mapping.loc[2].var_name == 'disp_in')
 
     def test_optim_nonzero_capacity(self):
         """Simple test where first ten times price is zero and afterwards price is one but with capacity=1.0/24.0
