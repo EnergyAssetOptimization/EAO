@@ -63,7 +63,15 @@ class Asset:
         self.timegrid = timegrid
         self.timegrid.set_wacc(self.wacc) # create discount factors for timegrid and asset's wacc
         if self.freq  is not None:
-            assert (pd.Timedelta(1, self.freq) >= pd.Timedelta(1, timegrid.freq)), 'Asset timegrid must have less/equal granular frequency than portfolios. Asset:'+str(self.name)
+            try:
+                freq_a = pd.Timedelta(1, self.freq)
+            except:
+                freq_a = pd.Timedelta(self.freq)
+            try:
+                freq_p = pd.Timedelta(1, timegrid.freq)
+            except:
+                freq_p = pd.Timedelta(timegrid.freq)
+            assert (freq_a >= freq_p), 'Asset timegrid must have less/equal granular frequency than portfolios. Asset:'+str(self.name)
         self.timegrid.set_restricted_grid(self.start, self.end, self.freq) # restricted timegrid for asset lifetime and own freq
 
     @abc.abstractmethod

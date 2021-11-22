@@ -101,7 +101,7 @@ class AssetFrequency(unittest.TestCase):
              block_size= 'w', cost_in = .1,cost_out = .1)
         # weekly flex
         lt = eao.assets.Storage('lt', nodes = node1, \
-             start=start, end=end, size=10, \
+             start=start, end=end, size=50, \
              cap_in=5, cap_out=5, start_level=5, end_level=5, \
              freq = 'w')
         prices ={'p1': 10*np.sin(np.linspace(0,2*np.pi, timegrid.T)) + 10*np.sin(np.linspace(0,7*2*np.pi, timegrid.T))}
