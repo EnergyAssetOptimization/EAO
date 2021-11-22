@@ -113,9 +113,15 @@ class AssetFrequency(unittest.TestCase):
         disp = out['dispatch']
         # eao.io.output_to_file(out, 'test_XXX.xlsx')
         for t in lt.timegrid.restricted.timepoints:
-            # change weekday !!!!!
-            all(disp[disp.index.week == t.week]['lt'] == disp[disp.index.date == t].iloc[0,2])        
-            self.assertAlmostEqual(disp[disp.index.week == t.week]['lt'].sum(), 0., 4)        
+            # change weekday. seems a bit complicated. pd date_range starts sunday !!!!!
+            t_week = t.isocalendar().week
+            if t.isocalendar().weekday == 7: t_week +=1
+            if t_week == 54: t_week = 1
+            weeks = disp.index.isocalendar().week
+            weeks[disp.index.isocalendar().day==7]+=1
+            weeks[weeks == 54] = 1            
+            assert all(disp[weeks == t_week]['lt'] == disp[disp.index.date == t].iloc[0,2])
+            self.assertAlmostEqual(disp[weeks == t_week]['st'].sum(), 0., 4)        
         pass
 
 
