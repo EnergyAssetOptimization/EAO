@@ -59,9 +59,10 @@
 <li class="toctree-l3"><a class="reference internal" href="#Perform-the-optimization">Perform the optimization</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Create-charts-and-interpret-the-results">Create charts and interpret the results</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#Interpretation">Interpretation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Two-stage-vs. multi-stage-problem:">Two-stage vs. multi-stage problem:</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#Notes:">Notes:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Backtesting:-SLP-vs. hard-optimization">Backtesting: SLP vs. hard optimization</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../../samples.html#robust-optimization">Robust optimization</a></li>
@@ -373,7 +374,7 @@ div.rendered_html tbody tr:hover {
 <section id="Basics">
 <h2>Basics<a class="headerlink" href="#Basics" title="Permalink to this headline"></a></h2>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -382,7 +383,7 @@ div.rendered_html tbody tr:hover {
 <span class="kn">import</span> <span class="nn">datetime</span> <span class="k">as</span> <span class="nn">dt</span>
 <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
 <span class="c1"># in case eao is not installed</span>
-<span class="kn">from</span> <span class="nn">os.path</span> <span class="kn">import</span> <span class="n">dirname</span><span class="p">,</span> <span class="n">join</span>
+<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="c1"># in case eao is not installed, set path</span>
 <span class="n">myDir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">&#39;../..&#39;</span><span class="p">)</span>
@@ -394,8 +395,7 @@ div.rendered_html tbody tr:hover {
 
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="o">%</span><span class="k">matplotlib</span> inline
-
-
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -405,17 +405,15 @@ div.rendered_html tbody tr:hover {
 <p>Defining timegrid and main portfolio settings as well as settings for SLP. Note that we do not explain the setup in detail. Please refer to the basic samples to understand the concepts and parameters</p>
 <p>For the SLP part we define the number of samples to be used. Using the parameter ‘sigma’ we can adjust uncertainty in price samples. The parameter ‘start_future’ defines the transition between the two stages of the SLP - present and future. In the two-stage setup we determine the optimal steps in the present given an uncertain future</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">Start</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2021</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">End</span>   <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2021</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
 <span class="n">start_future</span> <span class="o">=</span> <span class="n">Start</span><span class="o">+</span><span class="n">dt</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">n_samples</span>    <span class="o">=</span> <span class="mi">5</span>
+<span class="n">n_samples</span>    <span class="o">=</span> <span class="mi">200</span>
 <span class="n">sigma</span>        <span class="o">=</span> <span class="mf">.5</span>
-
-<span class="n">file_chart</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">myDir</span><span class="p">,</span> <span class="s1">&#39;chart_slp.pdf&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -428,26 +426,27 @@ div.rendered_html tbody tr:hover {
 <li><p>definition of how prices are sampled</p></li>
 </ol>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">node</span> <span class="o">=</span> <span class="n">eao</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s1">&#39;home&#39;</span><span class="p">)</span>
 <span class="n">timegrid</span> <span class="o">=</span> <span class="n">eao</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">Timegrid</span><span class="p">(</span><span class="n">Start</span><span class="p">,</span> <span class="n">End</span><span class="p">,</span> <span class="n">freq</span> <span class="o">=</span> <span class="s1">&#39;h&#39;</span><span class="p">)</span>
-<span class="n">battery</span>  <span class="o">=</span> <span class="n">eao</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">Storage</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;battery&#39;</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="n">node</span><span class="p">,</span> <span class="n">cap_in</span><span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">cap_out</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">start_level</span><span class="o">=</span> <span class="mi">24</span><span class="p">,</span> <span class="n">end_level</span><span class="o">=</span><span class="mi">24</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span> <span class="mi">72</span><span class="p">)</span>
+<span class="n">battery</span>  <span class="o">=</span> <span class="n">eao</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">Storage</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;battery&#39;</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="n">node</span><span class="p">,</span> <span class="n">cap_in</span><span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">cap_out</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">start_level</span><span class="o">=</span> <span class="mi">24</span><span class="p">,</span> <span class="n">end_level</span><span class="o">=</span><span class="mi">24</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span> <span class="mi">96</span><span class="p">)</span>
 <span class="n">market</span>   <span class="o">=</span> <span class="n">eao</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">SimpleContract</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;market&#39;</span><span class="p">,</span> <span class="n">nodes</span> <span class="o">=</span> <span class="n">node</span><span class="p">,</span> <span class="n">min_cap</span><span class="o">=</span> <span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="n">max_cap</span><span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">price</span> <span class="o">=</span> <span class="s1">&#39;spot&#39;</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">get_price</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;spot&#39;</span><span class="p">,</span> <span class="n">n_samples</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">sigma</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span> <span class="n">start_future</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">get_price</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;spot&#39;</span><span class="p">,</span> <span class="n">n_samples</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">sigma</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span> <span class="n">start_future</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">last_sample</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
     <span class="n">dates</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">freq</span> <span class="o">=</span><span class="s1">&#39;h&#39;</span><span class="p">)</span>
     <span class="n">prices</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
     <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dates</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">start_future</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">Ip</span> <span class="o">=</span> <span class="p">(</span><span class="n">dates</span> <span class="o">&lt;=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">(</span><span class="n">start_future</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">Ip</span> <span class="o">=</span> <span class="p">(</span><span class="n">dates</span> <span class="o">&lt;=</span> <span class="n">dates</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+    <span class="n">means</span>     <span class="o">=</span> <span class="mi">2</span><span class="o">+</span><span class="mf">.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mf">4.</span><span class="o">+</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span><span class="mf">10.</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">last_sample</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">means</span><span class="p">[</span><span class="n">Ip</span><span class="p">]</span> <span class="o">=</span> <span class="n">last_sample</span><span class="p">[</span><span class="n">Ip</span><span class="p">]</span>
     <span class="k">for</span> <span class="n">iS</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">n_samples</span><span class="p">):</span>
-        <span class="n">means</span> <span class="o">=</span> <span class="mi">2</span><span class="o">+</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">4</span><span class="o">+</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span><span class="mf">4.</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
         <span class="n">process</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">pres</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">Ip</span><span class="p">):</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">pres</span><span class="p">:</span>
@@ -458,12 +457,12 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="c1"># define mean price</span>
-<span class="n">mean_price</span>      <span class="o">=</span> <span class="n">get_price</span><span class="p">(</span><span class="n">Start</span><span class="p">,</span> <span class="n">End</span><span class="p">,</span> <span class="n">sigma</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">mean_price</span>      <span class="o">=</span> <span class="n">get_price</span><span class="p">(</span><span class="n">Start</span><span class="p">,</span> <span class="n">End</span><span class="p">,</span> <span class="n">sigma</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 <span class="c1"># standard format needs to be cast onto timegrid</span>
 <span class="n">mean_price_grid</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;spot&#39;</span> <span class="p">:</span><span class="n">timegrid</span><span class="o">.</span><span class="n">values_to_grid</span><span class="p">(</span><span class="n">mean_price</span><span class="p">)}</span>
 
@@ -484,7 +483,7 @@ div.rendered_html tbody tr:hover {
 <h1>Perform the optimization<a class="headerlink" href="#Perform-the-optimization" title="Permalink to this headline"></a></h1>
 <p>For comparison we perform a deterministic optimization on the ‘mean price’ and an SLP on given samples for the future</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -503,7 +502,7 @@ div.rendered_html tbody tr:hover {
 <section id="Create-charts-and-interpret-the-results">
 <h1>Create charts and interpret the results<a class="headerlink" href="#Create-charts-and-interpret-the-results" title="Permalink to this headline"></a></h1>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -520,15 +519,14 @@ div.rendered_html tbody tr:hover {
     <span class="n">ts</span><span class="p">[</span><span class="s1">&#39;spot&#39;</span><span class="p">][</span><span class="n">timegrid</span><span class="o">.</span><span class="n">restricted</span><span class="o">.</span><span class="n">I</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean_price_grid</span><span class="p">[</span><span class="s1">&#39;spot&#39;</span><span class="p">][</span><span class="n">timegrid</span><span class="o">.</span><span class="n">restricted</span><span class="o">.</span><span class="n">I</span><span class="p">]</span>
     <span class="n">collect</span><span class="p">[</span><span class="s1">&#39;sample &#39;</span><span class="o">+</span><span class="s1">&#39;</span><span class="si">{:1.0f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="o">=</span> <span class="n">ts</span><span class="p">[</span><span class="s1">&#39;spot&#39;</span><span class="p">]</span>
 
-<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span> <span class="n">tight_layout</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span> <span class="n">tight_layout</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
 <span class="n">collect</span><span class="p">[[</span><span class="s1">&#39;deterministic&#39;</span><span class="p">,</span><span class="s1">&#39;slp (future: mean)&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 <span class="n">collect</span><span class="p">[[</span><span class="s1">&#39;start price&#39;</span><span class="p">,</span> <span class="s1">&#39;sample 1&#39;</span><span class="p">,</span> <span class="s1">&#39;sample 2&#39;</span><span class="p">,</span> <span class="s1">&#39;sample 3&#39;</span><span class="p">,</span> <span class="s1">&#39;sample 4&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">style</span> <span class="o">=</span> <span class="s1">&#39;:&#39;</span><span class="p">)</span>
 <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="n">start_future</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
 <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="n">start_future</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span> <span class="o">=</span> <span class="s1">&#39;upper left&#39;</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span> <span class="o">=</span> <span class="s1">&#39;upper left&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span> <span class="o">=</span> <span class="s1">&#39;lower left&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span> <span class="o">=</span> <span class="s1">&#39;lower left&#39;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-
 </pre></div>
 </div>
 </div>
@@ -536,18 +534,97 @@ div.rendered_html tbody tr:hover {
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/samples_stochastic_optimization_slp_sample_11_0.svg" src="../../_images/samples_stochastic_optimization_slp_sample_11_0.svg" /></div>
+<img alt="../../_images/samples_stochastic_optimization_slp_sample_11_0.png" src="../../_images/samples_stochastic_optimization_slp_sample_11_0.png" />
+</div>
 </div>
 <section id="Interpretation">
 <h2>Interpretation<a class="headerlink" href="#Interpretation" title="Permalink to this headline"></a></h2>
-<p>The red line indicates the start of the uncertain future (Jan 3). While for the pending decision (stage 1) prices are certain, for the future (stage 2) we have five price samples that encode the uncertainty. Solutions in this example are relatively similar – but note that the deterministic optimization charges the storage maximally undil Jan 03 as future prices are higher than present prices. Since uncertainty is high, the SLP solution starts discharching earlier, as future prices may be higher
+<p>The red line indicates the start of the uncertain future (Jan 3). While for the pending decision (stage 1) prices are certain, for the future (stage 2) we have five price samples that encode the uncertainty. Solutions in this example are relatively similar – but note that the deterministic optimization charges the storage maximally until Jan 03 as future prices are higher than present prices. Since uncertainty is high, the SLP solution starts discharching earlier, as future prices may be higher
 today but are uncertain.</p>
 </section>
-</section>
-<section id="Notes:">
-<h1>Notes:<a class="headerlink" href="#Notes:" title="Permalink to this headline"></a></h1>
+<section id="Two-stage-vs. multi-stage-problem:">
+<h2>Two-stage vs. multi-stage problem:<a class="headerlink" href="#Two-stage-vs. multi-stage-problem:" title="Permalink to this headline"></a></h2>
 <p>In our implementation we provide a formulation of a two-stage SLP generically for any portfolio structure. For the two-stage case problems can typically be handled and often already provide a good appoximation. For the multi-stage case we believe that it will be necessary to resort to numerical approximations, strategies that are specific to the given portfolio or others such as methods from machine learning. Providing a solution to the SLP for a relevant problem class could be a valuable
 research thread for further work.</p>
+</section>
+</section>
+<section id="Backtesting:-SLP-vs. hard-optimization">
+<h1>Backtesting: SLP vs. hard optimization<a class="headerlink" href="#Backtesting:-SLP-vs. hard-optimization" title="Permalink to this headline"></a></h1>
+<p>We’re backtesting the decisions of the hard and SLP decision by sampling over future price outcomes. Naturally, this backtest is more of an illustration for this specific example.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">n_test</span> <span class="o">=</span> <span class="mi">1000</span> <span class="c1"># number of samples for backtesting</span>
+<span class="c1"># decisions to fix (hard and SLP)</span>
+<span class="n">fix_slp</span>  <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;I&#39;</span><span class="p">:</span> <span class="n">start_future</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="n">res_slp</span><span class="o">.</span><span class="n">x</span><span class="p">}</span>
+<span class="n">fix_hard</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;I&#39;</span><span class="p">:</span> <span class="n">start_future</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="n">res_hard</span><span class="o">.</span><span class="n">x</span><span class="p">}</span>
+<span class="c1"># draw random prices and perform optimization for future</span>
+<span class="n">sample_prices</span> <span class="o">=</span> <span class="n">get_price</span><span class="p">(</span><span class="n">Start</span><span class="p">,</span> <span class="n">End</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="n">n_test</span><span class="p">,</span> <span class="n">sigma</span> <span class="o">=</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">start_future</span> <span class="o">=</span> <span class="n">start_future</span><span class="p">)</span>
+<span class="n">values_slp</span>  <span class="o">=</span> <span class="p">[]</span>
+<span class="n">values_hard</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">mys</span> <span class="ow">in</span> <span class="n">sample_prices</span><span class="p">:</span>
+    <span class="n">my_price</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;spot&#39;</span> <span class="p">:</span><span class="n">timegrid</span><span class="o">.</span><span class="n">values_to_grid</span><span class="p">(</span><span class="n">mys</span><span class="p">)}</span>
+    <span class="n">op_test_hard</span> <span class="o">=</span> <span class="n">portf</span><span class="o">.</span><span class="n">setup_optim_problem</span><span class="p">(</span><span class="n">my_price</span><span class="p">,</span> <span class="n">timegrid</span><span class="p">,</span> <span class="n">fix_time_window</span><span class="o">=</span><span class="n">fix_hard</span><span class="p">)</span>
+    <span class="n">op_test_slp</span> <span class="o">=</span> <span class="n">portf</span><span class="o">.</span><span class="n">setup_optim_problem</span><span class="p">(</span><span class="n">my_price</span><span class="p">,</span> <span class="n">timegrid</span><span class="p">,</span> <span class="n">fix_time_window</span><span class="o">=</span><span class="n">fix_slp</span><span class="p">)</span>
+    <span class="n">res_test_hard</span> <span class="o">=</span> <span class="n">op_test_hard</span><span class="o">.</span><span class="n">optimize</span><span class="p">()</span>
+    <span class="n">res_test_slp</span>  <span class="o">=</span> <span class="n">op_test_slp</span><span class="o">.</span><span class="n">optimize</span><span class="p">()</span>
+    <span class="n">values_slp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">res_test_slp</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+    <span class="n">values_hard</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">res_test_hard</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Mean portfolio value hard optimization: &#39;</span><span class="o">+</span><span class="s1">&#39;</span><span class="si">{:2.2f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values_hard</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Mean portfolio value SLP optimization: &#39;</span><span class="o">+</span><span class="s1">&#39;</span><span class="si">{:2.2f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values_slp</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Variance portfolio value hard optimization: &#39;</span><span class="o">+</span><span class="s1">&#39;</span><span class="si">{:2.2f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values_hard</span><span class="p">)</span><span class="o">.</span><span class="n">var</span><span class="p">()))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Variance portfolio value SLP optimization: &#39;</span><span class="o">+</span><span class="s1">&#39;</span><span class="si">{:2.2f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values_slp</span><span class="p">)</span><span class="o">.</span><span class="n">var</span><span class="p">()))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Mean portfolio value hard optimization: 67.53
+Mean portfolio value SLP optimization: 68.01
+Variance portfolio value hard optimization: 605.14
+Variance portfolio value SLP optimization: 497.74
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="n">tight_layout</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">4</span><span class="p">),</span> <span class="n">sharex</span> <span class="o">=</span> <span class="s1">&#39;col&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values_hard</span><span class="p">),</span> <span class="n">bins</span> <span class="o">=</span> <span class="mi">20</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values_slp</span><span class="p">),</span> <span class="n">bins</span> <span class="o">=</span> <span class="mi">20</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;hard optimization&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;portfolio value&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;SLP optimization&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values_hard</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">c</span> <span class="o">=</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;mean&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values_slp</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">c</span> <span class="o">=</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/samples_stochastic_optimization_slp_sample_16_0.png" src="../../_images/samples_stochastic_optimization_slp_sample_16_0.png" />
+</div>
+</div>
+<p>The comparison shows only relatively small differences in the value. However, this was to be expected, since hard and SLP decisions only differed in a small timeframe for the immediate future. Variances differ more significantly, as also the histograms show.</p>
 </section>
 
 
