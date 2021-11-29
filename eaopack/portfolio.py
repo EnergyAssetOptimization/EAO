@@ -158,11 +158,16 @@ class Portfolio:
         # potentially expensive, as variables remain variable. however, assuming
         # this is fixed in optimization
         if not fix_time_window is None:
-            assert 'I' in fix_time_window.keys(), 'fix_time_window must contain key "I"'
-            assert 'x' in fix_time_window.keys(), 'fix_time_window must contain key "x"'
+            assert 'I' in fix_time_window.keys(), 'fix_time_window must contain key "I" (time steps to fix)'
+            assert 'x' in fix_time_window.keys(), 'fix_time_window must contain key "x" (values to fix)'
             if isinstance(fix_time_window['I'], (dt.date, dt.datetime)):
                 fix_time_window['I'] = (timegrid.timepoints<= pd.Timestamp(fix_time_window['I']))
             assert (isinstance(fix_time_window['I'], (np.ndarray, list))), 'fix_time_window["I"] must be date or array'
+            # in case of SLP, the problems may not be of same size (SLP is extended problem)
+            # ---> then cut x to fix to size of the problem
+            assert len(fix_time_window['x']) >= n_vars, 'fixing: values to fix appear to have the wrong size'
+            if len(fix_time_window['x']) > n_vars:
+                fix_time_window['x'] = fix_time_window['x'][0:n_vars]
             # get index of variables for those time points
             I = mapping['time_step'].isin(timegrid.I[fix_time_window['I']])
             l[I] = fix_time_window['x'][I]

@@ -24,7 +24,7 @@ def make_slp(optim_problem:OptimProblem, portf:Portfolio, timegrid:Timegrid,  st
     Returns:
         OptimProblem: Two stage SLP formulated as OptimProblem
     """
-    assert start_future < timegrid.end, 'Start of future must be before end for SLP'
+    assert pd.Timestamp(start_future) < pd.Timestamp(timegrid.end), 'Start of future must be before end for SLP'
     # (1) identify present and future on timegrid
     # future
     timegrid.set_restricted_grid(start = start_future)
