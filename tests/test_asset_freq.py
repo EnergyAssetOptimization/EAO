@@ -114,9 +114,14 @@ class AssetFrequency(unittest.TestCase):
         # eao.io.output_to_file(out, 'test_XXX.xlsx')
         for t in lt.timegrid.restricted.timepoints:
             # change weekday. seems a bit complicated. pd date_range starts sunday !!!!!
-            t_week = t.isocalendar().week
-            if t.isocalendar().weekday == 7: t_week +=1
-            if t_week == 54: t_week = 1
+            try:
+                t_week = t.isocalendar().week
+                if t.isocalendar().weekday == 7: t_week +=1
+                if t_week == 54: t_week = 1
+            except:
+                t_week = t.isocalendar()[1] # .week failed in used version
+                if t.isocalendar()[2] == 7: t_week +=1
+                if t_week == 54: t_week = 1
             weeks = disp.index.isocalendar().week
             weeks[disp.index.isocalendar().day==7]+=1
             weeks[weeks == 54] = 1            
@@ -128,7 +133,34 @@ class AssetFrequency(unittest.TestCase):
         self.assertTrue(len(op.mapping[op.mapping['asset']=='SC_1']['var_name'].unique())==2) # costs generate more vars
         pass
 
-
+    def test_freq_multi_commodity(self):
+        """ Unit test. Test Multi Commodity Asset with own freq """
+        portf = eao.serialization.load_from_json(file_name = join(mypath,'test_portf_multi_commodity.JSON'))
+        prices = pd.read_csv(join(mypath, '2020_price_sample.csv'))
+        # timegrid freq is HOURS
+        # ******** main part of test: set CHP timegrid to 'd'
+        assert portf.asset_names[2] == 'CHP', 'unit test failed as portfolio changed'
+        portf.assets[2].freq = 'd'
+        # cast to timegrid
+        prices = {'price': portf.timegrid.values_to_grid({'start': pd.to_datetime(prices['start'].values), 'values': prices['price'].values})}
+        op = portf.setup_optim_problem(prices)
+        res = op.optimize()
+        # checking against known value --> no change
+        self.assertAlmostEqual(res.value, 2971.151578, 4)
+        out = eao.io.extract_output(portf, op, res, prices)
+        fact = portf.assets[2].factors_commodities[1]/portf.assets[2].factors_commodities[0]
+        disp = out['dispatch']
+        check = disp['CHP (heat)']/disp['CHP (power)']
+        self.assertAlmostEqual((check-fact).sum(), 0., 4)
+        eao.io.output_to_file(out, 'test.xlsx')
+        self.assertAlmostEqual(res.value, out['DCF'].sum().sum()) # check detailed - asset-wise DCF is equal to LP value
+        # values of heat demand
+        heat_res = disp['heat_demand (heat)'].values
+        self.assertAlmostEqual(heat_res.sum(), -287.6800669895399, 4)
+        self.assertAlmostEqual(heat_res[-1], -0.7309221113481956, 4)
+        self.assertAlmostEqual(heat_res[0], 0, 4)        
+        self.assertAlmostEqual(heat_res[71], -0.05461761740138421, 4)        
+        
 
 if __name__ == '__main__':
     unittest.main()

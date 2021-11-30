@@ -387,6 +387,7 @@ class Storage(Asset):
             map_bool['asset']     = self.name
             map_bool['type']      = 'i' # internal
             map_bool['bool']      = True
+            map_bool['var_name']  = 'bool'
             mapping = pd.concat([mapping, map_bool])
             mapping.reset_index(inplace=True, drop = True) # need to reset index (which enumerates variables)
             # extend costs
@@ -424,6 +425,7 @@ class Storage(Asset):
             map_bool['asset']     = self.name
             map_bool['type']      = 'i' # internal
             map_bool['bool']      = True
+            map_bool['var_name']  = 'bool'
             mapping = pd.concat([mapping, map_bool])
             mapping.reset_index(inplace=True, drop = True) # need to reset index (which enumerates variables)
             # extend costs
