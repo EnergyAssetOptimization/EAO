@@ -104,7 +104,7 @@ class MIP(unittest.TestCase):
         assert (len(map) == 72), 'wrong length of mapping (2x disp plus bool)'
         assert all(map['var_name'].values[0:24]=='disp_in')
         assert all(map['var_name'].values[24:48]=='disp_out')
-        assert all(map['var_name'].values[48:72]=='bool')
+        assert all(map['var_name'].values[48:72]=='bool_1')
 
     def test_MIP_storage_storage_duration(self):
         """ MIP storage. addtl feature - limited storage duration
