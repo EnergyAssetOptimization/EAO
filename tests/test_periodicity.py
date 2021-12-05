@@ -41,7 +41,6 @@ class PeriodicityTests(unittest.TestCase):
         d = d[(d.index>=pd.Timestamp(dt.date(2021,1,3)))&(d.index<pd.Timestamp(dt.date(2021,1,25)))]
         for h in range(0,24):
             assert all(d.loc[d.index.hour == h, 'SC'] == d.loc[d.index.hour == h, 'SC'][0])
-        print(op.mapping)
 
 
 ###########################################################################################################
