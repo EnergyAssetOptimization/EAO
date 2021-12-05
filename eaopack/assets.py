@@ -21,7 +21,9 @@ class Asset:
                 end:   dt.datetime = None,
                 wacc: float = 0,
                 freq: str = None,
-                profile: pd.Series = None
+                profile: pd.Series = None,
+                periodicity: str = None,
+                periodicity_duration: str = None
                 ):
         """ The base class to define an asset.
 
@@ -36,6 +38,8 @@ class Asset:
                                     The more granular frequency of portf & asset is used
             profile (pd.Series, optional):  If freq(asset) > freq(portf) assuming this profile for granular dispatch (e.g. scaling hourly profile to week).
                                             Defaults to None, only relevant if freq is not none
+            periodicity (str, pd freq style):          Makes assets behave periodicly with given  duration frequency. Periods are repeated up to freq intervals (defaults to None)
+            periodicity_duration (str, pd freq style): Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)
         """
         if not isinstance(name, str): name = str(name)
         self.name = name
@@ -54,6 +58,10 @@ class Asset:
             self.profile = profile
             if profile is not None:
                 assert isinstance(profile, pd.Series), 'Profile must be np.Series. Asset:'+str(name)
+        #### periodicity
+        assert not ((periodicity_duration is not None) and (periodicity is None)), 'Cannot have periodicity duration not none and periodicity none'
+        self.periodicity          = periodicity
+        self.periodicity_duration = periodicity_duration
 
     def set_timegrid(self, timegrid: Timegrid):
         """ Set the timegrid for the asset
@@ -148,6 +156,7 @@ class Asset:
                 mapping = mapping.append(rr)
         mapping['time_step'] = mapping['time_step'].astype('int64')
         return mapping
+
 ##########################
 
 class Storage(Asset):
@@ -469,7 +478,9 @@ class SimpleContract(Asset):
                 min_cap: Union[float, Dict] = 0.,
                 max_cap: Union[float, Dict] = 0.,
                 freq: str = None,
-                profile: pd.Series = None): 
+                profile: pd.Series = None,
+                periodicity: str = None,
+                periodicity_duration: str = None): 
         """ Simple contract: given price and limited capacity in/out. No other constraints
             A simple contract is able to buy or sell (consume/produce) at given prices plus extra costs up to given capacity limits
 
@@ -484,6 +495,8 @@ class SimpleContract(Asset):
                                     The more granular frequency of portf & asset is used
             profile (pd.Series, optional):  If freq(asset) > freq(portf) assuming this profile for granular dispatch (e.g. scaling hourly profile to week).
                                             Defaults to None, only relevant if freq is not none            
+            periodicity (str, pd freq style): Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)
+            periodicity_duration (str, pd freq style): Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)
 
             min_cap (float, dict) : Minimum flow/capacity for buying (negative) 
             max_cap (float, dict) : Maximum flow/capacity for selling (positive)
@@ -494,7 +507,15 @@ class SimpleContract(Asset):
             price (str): Name of price vector for buying / selling. Defaults to None
             extra_costs (float, optional): extra costs added to price vector (in or out). Defaults to 0.
         """
-        super(SimpleContract, self).__init__(name=name, nodes=nodes, start=start, end=end, wacc=wacc, freq = freq, profile = profile)        
+        super(SimpleContract, self).__init__(name=name, 
+                                             nodes=nodes, 
+                                             start=start, 
+                                             end=end, 
+                                             wacc=wacc, 
+                                             freq = freq, 
+                                             profile = profile, 
+                                             periodicity = periodicity,
+                                             periodicity_duration = periodicity_duration)        
         if isinstance(min_cap, (float, int)) and isinstance(max_cap, (float, int)):
             if min_cap > max_cap:
                 raise ValueError('Contract with min_cap > max_cap leads to ill-posed optimization problem')
@@ -520,6 +541,8 @@ class SimpleContract(Asset):
         # set timegrid if given as optional argument
         if not timegrid is None:
             self.set_timegrid(timegrid)
+        else:
+            timegrid = self.timegrid
         # check: timegrid set?                    
         if not hasattr(self, 'timegrid'): 
             raise ValueError('Set timegrid of asset before creating optim problem. Asset: '+ self.name)
@@ -611,7 +634,12 @@ class SimpleContract(Asset):
         # Effectively we concat the mapping for each minor point (one row each)
         if hasattr(self.timegrid.restricted, 'I_minor_in_major'):
             mapping = self.__extend_mapping_to_minor_grid__(mapping)
-        return OptimProblem(c = c, l = l, u = u, mapping = mapping)
+        return OptimProblem(c = c, l = l, u = u, 
+                            mapping = mapping, 
+                            periodic_period_length = self.periodicity,
+                            periodic_duration      = self.periodicity_duration,
+                            timegrid               = self.timegrid)
+
 
 class Transport(Asset):
     """ Contract Class """
