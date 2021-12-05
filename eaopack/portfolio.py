@@ -241,6 +241,9 @@ class StructuredAsset(Asset):
         op.mapping.rename(columns={'index_assets':'index_internal_assets_'+self.name}, inplace = True)
         # store original asset name
         op.mapping['internal_asset'] = op.mapping['asset']
+        # record asset in variable name
+        if 'var_name' in op.mapping.columns:
+            op.mapping['var_name'] = op.mapping['var_name']+'__'+op.mapping['asset']
         # assign all variables to the struct asset
         op.mapping['asset'] = self.name
         # connect asset nodes to the outside and mark internal variables

@@ -1285,6 +1285,7 @@ class ScaledAsset(Asset):
         mymap = {'time_step': 0, ## assign fix costs to first time step
                  'node'     : self.node_names[0],
                  'asset'    : self.name,
+                 'var_name' : 'scale',
                  'type'     : 'size'}
         op.mapping['asset'] = self.name # in case scaled asset has a different name than the base asset
         op.mapping = op.mapping.append(mymap, ignore_index = True)
