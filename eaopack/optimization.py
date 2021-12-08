@@ -94,7 +94,7 @@ class OptimProblem:
         try: periods = pd.date_range(tp[0]-pd.Timedelta(1, freq_period),    tp[-1]+pd.Timedelta(1, freq_period), freq = freq_period)
         except: periods = pd.date_range(tp[0]-pd.Timedelta(freq_period), tp[-1]+pd.Timedelta(freq_period),    freq = freq_period)
         if freq_duration is None:
-            durations = [tp[0], tp[-1]] # whole interval
+            durations = [tp[0], tp[-1]+(tp[-1]-tp[0])] # whole interval - generously extending end
         else:
             try: durations = pd.date_range(tp[0]-pd.Timedelta(1, freq_duration), tp[-1]+pd.Timedelta(1, freq_duration), freq = freq_duration)
             except: durations = pd.date_range(tp[0]-pd.Timedelta(freq_duration), tp[-1]+pd.Timedelta(freq_duration), freq = freq_duration)    
@@ -131,7 +131,8 @@ class OptimProblem:
         df['sub_per'] = df['sub_per'].astype(int)
 
         self.mapping = pd.merge(self.mapping, df, left_on = 'time_step', right_index = True, how = 'left')
-        idx = np.asarray(self.mapping.index) # get mapping index to change it later on
+        self.mapping['new_idx'] = self.mapping.index
+        idx = np.asarray(self.mapping.index).copy() # get mapping index to change it later on
         # (2)  loop through each variable-group and group together all #################################
         #      elements that belong to the same period item
         all_out = [] # collect all vars to remove
@@ -161,10 +162,13 @@ class OptimProblem:
                                 #### if given, A (b and cType refer to restrictions)
                                 # need to add up A elements for vars to be deleted in A elements for leading var
                                 if self.A is not None:
+                                    self.A = self.A.tocsr()
                                     self.A[:,leading] += self.A[:,out].sum(axis = 1)
                                 # Adjust mapping. 
-                                assert all(self.mapping.loc[out, 'disp_factor'] == self.mapping.loc[leading, 'disp_factor']), 'periodicity cannot be imposed where disp factors are not identical'
+                                assert all(self.mapping.loc[II, 'disp_factor'] == self.mapping.loc[II, 'disp_factor'].iloc[0]), 'periodicity cannot be imposed where disp factors are not identical'
                                 idx[out] = leading
+                                self.mapping.loc[out, 'new_idx'] = leading
+
         self.l = np.delete(self.l,all_out)
         self.u = np.delete(self.u,all_out)                                
         self.c = np.delete(self.c,all_out)
@@ -173,14 +177,16 @@ class OptimProblem:
             my_idx = np.delete(my_idx, all_out)
             self.A = self.A[:,my_idx]
         self.mapping.drop(columns = ['dur','per','sub_per'], inplace = True)
+        self.mapping.set_index('new_idx', inplace = True)
+
         # index (i.e. enumeration of vars) needs to be redone
-        #idx = np.sort(idx)
-        new_idx = 999999*np.ones(len(idx))
-        for ii, xx in np.ndenumerate(np.unique(idx)):
-            new_idx[idx==xx] = ii
-        assert (not any(new_idx==999999)), 'Error in making optim prob periodic'
-        self.mapping.index = new_idx
-        self.mapping.index = self.mapping.index.astype(int)
+        # #idx = np.sort(idx)
+        # new_idx = 999999*np.ones(len(idx))
+        # for ii, xx in np.ndenumerate(np.unique(idx)):
+        #     new_idx[idx==xx] = ii
+        # assert (not any(new_idx==999999)), 'Error in making optim prob periodic'
+        # self.mapping.index = new_idx
+        # self.mapping.index = self.mapping.index.astype(int)
 
     def optimize(self, target = 'value',
                        samples = None,

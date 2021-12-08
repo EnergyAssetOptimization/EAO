@@ -629,7 +629,7 @@ class SimpleContract(Asset):
         # Effectively we concat the mapping for each minor point (one row each)
         if hasattr(self.timegrid.restricted, 'I_minor_in_major'):
             mapping = self.__extend_mapping_to_minor_grid__(mapping)
-        # distinction: if not the child class, ensure periodicity here
+        # distinction: if not the parent class, ensure periodicity here
         # else take care in child class
         if type(self).__name__ == 'SimpleContract':
             return OptimProblem(c = c, l = l, u = u,
@@ -656,7 +656,9 @@ class Transport(Asset):
                 max_cap:float = 0.,
                 efficiency: float = 1.,
                 freq: str = None,
-                profile: pd.Series = None):
+                profile: pd.Series = None,
+                periodicity: str = None,
+                periodicity_duration: str = None):
         """ Transport: Link two nodes, transporting the commodity at given efficiency and costs
 
         Args:
@@ -676,6 +678,9 @@ class Transport(Asset):
             efficiency (float): efficiency of transport. May be any positive float. Defaults to 1.
             costs_time_series (str): Name of cost vector for transporting. Defaults to None
             costs_const (float, optional): extra costs added to price vector (in or out). Defaults to 0.
+
+            periodicity (str, pd freq style): Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)
+            periodicity_duration (str, pd freq style): Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)
         """
         super(Transport, self).__init__(name=name, nodes=nodes, start=start, end=end, wacc=wacc, freq = freq, profile = profile)
         assert len(self.nodes) ==2, 'Transport asset mus link exactly 2 nodes. Asset name: '+name
@@ -686,6 +691,10 @@ class Transport(Asset):
         self.costs_time_series = costs_time_series
         assert efficiency > 0., 'efficiency of transport must be chosen to be positive ('+name+')'
         self.efficiency = efficiency
+        #### periodicity
+        assert not ((periodicity_duration is not None) and (periodicity is None)), 'Cannot have periodicity duration not none and periodicity none'
+        self.periodicity          = periodicity
+        self.periodicity_duration = periodicity_duration
 
 
     @abc.abstractmethod
@@ -746,8 +755,8 @@ class Transport(Asset):
 
 
         mapping = pd.DataFrame() ## mapping of variables for use in portfolio
-
-        if (all(max_cap<=0.)) or (all(min_cap>=0.)):
+        c =  costs_time_series + self.costs_const
+        if ((all(max_cap<=0.)) or (all(min_cap>=0.))) or (all(c == 0)):
         # in this case  one variable per time step and node needed
             # upper / lower bound for dispatch Node1 / Node2
             ######  --> if implemented with two variables per time step
@@ -758,10 +767,10 @@ class Transport(Asset):
 
             # costs always act on abs(dispatch)
             if (all(max_cap<=0.)): # dispatch always negative
-                costs = - costs_time_series - self.costs_const
-            if (all(min_cap>=0.)): # dispatch always positive
-                costs =   costs_time_series + self.costs_const
-            c = costs * discount_factors # set costs and discount
+                c = -c
+            # if (all(min_cap>=0.)): # dispatch always positive
+            #     c =  c
+            c = c * discount_factors # set costs and discount
             ######  --> if implemented with two variables per time step
             #    c = np.hstack( (np.zeros(T),c) ) # linking two nodes, assigning costs only to receiving node
             if costs_only:
@@ -794,7 +803,17 @@ class Transport(Asset):
         if hasattr(self.timegrid.restricted, 'I_minor_in_major'):
             mapping = self.__extend_mapping_to_minor_grid__(mapping)
         #### return OptimProblem(c = c, l = l, u = u, A = A, b = b, cType = cType, mapping = mapping)
-        return OptimProblem(c = c, l = l, u = u,  mapping = mapping)
+        # distinction: if not the parent class, ensure periodicity here
+        # else take care in child class
+        if type(self).__name__ == 'Transport':
+            return OptimProblem(c = c, l = l, u = u,
+                                mapping = mapping,
+                                periodic_period_length = self.periodicity,
+                                periodic_duration      = self.periodicity_duration,
+                                timegrid               = self.timegrid)
+        else:
+            return OptimProblem(c = c, l = l, u = u,
+                                mapping = mapping)
 
 ########## SimpleContract and Transport extended with minTake and maxTake restrictions
 
@@ -1112,7 +1131,9 @@ class ExtendedTransport(Transport):
                 min_take:Union[float, List[float], Dict] = None,
                 max_take:Union[float, List[float], Dict] = None,
                 freq: str = None,
-                profile: pd.Series = None                ):
+                profile: pd.Series = None,
+                periodicity:str=None,
+                periodicity_duration:str=None):
         """ Transport:
 
             name (str): Unique name of the asset                                              (asset parameter)
@@ -1131,6 +1152,9 @@ class ExtendedTransport(Transport):
             efficiency (float): efficiency of transport. May be any positive float. Defaults to 1.
             costs_time_series (str): Name of cost vector for transporting. Defaults to None
             costs_const (float, optional): extra costs added to price vector (in or out). Defaults to 0.
+
+            periodicity (str, pd freq style): Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)
+            periodicity_duration (str, pd freq style): Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)
 
             Extension of transport with more complex restrictions:
 
@@ -1161,7 +1185,10 @@ class ExtendedTransport(Transport):
                                                 costs_time_series = costs_time_series,
                                                 min_cap = min_cap,
                                                 max_cap = max_cap,
-                                                efficiency = efficiency)
+                                                efficiency = efficiency,
+                                                periodicity= periodicity,
+                                                periodicity_duration=periodicity_duration
+                                                )
         if not min_take is None:
             if isinstance(min_take['values'], (float, int)):
                 min_take['values'] = [min_take['values']]
@@ -1231,6 +1258,8 @@ class ExtendedTransport(Transport):
                 op.A     = sp.vstack((op.A, A))
                 op.b     = np.hstack((op.b, b))
                 op.cType = op.cType+cType
+        if self.periodicity is not None:
+            op.__make_periodic__(freq_period = self.periodicity, freq_duration = self.periodicity_duration, timegrid = timegrid)
         return op
 
 class ScaledAsset(Asset):
