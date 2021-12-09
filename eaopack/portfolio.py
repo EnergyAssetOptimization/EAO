@@ -97,6 +97,7 @@ class Portfolio:
         n_nodes = len(self.nodes) # number of nodes
         T = self.timegrid.T       # number of time steps
         # new index refers to portfolio
+        mapping.index.name = None
         mapping.reset_index(inplace = True) 
         mapping.rename(columns={'index':'index_assets'}, inplace=True) 
         #### version WITH ability to handle same variable in two rows
