@@ -172,7 +172,9 @@ class Storage(Asset):
                 max_store_duration : float = None,
                 price: str=None,
                 freq: str = None,
-                profile: pd.Series = None ):
+                profile: pd.Series = None,
+                periodicity: str = None,
+                periodicity_duration: str = None                 ):
         """ Specific storage asset. A storage has the basic capability to
             (1) take in a commodity within a limited flow rate (capacity)
             (2) store a maximum volume of a commodity (size)
@@ -203,7 +205,10 @@ class Storage(Asset):
             eff_in (float, optional): Efficiency taking in the commodity. Means e.g. at 90%: 1MWh in --> 0,9 MWh in storage. Defaults to 1 (=100%).
             inflow (float, optional): Constant rate of inflow volumes (flow in each time step. E.g. water inflow in hydro storage). Defaults to 0.
             no_simult_in_out (boolean, optional): Enforce no simultaneous dispatch in/out in case of costs or efficiency!=1. Makes problem MIP. Defaults to False
-            max_store_duration (float, optional): Maximal duration in main time units that charged commodity can be held. Makes problem MIP. Defaults to none
+            max_store_duration (float, optional): Maximal duration in main time units that charged commodity can be held. Makes problem a MIP. Defaults to none
+
+            periodicity (str, pd freq style): Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)
+            periodicity_duration (str, pd freq style): Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)
         """
         super(Storage, self).__init__(name=name, nodes=nodes, start=start, end=end, wacc=wacc, freq = freq, profile=profile)
         assert size is not None, 'Storage --'+self.name+'--: size must be given'
@@ -227,6 +232,10 @@ class Storage(Asset):
         assert len(self.nodes)<=2, 'for storage only one or two nodes valid'
         self.no_simult_in_out   = no_simult_in_out
         self.max_store_duration = max_store_duration
+        #### periodicity
+        assert not ((periodicity_duration is not None) and (periodicity is None)), 'Cannot have periodicity duration not none and periodicity none'
+        self.periodicity          = periodicity
+        self.periodicity_duration = periodicity_duration
 
     def setup_optim_problem(self, prices: dict, timegrid:Timegrid = None, costs_only:bool = False) -> OptimProblem:
         """ Set up optimization problem for asset
@@ -453,7 +462,12 @@ class Storage(Asset):
         # Effectively we concat the mapping for each minor point (one row each)
         if hasattr(self.timegrid.restricted, 'I_minor_in_major'):
             mapping = self.__extend_mapping_to_minor_grid__(mapping)
-        return OptimProblem(c=c,l=l, u=u, A=A, b=b, cType=cType, mapping = mapping)
+
+        return OptimProblem(c=c,l=l, u=u, A=A, b=b, cType=cType, mapping = mapping,
+                                periodic_period_length = self.periodicity,
+                                periodic_duration      = self.periodicity_duration,
+                                timegrid               = self.timegrid)
+
 
 class SimpleContract(Asset):
     """ Contract Class """

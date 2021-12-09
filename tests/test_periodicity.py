@@ -147,6 +147,27 @@ class PeriodicityTests(unittest.TestCase):
         for h in range(0,24):
             self.assertAlmostEqual(abs(d.loc[d.index.hour == h, 'SC (n1)'] - d.loc[d.index.hour == h, 'SC (n1)'][0]).sum(), 0, 4)
 
+    def test_period_storage(self):
+        """ Periodization. Unit test. Setting up a simple contract with random prices 
+            and check that it buys full load at negative prices and opposite
+        """
+        node = eao.assets.Node('testNode')
+        timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,2,1), freq = 'd')
+        a = eao.assets.Storage(name = 'st', nodes = node ,
+                               cap_in=1, cap_out=1, size = 5,
+                               periodicity = '4d')
+        b = eao.assets.SimpleContract(name = 'm',  nodes = node , price = 'price',
+                                      min_cap= -10., max_cap=+10.)
+        prices ={'price': np.sin(30*np.linspace(0,10,timegrid.T))}
+        portf = eao.portfolio.Portfolio([a,b])
+        op = portf.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        out = eao.io.extract_output(portf, op, res, prices)
+        d = out['dispatch']
+        for ii in range(0,4):
+            dd = timegrid.timepoints[ii::4]
+            self.assertAlmostEqual(abs(d.loc[dd, 'st'] - d.loc[dd, 'st'][0]).sum(), 0, 4)
+
 
 ###########################################################################################################
 ###########################################################################################################
