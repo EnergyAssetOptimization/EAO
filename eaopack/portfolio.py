@@ -97,20 +97,18 @@ class Portfolio:
         n_nodes = len(self.nodes) # number of nodes
         T = self.timegrid.T       # number of time steps
         # new index refers to portfolio
+        mapping.index.name = None
         mapping.reset_index(inplace = True) 
         mapping.rename(columns={'index':'index_assets'}, inplace=True) 
-        #### version WITH ability to handle same variable in two rows
-        ## ensure in index that it refers to variables
-        ## go through assets and their index, count through
-        mapping['new_ind'] = np.zeros(len(mapping))*np.nan
-        counter = 0
-        for all_vars in zip(mapping['index_assets'], mapping['asset']):
-            I = (mapping['index_assets']==all_vars[0]) & (mapping['asset'] == all_vars[1])
-            if any(np.isnan(mapping['new_ind'][I])): # not covered yet
-                mapping.loc[I, 'new_ind'] = counter
-                counter += 1
-        mapping['new_ind'] = mapping['new_ind'].astype(int)   
-        mapping.set_index('new_ind', inplace = True)
+        #### mapping may come with several rows per variable 
+        ## ensure index refers to variables: go through assets and their index, make unique
+        mapping['keys'] = mapping['index_assets'].astype(str) +mapping['asset'].astype(str)
+        idx = pd.DataFrame()
+        idx['keys'] = mapping['keys'].unique()
+        idx.reset_index(inplace = True)
+        mapping = pd.merge(mapping, idx, left_on = 'keys', right_on = 'keys', how = 'left')
+        mapping.drop(columns = ['keys'], inplace = True)
+        mapping.set_index('index', inplace = True)
         ################################################## put together asset restrictions
         A = sp.lil_matrix((0, n_vars)) # sparse format to incrementally change
         b = np.zeros(0)
@@ -132,11 +130,11 @@ class Portfolio:
         if 'disp_factor' not in mapping.columns:
             mapping['disp_factor'] = 1.
         mapping['disp_factor'].fillna(1., inplace = True)
-        n_restr = len(b) # so many restr so far
+        # n_restr = len(b) # so many restr so far
         mapping['nodal_restr'] = None
         # mapping['index_restr'] = None # index of the nodal restriction in the op (rows of A & b)  # Note: Not needed and probably not well defined
         n_nodal_restr = 0 # counter
-        for i_node, n in enumerate(self.nodes):
+        for n in self.nodes:
             if not n in skip_nodes:
                 for t in self.timegrid.I:
                     # identify variables belonging to this node n and time step t
@@ -241,6 +239,9 @@ class StructuredAsset(Asset):
         op.mapping.rename(columns={'index_assets':'index_internal_assets_'+self.name}, inplace = True)
         # store original asset name
         op.mapping['internal_asset'] = op.mapping['asset']
+        # record asset in variable name
+        if 'var_name' in op.mapping.columns:
+            op.mapping['var_name'] = op.mapping['var_name']+'__'+op.mapping['asset']
         # assign all variables to the struct asset
         op.mapping['asset'] = self.name
         # connect asset nodes to the outside and mark internal variables
