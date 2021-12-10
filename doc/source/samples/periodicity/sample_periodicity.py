@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import datetime as dt
-
+import time
 # in case eao is not installed
 from os.path import dirname, join
 import sys
@@ -12,7 +12,7 @@ import eaopack as eao
 
 ###############################################   setting
 Start = dt.date(2020, 1, 1)
-End   = dt.date(2020, 2, 1)
+End   = dt.date(2021, 1, 1)
 freq = 'h'
 
 # define file names for this sample
@@ -30,7 +30,7 @@ node_power  = eao.assets.Node('client', commodity= 'power', unit = eao.assets.Un
 
 
 periodicity_period   = 'd'
-periodicity_duration = '7d'
+periodicity_duration = None
 
 ###############################################   import data
 df_profiles = pd.read_csv(file_profiles)
@@ -74,36 +74,45 @@ gas  = eao.assets.SimpleContract(name = 'gas',  extra_costs= 100, min_cap = 0, m
 coal = eao.assets.SimpleContract(name = 'coal', extra_costs= 50,  min_cap = 0, max_cap = max_load, nodes= node_power)
 
 portf_wo_per = eao.portfolio.Portfolio([load, onshore, offshore,  gas, coal])
+print('.. set up full problem')
+perf = time.perf_counter()
 op_wo_per  = portf_wo_per.setup_optim_problem(prices, timegrid)
+print('  duration '+'{:0.1f}'.format(time.perf_counter()-perf)+'s')
 print('.. optimize full problem')
+perf = time.perf_counter()
 res_wo_per = op_wo_per.optimize()
+print('  duration '+'{:0.1f}'.format(time.perf_counter()-perf)+'s')
 out_wo_per = eao.io.extract_output(portf_wo_per, op_wo_per, res_wo_per, prices)
-
+del op_wo_per
 
 ############################################## with periodicity
-pvshore   = eao.assets.Contract(name = 'pv', min_cap = 0., max_cap= pv_profile, nodes = node_power, periodicity = periodicity_period, periodicity_duration = periodicity_duration)
-onshore   = eao.assets.Contract(name = 'onshore', min_cap = 0., max_cap= onshore_profile, nodes = node_power, periodicity = periodicity_period, periodicity_duration = periodicity_duration)
-offshore  = eao.assets.Contract(name = 'offshore', min_cap = 0., max_cap= offshore_profile, nodes = node_power, periodicity = periodicity_period, periodicity_duration = periodicity_duration)
-load      = eao.assets.Contract(name = 'load', min_cap= load_profile, max_cap= load_profile, nodes = node_power, periodicity = periodicity_period, periodicity_duration = periodicity_duration)
+pvshore    = eao.assets.Contract(name = 'pv', min_cap = 0., max_cap= pv_profile, nodes = node_power, periodicity = periodicity_period, periodicity_duration = periodicity_duration)
+onshore    = eao.assets.Contract(name = 'onshore', min_cap = 0., max_cap= onshore_profile, nodes = node_power, periodicity = periodicity_period, periodicity_duration = periodicity_duration)
+offshore   = eao.assets.Contract(name = 'offshore', min_cap = 0., max_cap= offshore_profile, nodes = node_power, periodicity = periodicity_period, periodicity_duration = periodicity_duration)
+load       = eao.assets.Contract(name = 'load', min_cap= load_profile, max_cap= load_profile, nodes = node_power, periodicity = periodicity_period, periodicity_duration = periodicity_duration)
 gas  = eao.assets.SimpleContract(name = 'gas',  extra_costs= 100, min_cap = 0, max_cap = max_load, nodes= node_power, periodicity = periodicity_period, periodicity_duration = periodicity_duration)
 coal = eao.assets.SimpleContract(name = 'coal', extra_costs= 50,  min_cap = 0, max_cap = max_load, nodes= node_power, periodicity = periodicity_period, periodicity_duration = periodicity_duration)
 
 portf = eao.portfolio.Portfolio([load, onshore, offshore,  gas, coal])
+print('.. set up simplified periodic problem')
+perf = time.perf_counter()
 op  = portf.setup_optim_problem(prices, timegrid)
+print('  duration '+'{:0.1f}'.format(time.perf_counter()-perf)+'s')
 print('.. optimize simplified periodic problem')
+perf = time.perf_counter()
 res = op.optimize()
+print('  duration '+'{:0.1f}'.format(time.perf_counter()-perf)+'s')
 out = eao.io.extract_output(portf, op, res, prices)
-
 import matplotlib.pyplot as plt
 # %matplotlib inline
 d1 = out['dispatch']
 d2 = out_wo_per['dispatch']
 
-fig, ax = plt.subplots(1,1, tight_layout = True, figsize=(12,4))
-d1['load'].plot(ax = ax, style = '-', label = 'periodic')
-d2['load'].plot(ax = ax, style = '-', label = 'actual')
+# fig, ax = plt.subplots(1,1, tight_layout = True, figsize=(12,4))
+# d1['load'].plot(ax = ax, style = '-', label = 'periodic')
+# d2['load'].plot(ax = ax, style = '-', label = 'actual')
 
-ax.legend()
-ax.set_title('Comparison: Actual load and weekly periodicity')
-plt.show()
-pass
+# ax.legend()
+# ax.set_title('Comparison: Actual load and weekly periodicity')
+# plt.show()
+# pass

@@ -91,13 +91,13 @@ class OptimProblem:
         self.mapping['disp_factor'].fillna(1., inplace = True) # ensure there's a one where not assigned yet
         tp = timegrid.timepoints
         T  = timegrid.T
-        try: periods = pd.date_range(tp[0]-pd.Timedelta(1, freq_period),    tp[-1]+pd.Timedelta(1, freq_period), freq = freq_period)
-        except: periods = pd.date_range(tp[0]-pd.Timedelta(freq_period), tp[-1]+pd.Timedelta(freq_period),    freq = freq_period)
+        try: periods = pd.date_range(tp[0]-pd.Timedelta(1, freq_period),    tp[-1]+pd.Timedelta(1, freq_period), freq = freq_period, tz = timegrid.tz)
+        except: periods = pd.date_range(tp[0]-pd.Timedelta(freq_period), tp[-1]+pd.Timedelta(freq_period),    freq = freq_period, tz = timegrid.tz)
         if freq_duration is None:
             durations = [tp[0], tp[-1]+(tp[-1]-tp[0])] # whole interval - generously extending end
         else:
-            try: durations = pd.date_range(tp[0]-pd.Timedelta(1, freq_duration), tp[-1]+pd.Timedelta(1, freq_duration), freq = freq_duration)
-            except: durations = pd.date_range(tp[0]-pd.Timedelta(freq_duration), tp[-1]+pd.Timedelta(freq_duration), freq = freq_duration)    
+            try: durations = pd.date_range(tp[0]-pd.Timedelta(1, freq_duration), tp[-1]+pd.Timedelta(1, freq_duration), freq = freq_duration, tz = timegrid.tz)
+            except: durations = pd.date_range(tp[0]-pd.Timedelta(freq_duration), tp[-1]+pd.Timedelta(freq_duration), freq = freq_duration, tz = timegrid.tz)    
         # gave a bit space in case date ranges do not have the same start - deleting now superfluous (early) start
         if periods[1] <= tp[0]: periods = periods.drop(periods[0])
         if durations[1] <= tp[0]: durations = durations.drop(durations[0])
