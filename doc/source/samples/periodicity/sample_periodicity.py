@@ -30,7 +30,7 @@ timegrid    = eao.assets.Timegrid(start = Start, end = End, freq = freq, main_ti
 node_power  = eao.assets.Node('power', commodity= 'power', unit = eao.assets.Unit('MWh', 'MW'))
 node_co2    = eao.assets.Node('co2', commodity= 'co2', unit = eao.assets.Unit('t', 't/h'))
 
-periodicity_period   = None
+periodicity_period   = 'd'
 periodicity_duration = None
 
 ###############################################   import data
@@ -68,7 +68,7 @@ load_profile     = {'start': df_profiles.index.values, 'values': -df_profiles.To
 max_load = -1.1*load_profile['values'].min()
 
 res_vals = []
-limits   = [0.9*8e6]
+limits   = [0.9*8e+06]
 emissions = []
 co2_prices = []
 for mylimit in limits:
@@ -94,7 +94,7 @@ for mylimit in limits:
                             nodes= node_co2, periodicity = periodicity_period, periodicity_duration = periodicity_duration,
                             max_take = max_co2)
     store = eao.assets.Storage(name = 'storage', nodes = node_power, cap_in=max_load/10., cap_out=max_load/10., size = max_load/10.*10.,
-                               block_size = 'w', periodicity = periodicity_period, periodicity_duration = periodicity_duration)
+                               block_size = 'w')#, periodicity = periodicity_period, periodicity_duration = periodicity_duration)
     #### add complexity
     ass = []
     for ii in range(0,10):

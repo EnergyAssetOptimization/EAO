@@ -162,7 +162,7 @@ class OptimProblem:
                                 #### if given, A (b and cType refer to restrictions)
                                 # need to add up A elements for vars to be deleted in A elements for leading var
                                 if self.A is not None:
-                                    self.A = self.A.tocsr()
+                                    self.A = self.A.tolil()
                                     self.A[:,leading] += self.A[:,out].sum(axis = 1)
                                 # Adjust mapping. 
                                 assert all(self.mapping.loc[II, 'disp_factor'] == self.mapping.loc[II, 'disp_factor'].iloc[0]), 'periodicity cannot be imposed where disp factors are not identical'
