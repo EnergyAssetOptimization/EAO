@@ -1,3 +1,4 @@
+from os import startfile
 import numpy as np
 import pandas as pd
 import datetime as dt
@@ -25,11 +26,11 @@ file_xx       = join(mypath, 'xx')
 
 
 ###############################################   create helpers 
-timegrid = eao.assets.Timegrid(start = Start, end = End, freq = freq, main_time_unit= 'h')
-node_power  = eao.assets.Node('client', commodity= 'power', unit = eao.assets.Unit('MWh', 'MW',  1.))
+timegrid    = eao.assets.Timegrid(start = Start, end = End, freq = freq, main_time_unit= 'h')
+node_power  = eao.assets.Node('power', commodity= 'power', unit = eao.assets.Unit('MWh', 'MW'))
+node_co2    = eao.assets.Node('co2', commodity= 'co2', unit = eao.assets.Unit('t', 't/h'))
 
-
-periodicity_period   = 'd'
+periodicity_period   = None
 periodicity_duration = None
 
 ###############################################   import data
@@ -58,61 +59,77 @@ df_profiles.ffill(inplace = True)
 prices =  {'start': df_prices.index.values, 'values': df_prices.SpotPriceEUR.values}
 prices =  {'spot': timegrid.values_to_grid(prices)}
 
-############################################## without periodicity
+############################################## data preparation
 pv_profile       = {'start': df_profiles.index.values, 'values': df_profiles.SolarPower.values}
 onshore_profile  = {'start': df_profiles.index.values, 'values': df_profiles.OnshoreWindPower.values}
 offshore_profile = {'start': df_profiles.index.values, 'values': df_profiles.OffshoreWindPower.values}
 load_profile     = {'start': df_profiles.index.values, 'values': -df_profiles.TotalLoad.values}
 
-pvshore   = eao.assets.Contract(name = 'pv', min_cap = 0., max_cap= pv_profile, nodes = node_power)
-onshore   = eao.assets.Contract(name = 'onshore', min_cap = 0., max_cap= onshore_profile, nodes = node_power)
-offshore  = eao.assets.Contract(name = 'offshore', min_cap = 0., max_cap= offshore_profile, nodes = node_power)
-load      = eao.assets.Contract(name = 'load', min_cap= load_profile, max_cap= load_profile, nodes = node_power)
-
 max_load = -1.1*load_profile['values'].min()
-gas  = eao.assets.SimpleContract(name = 'gas',  extra_costs= 100, min_cap = 0, max_cap = max_load, nodes= node_power)
-coal = eao.assets.SimpleContract(name = 'coal', extra_costs= 50,  min_cap = 0, max_cap = max_load, nodes= node_power)
 
-portf_wo_per = eao.portfolio.Portfolio([load, onshore, offshore,  gas, coal])
-print('.. set up full problem')
-perf = time.perf_counter()
-op_wo_per  = portf_wo_per.setup_optim_problem(prices, timegrid)
-print('  duration '+'{:0.1f}'.format(time.perf_counter()-perf)+'s')
-print('.. optimize full problem')
-perf = time.perf_counter()
-res_wo_per = op_wo_per.optimize()
-print('  duration '+'{:0.1f}'.format(time.perf_counter()-perf)+'s')
-out_wo_per = eao.io.extract_output(portf_wo_per, op_wo_per, res_wo_per, prices)
-del op_wo_per
+res_vals = []
+limits   = [0.9*8e6]
+emissions = []
+co2_prices = []
+for mylimit in limits:
 
-############################################## with periodicity
-pvshore    = eao.assets.Contract(name = 'pv', min_cap = 0., max_cap= pv_profile, nodes = node_power, periodicity = periodicity_period, periodicity_duration = periodicity_duration)
-onshore    = eao.assets.Contract(name = 'onshore', min_cap = 0., max_cap= onshore_profile, nodes = node_power, periodicity = periodicity_period, periodicity_duration = periodicity_duration)
-offshore   = eao.assets.Contract(name = 'offshore', min_cap = 0., max_cap= offshore_profile, nodes = node_power, periodicity = periodicity_period, periodicity_duration = periodicity_duration)
-load       = eao.assets.Contract(name = 'load', min_cap= load_profile, max_cap= load_profile, nodes = node_power, periodicity = periodicity_period, periodicity_duration = periodicity_duration)
-gas  = eao.assets.SimpleContract(name = 'gas',  extra_costs= 100, min_cap = 0, max_cap = max_load, nodes= node_power, periodicity = periodicity_period, periodicity_duration = periodicity_duration)
-coal = eao.assets.SimpleContract(name = 'coal', extra_costs= 50,  min_cap = 0, max_cap = max_load, nodes= node_power, periodicity = periodicity_period, periodicity_duration = periodicity_duration)
+    # CO2 limit
+    max_co2 = {'start': Start,
+            'end'  : End,
+            'values':mylimit}
 
-portf = eao.portfolio.Portfolio([load, onshore, offshore,  gas, coal])
-print('.. set up simplified periodic problem')
-perf = time.perf_counter()
-op  = portf.setup_optim_problem(prices, timegrid)
-print('  duration '+'{:0.1f}'.format(time.perf_counter()-perf)+'s')
-print('.. optimize simplified periodic problem')
-perf = time.perf_counter()
-res = op.optimize()
-print('  duration '+'{:0.1f}'.format(time.perf_counter()-perf)+'s')
-out = eao.io.extract_output(portf, op, res, prices)
-import matplotlib.pyplot as plt
-# %matplotlib inline
-d1 = out['dispatch']
-d2 = out_wo_per['dispatch']
+    ############################################## assets
+    pvshore    = eao.assets.Contract(name = 'pv', min_cap = 0., max_cap= pv_profile, nodes = node_power, periodicity = periodicity_period, periodicity_duration = periodicity_duration)
+    onshore    = eao.assets.Contract(name = 'onshore', min_cap = 0., max_cap= onshore_profile, nodes = node_power, periodicity = periodicity_period, periodicity_duration = periodicity_duration)
+    offshore   = eao.assets.Contract(name = 'offshore', min_cap = 0., max_cap= offshore_profile, nodes = node_power, periodicity = periodicity_period, periodicity_duration = periodicity_duration)
+    load       = eao.assets.Contract(name = 'load', min_cap= load_profile, max_cap= load_profile, nodes = node_power, periodicity = periodicity_period, periodicity_duration = periodicity_duration)
 
-# fig, ax = plt.subplots(1,1, tight_layout = True, figsize=(12,4))
-# d1['load'].plot(ax = ax, style = '-', label = 'periodic')
-# d2['load'].plot(ax = ax, style = '-', label = 'actual')
+    gas  = eao.assets.MultiCommodityContract(name = 'gas',  extra_costs= 100, min_cap = 0, max_cap = max_load, nodes= [node_power, node_co2], 
+                                            periodicity = periodicity_period, periodicity_duration = periodicity_duration,
+                                            factors_commodities=[1, -0.5])
+    coal  = eao.assets.MultiCommodityContract(name = 'coal',  extra_costs= 50, min_cap = 0, max_cap = max_load, nodes= [node_power, node_co2], 
+                                            periodicity = periodicity_period, periodicity_duration = periodicity_duration,
+                                            factors_commodities=[1, -0.85])
+    co2 = eao.assets.Contract(name = 'co2_supply', extra_costs= 0,  min_cap = -max_load*10, max_cap = max_load*10,
+                            nodes= node_co2, periodicity = periodicity_period, periodicity_duration = periodicity_duration,
+                            max_take = max_co2)
+    store = eao.assets.Storage(name = 'storage', nodes = node_power, cap_in=max_load/10., cap_out=max_load/10., size = max_load/10.*10.,
+                               block_size = 'w', periodicity = periodicity_period, periodicity_duration = periodicity_duration)
+    #### add complexity
+    ass = []
+    for ii in range(0,10):
+        ass.append(   eao.assets.MultiCommodityContract(name = 'gas'+str(ii),  extra_costs= 100, min_cap = 0, max_cap = max_load, nodes= [node_power, node_co2], 
+                                            periodicity = periodicity_period, periodicity_duration = periodicity_duration,
+                                            factors_commodities=[1, -0.5*np.random.rand()-0.2])
+                   )
 
-# ax.legend()
-# ax.set_title('Comparison: Actual load and weekly periodicity')
-# plt.show()
-# pass
+
+    portf = eao.portfolio.Portfolio([load, onshore, offshore,  gas, coal, co2, store]+ass)
+    print('.. set up  problem')
+    perf = time.perf_counter()
+    op  = portf.setup_optim_problem(prices, timegrid)
+    print('  duration '+'{:0.1f}'.format(time.perf_counter()-perf)+'s')
+    print('.. optimize problem')
+    perf = time.perf_counter()
+    res = op.optimize()
+    print('  duration '+'{:0.1f}'.format(time.perf_counter()-perf)+'s')
+    out = eao.io.extract_output(portf, op, res, prices)
+    import matplotlib.pyplot as plt
+    # %matplotlib inline
+    d1 = out['dispatch']
+    pass
+    print(out['dispatch'].sum())
+    print(out['prices'].mean())
+    #print(res.duals['U'])
+    print(res.value)
+    # fig, ax = plt.subplots(1,1, tight_layout = True, figsize=(12,4))
+    # d1['load'].plot(ax = ax, style = '-', label = 'periodic')
+    # d2['load'].plot(ax = ax, style = '-', label = 'actual')
+
+    # ax.legend()
+    # ax.set_title('Comparison: Actual load and weekly periodicity')
+    # plt.show()
+    # pass
+    res_vals.append(res.value)
+    co2_prices.append(out['prices']['nodal price: co2'].mean())
+    emissions.append(out['dispatch']['co2_supply (co2)'].sum())
