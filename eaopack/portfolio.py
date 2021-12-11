@@ -132,7 +132,7 @@ class Portfolio:
         mapping['nodal_restr'] = None
 
         def create_nodal_restr(nodes, map_nodes, map_types, map_idx, map_dispf, map_times, timegrid_I, skip_nodes, n_vars):
-            """ Specific function creating nodal restrictions - moved out of main function to be able to increase speed """
+            """ Specific function creating nodal restrictions """
             map_nodal_restr = np.zeros(map_idx.shape[0])
             n_nodal_restr = 0
             cols = np.zeros(0)
