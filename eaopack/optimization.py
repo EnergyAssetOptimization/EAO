@@ -20,6 +20,7 @@ class Results:
         self.duals = duals
 
 class OptimProblem:
+
     def __init__(self, 
                  c: np.array, 
                  l:np.array, 
@@ -138,36 +139,37 @@ class OptimProblem:
         all_out = [] # collect all vars to remove
         for myasset in self.mapping['asset'].unique():
             for mynode in self.mapping['node'].unique():
-                for myvar in list(self.mapping['var_name'].unique()):
-                    I = (self.mapping['asset'] == myasset)&(self.mapping['node'] == mynode)&(self.mapping['var_name'] == myvar)
-                    # loop through durations
-                    for dur in self.mapping.loc[I].dur.unique():
-                        # loop through period steps
-                        for sub_per in self.mapping.loc[I & (self.mapping['dur'] == dur)].sub_per.unique():
-                            II = I & (self.mapping['dur'] == dur) & (self.mapping['sub_per'] == sub_per)
-                            if II.sum() <= 1:
-                                pass ##  Nothing to do. There is only one variable
-                            else:
-                                vars    = self.mapping.index[II] # variables to be joined
-                                leading = vars[0]       # this one to remain
-                                out     = vars[1:]
-                                all_out +=out.to_list()
-                                # shrink optimization problem
-                                ####  u, l, c
-                                # bounds should ideally be equal anyhow. here choose average
-                                self.l[leading] = self.l[vars].mean()
-                                self.u[leading] = self.u[vars].mean()
-                                # leading variable takes joint role - thus summing up costs
-                                self.c[leading] = self.c[vars].sum()
-                                #### if given, A (b and cType refer to restrictions)
-                                # need to add up A elements for vars to be deleted in A elements for leading var
-                                if self.A is not None:
-                                    self.A = self.A.tolil()
-                                    self.A[:,leading] += self.A[:,out].sum(axis = 1)
-                                # Adjust mapping. 
-                                assert all(self.mapping.loc[II, 'disp_factor'] == self.mapping.loc[II, 'disp_factor'].iloc[0]), 'periodicity cannot be imposed where disp factors are not identical'
-                                idx[out] = leading
-                                self.mapping.loc[out, 'new_idx'] = leading
+                for mytype in self.mapping['type'].unique():
+                    for myvar in list(self.mapping['var_name'].unique()):
+                        I = (self.mapping['asset'] == myasset)&(self.mapping['node'] == mynode)&(self.mapping['var_name'] == myvar)&(self.mapping['type'] == mytype)
+                        # loop through durations
+                        for dur in self.mapping.loc[I].dur.unique():
+                            # loop through period steps
+                            for sub_per in self.mapping.loc[I & (self.mapping['dur'] == dur)].sub_per.unique():
+                                II = I & (self.mapping['dur'] == dur) & (self.mapping['sub_per'] == sub_per)
+                                if II.sum() <= 1:
+                                    pass ##  Nothing to do. There is only one variable
+                                else:
+                                    vars    = self.mapping.index[II] # variables to be joined
+                                    leading = vars[0]       # this one to remain
+                                    out     = vars[1:]
+                                    all_out +=out.to_list()
+                                    # shrink optimization problem
+                                    ####  u, l, c
+                                    # bounds should ideally be equal anyhow. here choose average
+                                    self.l[leading] = self.l[vars].mean()
+                                    self.u[leading] = self.u[vars].mean()
+                                    # leading variable takes joint role - thus summing up costs
+                                    self.c[leading] = self.c[vars].sum()
+                                    #### if given, A (b and cType refer to restrictions)
+                                    # need to add up A elements for vars to be deleted in A elements for leading var
+                                    if self.A is not None:
+                                        self.A = self.A.tolil()
+                                        self.A[:,leading] += self.A[:,out].sum(axis = 1)
+                                    # Adjust mapping. 
+                                    assert all(self.mapping.loc[II, 'disp_factor'] == self.mapping.loc[II, 'disp_factor'].iloc[0]), 'periodicity cannot be imposed where disp factors are not identical'
+                                    idx[out] = leading
+                                    self.mapping.loc[out, 'new_idx'] = leading
 
         self.l = np.delete(self.l,all_out)
         self.u = np.delete(self.u,all_out)                                
@@ -179,14 +181,6 @@ class OptimProblem:
         self.mapping.drop(columns = ['dur','per','sub_per'], inplace = True)
         self.mapping.set_index('new_idx', inplace = True)
 
-        # index (i.e. enumeration of vars) needs to be redone
-        # #idx = np.sort(idx)
-        # new_idx = 999999*np.ones(len(idx))
-        # for ii, xx in np.ndenumerate(np.unique(idx)):
-        #     new_idx[idx==xx] = ii
-        # assert (not any(new_idx==999999)), 'Error in making optim prob periodic'
-        # self.mapping.index = new_idx
-        # self.mapping.index = self.mapping.index.astype(int)
 
     def optimize(self, target = 'value',
                        samples = None,

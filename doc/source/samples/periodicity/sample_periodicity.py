@@ -30,8 +30,8 @@ timegrid    = eao.assets.Timegrid(start = Start, end = End, freq = freq, main_ti
 node_power  = eao.assets.Node('power', commodity= 'power', unit = eao.assets.Unit('MWh', 'MW'))
 node_co2    = eao.assets.Node('co2', commodity= 'co2', unit = eao.assets.Unit('t', 't/h'))
 
-periodicity_period   = None
-periodicity_duration = None
+periodicity_period   = 'd'
+periodicity_duration = '4w'
 
 ###############################################   import data
 df_profiles = pd.read_csv(file_profiles)
@@ -109,19 +109,18 @@ op  = portf.setup_optim_problem(prices, timegrid)
 print('  duration '+'{:0.1f}'.format(time.perf_counter()-perf)+'s')
 print('.. optimize problem')
 perf = time.perf_counter()
-#res = op.optimize()
-#print('  duration '+'{:0.1f}'.format(time.perf_counter()-perf)+'s')
-#out = eao.io.extract_output(portf, op, res, prices)
+res = op.optimize()
+print('  duration '+'{:0.1f}'.format(time.perf_counter()-perf)+'s')
+out = eao.io.extract_output(portf, op, res, prices)
 
 
 # import matplotlib.pyplot as plt
 # # %matplotlib inline
 # d1 = out['dispatch']
 # pass
-# print(out['dispatch'].sum())
-# print(out['prices'].mean())
-# #print(res.duals['U'])
-# print(res.value)
+print(out['dispatch'].sum())
+print(out['prices'].mean())
+print(res.value)
 # # fig, ax = plt.subplots(1,1, tight_layout = True, figsize=(12,4))
 # # d1['load'].plot(ax = ax, style = '-', label = 'periodic')
 # # d2['load'].plot(ax = ax, style = '-', label = 'actual')
@@ -134,10 +133,3 @@ perf = time.perf_counter()
 # co2_prices.append(out['prices']['nodal price: co2'].mean())
 # emissions.append(out['dispatch']['co2_supply (co2)'].sum())
 
-# with open('profiling_stats.txt', 'w') as stream:
-#     stats = Stats(pr, stream=stream)
-#     stats.strip_dirs()
-#     stats.sort_stats('time')
-#     stats.dump_stats('.prof_stats')
-#     stats.print_stats()
-# pass
