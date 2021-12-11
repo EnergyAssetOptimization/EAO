@@ -25,3 +25,4 @@ tests/htmlcov
 test_XXX.xlsx
 xxx.csv
 .~lock.test_XXX.xlsx#
+*_stats.txt

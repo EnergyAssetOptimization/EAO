@@ -20,6 +20,7 @@ class Results:
         self.duals = duals
 
 class OptimProblem:
+
     def __init__(self, 
                  c: np.array, 
                  l:np.array, 
@@ -27,7 +28,11 @@ class OptimProblem:
                  A:np.array = None, 
                  b:np.array = None, 
                  cType:str = None ,
-                 mapping:pd.DataFrame = None):
+                 mapping:pd.DataFrame = None,
+                 timegrid:Timegrid = None,  # needed if periodic
+                 periodic_period_length:str = None,
+                 periodic_duration:str = None
+                 ):
         """ Formulated optimization problem. LP problem.
 
         Args:
@@ -41,6 +46,11 @@ class OptimProblem:
                                                          sum of dispatch at node zero: N
                                                       Optional. Defaults to None (no restrictions given)
             mapping (pd.DataFrame): Mapping of variables to 'asset', 'node', 'type' ('d' - dispatch and 'i' internal variable) and 'time_step' 
+
+            --- if periodic
+            timegrid (Timegrid)          : timegrid underneath optim problem (defaults to None)
+            periodic_period_length (str) : pandas freq defining the period length (defaults to None)
+            periodic_duration (str)      : pandas freq defining the duration of intervals in which periods are repeated (defaults to None - then duration is inf)
         """
         self.c     = c     # cost vector
         self.l     = l     # lower bound
@@ -54,6 +64,123 @@ class OptimProblem:
         assert not np.isnan(l.sum()), 'nan value in optim problem. Check input data -- l'
         assert not np.isnan(u.sum()), 'nan value in optim problem. Check input data -- u'
         if not b is None: assert not np.isnan(b.sum()), 'nan value in optim problem. Check input data -- b'
+
+        # make periodic
+        if periodic_period_length is not None:
+            assert timegrid is not None, 'for periodic optim problem need timegrid'
+            self.__make_periodic__(freq_period = periodic_period_length , freq_duration = periodic_duration, timegrid = timegrid)
+
+    def __make_periodic__(self, freq_period:str, freq_duration:str, timegrid:Timegrid):
+        """ Make the optimization problem periodic main purpose is to save resources when optimizing 
+            granular problems over a long time -- e.g. a year with hourly resolution -- where the
+            finer resolution shows periodic behaviour -- e.g. typical load profiles over the day
+
+            The routine is typically called during init of optim problem
+
+        Args:
+            freq_period (str): [description]
+            freq_duration (str): [description]
+        """
+
+        # (1)  create mapping of timegrid to periodicity intervals #################################
+        #      We create a numbering 0, 1, ... for each period
+        #      and identify duration intervals. In case there's an overlap between periods and durations
+        #      periods are leading. However - best choice are frequencies that don't create this problem
+
+        # disp factor column needed to assign same dispatch to all related time steps
+        if 'disp_factor' not in self.mapping.columns: self.mapping['disp_factor'] = 1.
+        self.mapping['disp_factor'].fillna(1., inplace = True) # ensure there's a one where not assigned yet
+        tp = timegrid.timepoints
+        T  = timegrid.T
+        try: periods = pd.date_range(tp[0]-pd.Timedelta(1, freq_period),    tp[-1]+pd.Timedelta(1, freq_period), freq = freq_period, tz = timegrid.tz)
+        except: periods = pd.date_range(tp[0]-pd.Timedelta(freq_period), tp[-1]+pd.Timedelta(freq_period),    freq = freq_period, tz = timegrid.tz)
+        if freq_duration is None:
+            durations = [tp[0], tp[-1]+(tp[-1]-tp[0])] # whole interval - generously extending end
+        else:
+            try: durations = pd.date_range(tp[0]-pd.Timedelta(1, freq_duration), tp[-1]+pd.Timedelta(1, freq_duration), freq = freq_duration, tz = timegrid.tz)
+            except: durations = pd.date_range(tp[0]-pd.Timedelta(freq_duration), tp[-1]+pd.Timedelta(freq_duration), freq = freq_duration, tz = timegrid.tz)    
+        # gave a bit space in case date ranges do not have the same start - deleting now superfluous (early) start
+        if periods[1] <= tp[0]: periods = periods.drop(periods[0])
+        if durations[1] <= tp[0]: durations = durations.drop(durations[0])
+        # assertions - ensure that all periods are of same length
+        d = periods[1:]-periods[0:-1]
+        assert all(d==d[0]), 'Error. All periods must have same length. Not given for chosen frequency '+periods
+        ### create df that assigns periods and duration intervals to all tp's
+        df = pd.DataFrame(index = timegrid.I)
+        df['dur']     = np.nan
+        df['per']     = np.nan
+        df['sub_per'] = np.nan
+        i_dur = 0
+        i_per = 0
+        i_sub_per = 0
+        df['dur'].iloc[0] = 0
+        df['per'].iloc[0] = 0
+        for i in range(0,T):
+            if tp[i] >= durations[i_dur]: 
+                i_dur +=1
+                df['dur'].iloc[i] = int(i_dur)
+            if tp[i] >= periods[i_per]: 
+                i_per +=1
+                df['per'].iloc[i] = int(i_per)
+                i_sub_per = 0
+            df['sub_per'].iloc[i] = int(i_sub_per)
+            i_sub_per += 1
+                
+        df.ffill(inplace = True)
+        df['per']     = df['per'].astype(int)
+        df['dur']     = df['dur'].astype(int)
+        df['sub_per'] = df['sub_per'].astype(int)
+
+        self.mapping = pd.merge(self.mapping, df, left_on = 'time_step', right_index = True, how = 'left')
+        self.mapping['new_idx'] = self.mapping.index
+        idx = np.asarray(self.mapping.index).copy() # get mapping index to change it later on
+        # (2)  loop through each variable-group and group together all #################################
+        #      elements that belong to the same period item
+        all_out = [] # collect all vars to remove
+        for myasset in self.mapping['asset'].unique():
+            for mynode in self.mapping['node'].unique():
+                for mytype in self.mapping['type'].unique():
+                    for myvar in list(self.mapping['var_name'].unique()):
+                        I = (self.mapping['asset'] == myasset)&(self.mapping['node'] == mynode)&(self.mapping['var_name'] == myvar)&(self.mapping['type'] == mytype)
+                        # loop through durations
+                        for dur in self.mapping.loc[I].dur.unique():
+                            # loop through period steps
+                            for sub_per in self.mapping.loc[I & (self.mapping['dur'] == dur)].sub_per.unique():
+                                II = I & (self.mapping['dur'] == dur) & (self.mapping['sub_per'] == sub_per)
+                                if II.sum() <= 1:
+                                    pass ##  Nothing to do. There is only one variable
+                                else:
+                                    vars    = self.mapping.index[II] # variables to be joined
+                                    leading = vars[0]       # this one to remain
+                                    out     = vars[1:]
+                                    all_out +=out.to_list()
+                                    # shrink optimization problem
+                                    ####  u, l, c
+                                    # bounds should ideally be equal anyhow. here choose average
+                                    self.l[leading] = self.l[vars].mean()
+                                    self.u[leading] = self.u[vars].mean()
+                                    # leading variable takes joint role - thus summing up costs
+                                    self.c[leading] = self.c[vars].sum()
+                                    #### if given, A (b and cType refer to restrictions)
+                                    # need to add up A elements for vars to be deleted in A elements for leading var
+                                    if self.A is not None:
+                                        self.A = self.A.tolil()
+                                        self.A[:,leading] += self.A[:,out].sum(axis = 1)
+                                    # Adjust mapping. 
+                                    assert all(self.mapping.loc[II, 'disp_factor'] == self.mapping.loc[II, 'disp_factor'].iloc[0]), 'periodicity cannot be imposed where disp factors are not identical'
+                                    idx[out] = leading
+                                    self.mapping.loc[out, 'new_idx'] = leading
+
+        self.l = np.delete(self.l,all_out)
+        self.u = np.delete(self.u,all_out)                                
+        self.c = np.delete(self.c,all_out)
+        if self.A is not None:
+            my_idx = self.mapping.index.unique() # full index
+            my_idx = np.delete(my_idx, all_out)
+            self.A = self.A[:,my_idx]
+        self.mapping.drop(columns = ['dur','per','sub_per'], inplace = True)
+        self.mapping.set_index('new_idx', inplace = True)
+
 
     def optimize(self, target = 'value',
                        samples = None,
@@ -176,8 +303,8 @@ class OptimProblem:
                 prob.solve() # no rel_tol parameter here
             else:
                 prob.solve(solver = getattr(CVX, solver)) 
-#                if isMIP: solver = 'GLPK_MI'
-#                else:     solver = 'ECOS'
+                #                if isMIP: solver = 'GLPK_MI'
+                #                else:     solver = 'ECOS'
                 
 
             if prob.status == 'optimal':
@@ -207,3 +334,5 @@ class OptimProblem:
             raise NotImplementedError('Solver - '+str(solver)+ ' -not implemented')
 
         return results
+
+
