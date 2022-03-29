@@ -35,6 +35,15 @@ class Portfolio:
                 if n.name not in self.nodes:
                     self.nodes[n.name] = n
         # some consistency checks
+        asset_names = set(self.asset_names)
+        duplicate_names = set()
+        for k in self.asset_names:
+            if k not in asset_names:
+                duplicate_names.add(k)
+            else:
+                asset_names.remove(k)
+        if len(duplicate_names) > 0:
+            raise Exception( 'Asset names in portfolio must be unique, but the following names are duplicated: ' + str(duplicate_names))
         assert (len(self.asset_names) == len(set(self.asset_names))), 'Asset names in portfolio must be unique'
         self.assets = assets
 
