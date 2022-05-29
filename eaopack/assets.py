@@ -1006,6 +1006,217 @@ class Contract(SimpleContract):
         return op
 
 
+class CHPContract(Contract):
+    def __init__(self,
+                 name: str = 'default_name_contract',
+                 nodes: Union[Node, List[Node]] = [Node(name = 'default_node_1'), Node(name = 'default_node_2')],
+                 start: dt.datetime = None,
+                 end:   dt.datetime = None,
+                 wacc: float = 0,
+                 price:str = None,
+                 extra_costs:float = 0.,
+                 min_cap: Union[float, Dict] = 0.,
+                 max_cap: Union[float, Dict] = 0.,
+                 min_take:Union[float, List[float], Dict] = None,
+                 max_take:Union[float, List[float], Dict] = None,
+                 freq: str = None,
+                 profile: pd.Series = None,
+                 periodicity: str = None,
+                 periodicity_duration: str = None,
+                 alpha: float = 1.,
+                 beta: float = 1.,
+                 ramp: float = 1.,
+                 start_costs: float = 0.,
+                 running_costs: float = 0.,
+                 min_runtime: int = 0,
+                 ):
+        """ Contract: buy or sell (consume/produce) given price and limited capacity in/out
+            Restrictions
+            - time dependent capacity restrictions
+            - MinTake & MaxTake for a list of periods
+            Examples
+            - with min_cap = max_cap and a detailed time series, implement must run RES assets such as wind
+            - with MinTake & MaxTake, implement structured gas contracts
+        Args:
+            name (str): Unique name of the asset                                              (asset parameter)
+            node (Node): Node, the constract is located in                                    (asset parameter)
+            start (dt.datetime) : start of asset being active. defaults to none (-> timegrid start relevant)
+            end (dt.datetime)   : end of asset being active. defaults to none (-> timegrid start relevant)
+            timegrid (Timegrid): Timegrid for discretization                                  (asset parameter)
+            wacc (float): Weighted average cost of capital to discount cash flows in target   (asset parameter)
+            freq (str, optional):   Frequency for optimization - in case different from portfolio (defaults to None, using portfolio's freq)
+                                    The more granular frequency of portf & asset is used
+            profile (pd.Series, optional):  If freq(asset) > freq(portf) assuming this profile for granular dispatch (e.g. scaling hourly profile to week).
+                                            Defaults to None, only relevant if freq is not none
+
+            min_cap (float) : Minimum flow/capacity for buying (negative) or selling (positive). Defaults to 0
+            max_cap (float) : Maximum flow/capacity for selling (positive). Defaults to 0
+            min_take (float) : Minimum volume within given period. Defaults to None
+            max_take (float) : Maximum volume within given period. Defaults to None
+                              float: constant value
+                              dict:  dict['start'] = np.array
+                                     dict['end']   = np.array
+                                     dict['value'] = np.array
+            price (str): Name of price vector for buying / selling
+            extra_costs (float, optional): extra costs added to price vector (in or out). Defaults to 0.
+
+            periodicity (str, pd freq style): Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)
+            periodicity_duration (str, pd freq style): Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)
+
+        """
+        super(CHPContract, self).__init__(name=name,
+                                          nodes=nodes,
+                                          start=start,
+                                          end=end,
+                                          wacc=wacc,
+                                          freq=freq,
+                                          profile=profile,
+                                          price=price,
+                                          extra_costs=extra_costs,
+                                          min_cap=min_cap,
+                                          max_cap=max_cap,
+                                          min_take=min_take,
+                                          max_take=max_take,
+                                          periodicity=periodicity,
+                                          periodicity_duration=periodicity_duration)
+        self.alpha = alpha
+        self.beta = beta
+        self.ramp = ramp
+        self.start_costs = start_costs
+        self.running_costs = running_costs
+        self.min_runtime = min_runtime
+
+    def setup_optim_problem(self, prices: dict, timegrid: Timegrid = None,
+                            costs_only: bool = False) -> OptimProblem:
+        """ Set up optimization problem for asset
+
+        Args:
+            prices (dict): Dictionary of price arrays needed by assets in portfolio
+            timegrid (Timegrid, optional): Discretization grid for asset. Defaults to None,
+                                           in which case it must have been set previously
+            costs_only (bool): Only create costs vector (speed up e.g. for sampling prices). Defaults to False
+
+        Returns:
+            OptimProblem: Optimization problem to be used by optimizer
+        """
+        op = super().setup_optim_problem(prices=prices, timegrid=timegrid, costs_only=costs_only)
+        n = len(op.l)
+
+        if op.A is None:
+            op.A = sp.lil_matrix((0, n))
+            op.cType = ''
+            op.b = np.zeros(0)
+
+        # Ramp constraints:
+        variables = op.mapping[["asset", "node", "var_name"]].drop_duplicates()
+        for i in range(len(variables)):
+            I_past = None
+            for t in range(timegrid.restricted.T):
+                I_curr = np.where((op.mapping["asset"] == variables.iloc[i]["asset"])
+                                  & (op.mapping["node"] == variables.iloc[i]["node"])
+                                  & (op.mapping["var_name"] == variables.iloc[i]["var_name"])
+                                  & (op.mapping["time_step"] == timegrid.restricted.I[t]))
+                if I_past and I_curr:
+                    a = sp.lil_matrix((1, n))
+                    a[0, I_curr] = 1
+                    a[0, I_past] = -1
+                    op.A = sp.vstack([op.A, a])
+                    op.cType += 'L'
+                    op.b = np.hstack([op.b, -self.ramp])
+                    op.A = sp.vstack([op.A, a])
+                    op.cType += 'U'
+                    op.b = np.hstack([op.b, self.ramp])
+                I_past = I_curr
+
+        # Divide each dispatch variable in power and heat:
+        new_map = pd.DataFrame()
+        for i, mynode in enumerate(self.nodes):
+            initial_map = op.mapping[op.mapping['type'] == 'd'].copy()
+            initial_map['node'] = mynode.name
+            new_map = pd.concat([new_map, initial_map.copy()])
+        op.mapping = new_map
+        op.A = sp.hstack([op.A, self.alpha * op.A])
+        op.c = np.hstack([op.c,  self.alpha * op.c])
+
+        # Add on variables
+        op.mapping['bool'] = False
+        map_bool = pd.DataFrame()
+        map_bool['time_step'] = self.timegrid.restricted.I
+        map_bool['node'] = np.nan
+        map_bool['asset'] = self.name
+        map_bool['type'] = 'i'  # internal
+        map_bool['bool'] = True
+        map_bool['var_name'] = 'bool_on'
+        op.mapping = pd.concat([op.mapping, map_bool])
+        op.mapping.reset_index(inplace=True, drop=True)  # need to reset index (which enumerates variables)
+        op.c = np.hstack([op.c, np.ones(len(map_bool)) * self. running_costs])
+
+        # Add start variables
+        map_bool['var_name'] = 'bool_start'
+        op.mapping = pd.concat([op.mapping, map_bool])
+        op.mapping.reset_index(inplace=True, drop=True)  # need to reset index (which enumerates variables)
+        op.c = np.hstack([op.c, np.ones(len(map_bool)) * self.start_costs])
+
+        # extend A for binary variables (not relevant in exist. restrictions)
+        op.A = sp.hstack((op.A, sp.lil_matrix((op.A.shape[0], len(map_bool)*2))))
+
+        # Upper and lower bounds:
+        myA = sp.lil_matrix((n, op.A.shape[1]))
+        for i in range(n):
+            myA[i, i] = 1
+            myA[i, n+i] = self.alpha
+            myA[i, 2 * n + i] = - op.l[i]
+        op.A = sp.vstack((op.A, myA))
+        op.cType += 'L'*n
+        op.b = np.hstack((op.b, np.zeros(n)))
+
+        myA = sp.lil_matrix((n, op.A.shape[1]))
+        for i in range(n):
+            myA[i, i] = 1
+            myA[i, n + i] = self.alpha
+            myA[i, 2 * n + i] = - op.u[i]
+        op.A = sp.vstack((op.A, myA))
+        op.cType += 'U' * n
+        op.b = np.hstack((op.b, np.zeros(n)))
+
+        # Start constraints:
+        myA = sp.lil_matrix((n-1, op.A.shape[1]))
+        for i in range(n-1):
+            myA[i, 2 * n + i + 1] = 1
+            myA[i, 2 * n + i] = - 1
+            myA[i, 2 * n + self.timegrid.restricted.T + i + 1] = 1
+        op.A = sp.vstack((op.A, myA))
+        op.cType += 'U' * (n - 1)
+        op.b = np.hstack((op.b, np.zeros(n-1)))
+
+        # Minimum runtime:
+        for t in range(self.timegrid.restricted.T):
+            for i in range(1, self.min_runtime):
+                if i > t:
+                    continue
+                print(t, i)
+                a = sp.lil_matrix((1, op.A.shape[1]))
+                a[0, 2 * n + t] = 1
+                a[0, 2 * n + self.timegrid.restricted.T + t - i] = -1
+                op.A = sp.vstack((op.A, a))
+                op.cType += 'L'
+                op.b = np.hstack((op.b, 0))
+
+        # Boundaries for the heat variable:
+        myA = sp.lil_matrix((n, op.A.shape[1]))
+        for i in range(n):
+            myA[i, n + i] = 1
+            myA[i, i] = - self.beta
+        op.A = sp.vstack((op.A, myA))
+        op.cType += 'U' * n
+        op.b = np.hstack((op.b, np.zeros(n)))
+
+        op.l = np.zeros(op.A.shape[1])
+        op.u = np.hstack((op.u, self.beta * op.u, np.ones(2 * self.timegrid.restricted.T)))
+
+        return op
+
+
 class MultiCommodityContract(Contract):
     """ Multi commodity contract class - implements a Contract that generates two or more commoditites at a time.
         The main idea is to implement a CHP generating unit that would generate power and heat at the same time.
