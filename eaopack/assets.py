@@ -1161,40 +1161,44 @@ class CHPContract(Contract):
         op.A = sp.hstack((op.A, sp.lil_matrix((op.A.shape[0], len(map_bool)*2))))
 
         # Upper and lower bounds:
-        myA = sp.lil_matrix((n, op.A.shape[1]))
+        A_lower_bounds = sp.lil_matrix((n, op.A.shape[1]))
+        A_upper_bounds = sp.lil_matrix((n, op.A.shape[1]))
         for i in range(n):
-            myA[i, i] = 1
-            myA[i, n+i] = self.alpha
-            myA[i, 2 * n + i] = - op.l[i]
-        op.A = sp.vstack((op.A, myA))
-        op.cType += 'L'*n
+            var = op.mapping.iloc[i]
+            on_variable = np.where((op.mapping["asset"] == var["asset"])
+                                   & (op.mapping["var_name"] == "bool_on")
+                                   & (op.mapping["time_step"] == var["time_step"]))
+
+            A_lower_bounds[i, i] = 1
+            A_lower_bounds[i, n + i] = self.alpha
+            A_lower_bounds[i, on_variable] = - op.l[i]
+
+            A_upper_bounds[i, i] = 1
+            A_upper_bounds[i, n + i] = self.alpha
+            A_upper_bounds[i, on_variable] = - op.u[i]
+        op.A = sp.vstack((op.A, A_lower_bounds))
+        op.cType += 'L' * n
         op.b = np.hstack((op.b, np.zeros(n)))
 
-        myA = sp.lil_matrix((n, op.A.shape[1]))
-        for i in range(n):
-            myA[i, i] = 1
-            myA[i, n + i] = self.alpha
-            myA[i, 2 * n + i] = - op.u[i]
-        op.A = sp.vstack((op.A, myA))
+        op.A = sp.vstack((op.A, A_upper_bounds))
         op.cType += 'U' * n
         op.b = np.hstack((op.b, np.zeros(n)))
 
         # Start constraints:
-        myA = sp.lil_matrix((n-1, op.A.shape[1]))
-        for i in range(n-1):
+        myA = sp.lil_matrix((self.timegrid.restricted.T-1, op.A.shape[1]))
+        for i in range(self.timegrid.restricted.T-1):
             myA[i, 2 * n + i + 1] = 1
             myA[i, 2 * n + i] = - 1
             myA[i, 2 * n + self.timegrid.restricted.T + i + 1] = 1
         op.A = sp.vstack((op.A, myA))
-        op.cType += 'U' * (n - 1)
-        op.b = np.hstack((op.b, np.zeros(n-1)))
+        op.cType += 'U' * (self.timegrid.restricted.T - 1)
+        op.b = np.hstack((op.b, np.zeros(self.timegrid.restricted.T-1)))
 
         # Minimum runtime:
         for t in range(self.timegrid.restricted.T):
             for i in range(1, self.min_runtime):
                 if i > t:
                     continue
-                print(t, i)
                 a = sp.lil_matrix((1, op.A.shape[1]))
                 a[0, 2 * n + t] = 1
                 a[0, 2 * n + self.timegrid.restricted.T + t - i] = -1
