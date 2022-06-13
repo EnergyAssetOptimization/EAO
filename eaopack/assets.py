@@ -1009,7 +1009,7 @@ class Contract(SimpleContract):
 class CHPContract(Contract):
     def __init__(self,
                  name: str = 'default_name_contract',
-                 nodes: Union[Node, List[Node]] = [Node(name = 'default_node_1'), Node(name = 'default_node_2')],
+                 nodes: List[Node] = [Node(name = 'default_node_power'), Node(name = 'default_node_heat')],
                  start: dt.datetime = None,
                  end:   dt.datetime = None,
                  wacc: float = 0,
@@ -1029,6 +1029,7 @@ class CHPContract(Contract):
                  start_costs: float = 0.,
                  running_costs: float = 0.,
                  min_runtime: int = 0,
+                 time_already_running: int = 0,
                  ):
         """ Contract: buy or sell (consume/produce) given price and limited capacity in/out
             Restrictions
@@ -1085,6 +1086,14 @@ class CHPContract(Contract):
         self.start_costs = start_costs
         self.running_costs = running_costs
         self.min_runtime = min_runtime
+        self.time_already_running = time_already_running
+
+        if len(nodes) != 2:
+            raise ValueError('Length of nodes has to be 2; one node for power and one node for heat. Asset: ' + self.name)
+
+        if not (np.all(min_cap >= 0.)) and (np.all(max_cap >= 0.)):
+            raise ValueError('min_cap and max_cap have to be greater or equal to 0. Asset: ' + self.name)
+
 
     def setup_optim_problem(self, prices: dict, timegrid: Timegrid = None,
                             costs_only: bool = False) -> OptimProblem:
@@ -1099,6 +1108,9 @@ class CHPContract(Contract):
         Returns:
             OptimProblem: Optimization problem to be used by optimizer
         """
+        if self.freq != timegrid.freq:
+            raise ValueError('Freq of asset' + self.name + ' is ' + str(self.freq) + ' which is unequal to freq ' + timegrid.freq + ' of timegrid.')
+
         op = super().setup_optim_problem(prices=prices, timegrid=timegrid, costs_only=costs_only)
         n = len(op.l)
 
@@ -1194,6 +1206,14 @@ class CHPContract(Contract):
         op.cType += 'U' * (self.timegrid.restricted.T - 1)
         op.b = np.hstack((op.b, np.zeros(self.timegrid.restricted.T-1)))
 
+        if self.time_already_running==0:
+            a = sp.lil_matrix((1, op.A.shape[1]))
+            a[0, 2*n] = 1
+            a[0, 2*n + self.timegrid.restricted.T] = -1
+            op.A = sp.vstack((op.A, a))
+            op.cType += 'U'
+            op.b = np.hstack((op.b, 0))
+
         # Minimum runtime:
         for t in range(self.timegrid.restricted.T):
             for i in range(1, self.min_runtime):
@@ -1218,6 +1238,9 @@ class CHPContract(Contract):
         op.l = np.zeros(op.A.shape[1])
         op.u = np.hstack((op.u, self.beta * op.u, np.ones(2 * self.timegrid.restricted.T)))
 
+        # Enforce minimum runtime if CHP already on
+        if self.time_already_running > 0 and self.min_runtime - self.time_already_running>0:
+            op.l[2*n:2*n+ self.min_runtime - self.time_already_running] = 1
         return op
 
 
