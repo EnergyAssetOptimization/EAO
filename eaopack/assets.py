@@ -1163,14 +1163,18 @@ class CHPContract(Contract):
         op.mapping.reset_index(inplace=True, drop=True)  # need to reset index (which enumerates variables)
         op.c = np.hstack([op.c, np.ones(len(map_bool)) * self. running_costs])
 
-        # Add start variables
-        map_bool['var_name'] = 'bool_start'
-        op.mapping = pd.concat([op.mapping, map_bool])
-        op.mapping.reset_index(inplace=True, drop=True)  # need to reset index (which enumerates variables)
-        op.c = np.hstack([op.c, np.ones(len(map_bool)) * self.start_costs])
+        # extend A for on variables (not relevant in exist. restrictions)
+        op.A = sp.hstack((op.A, sp.lil_matrix((op.A.shape[0], len(map_bool)))))
 
-        # extend A for binary variables (not relevant in exist. restrictions)
-        op.A = sp.hstack((op.A, sp.lil_matrix((op.A.shape[0], len(map_bool)*2))))
+        # Add start variables
+        if self.min_runtime>1 or self.start_costs!=0:
+            map_bool['var_name'] = 'bool_start'
+            op.mapping = pd.concat([op.mapping, map_bool])
+            op.mapping.reset_index(inplace=True, drop=True)  # need to reset index (which enumerates variables)
+            op.c = np.hstack([op.c, np.ones(len(map_bool)) * self.start_costs])
+
+            # extend A for start variables (not relevant in exist. restrictions)
+            op.A = sp.hstack((op.A, sp.lil_matrix((op.A.shape[0], len(map_bool)))))
 
         # Upper and lower bounds:
         A_lower_bounds = sp.lil_matrix((n, op.A.shape[1]))
@@ -1197,34 +1201,35 @@ class CHPContract(Contract):
         op.b = np.hstack((op.b, np.zeros(n)))
 
         # Start constraints:
-        myA = sp.lil_matrix((self.timegrid.restricted.T-1, op.A.shape[1]))
-        for i in range(self.timegrid.restricted.T-1):
-            myA[i, 2 * n + i + 1] = 1
-            myA[i, 2 * n + i] = - 1
-            myA[i, 2 * n + self.timegrid.restricted.T + i + 1] = 1
-        op.A = sp.vstack((op.A, myA))
-        op.cType += 'U' * (self.timegrid.restricted.T - 1)
-        op.b = np.hstack((op.b, np.zeros(self.timegrid.restricted.T-1)))
+        if self.min_runtime > 1 or self.start_costs != 0:
+            myA = sp.lil_matrix((self.timegrid.restricted.T-1, op.A.shape[1]))
+            for i in range(self.timegrid.restricted.T-1):
+                myA[i, 2 * n + i + 1] = 1
+                myA[i, 2 * n + i] = - 1
+                myA[i, 2 * n + self.timegrid.restricted.T + i + 1] = 1
+            op.A = sp.vstack((op.A, myA))
+            op.cType += 'U' * (self.timegrid.restricted.T - 1)
+            op.b = np.hstack((op.b, np.zeros(self.timegrid.restricted.T-1)))
 
-        if self.time_already_running==0:
-            a = sp.lil_matrix((1, op.A.shape[1]))
-            a[0, 2*n] = 1
-            a[0, 2*n + self.timegrid.restricted.T] = -1
-            op.A = sp.vstack((op.A, a))
-            op.cType += 'U'
-            op.b = np.hstack((op.b, 0))
-
-        # Minimum runtime:
-        for t in range(self.timegrid.restricted.T):
-            for i in range(1, self.min_runtime):
-                if i > t:
-                    continue
+            if self.time_already_running==0:
                 a = sp.lil_matrix((1, op.A.shape[1]))
-                a[0, 2 * n + t] = 1
-                a[0, 2 * n + self.timegrid.restricted.T + t - i] = -1
+                a[0, 2*n] = 1
+                a[0, 2*n + self.timegrid.restricted.T] = -1
                 op.A = sp.vstack((op.A, a))
-                op.cType += 'L'
+                op.cType += 'U'
                 op.b = np.hstack((op.b, 0))
+
+            # Minimum runtime:
+            for t in range(self.timegrid.restricted.T):
+                for i in range(1, self.min_runtime):
+                    if i > t:
+                        continue
+                    a = sp.lil_matrix((1, op.A.shape[1]))
+                    a[0, 2 * n + t] = 1
+                    a[0, 2 * n + self.timegrid.restricted.T + t - i] = -1
+                    op.A = sp.vstack((op.A, a))
+                    op.cType += 'L'
+                    op.b = np.hstack((op.b, 0))
 
         # Boundaries for the heat variable:
         myA = sp.lil_matrix((n, op.A.shape[1]))
