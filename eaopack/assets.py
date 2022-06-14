@@ -1252,7 +1252,7 @@ class CHPContract(Contract):
         op.b = np.hstack((op.b, np.zeros(n)))
 
         op.l = np.zeros(op.A.shape[1])
-        op.u = np.hstack((op.u, self.beta * op.u, np.ones(2 * self.timegrid.restricted.T)))
+        op.u = np.hstack((op.u, self.beta * op.u, np.ones(op.A.shape[1]-op.u.shape[0]*2)))
 
         # Enforce minimum runtime if CHP already on
         if self.time_already_running > 0 and self.min_runtime - self.time_already_running>0:
