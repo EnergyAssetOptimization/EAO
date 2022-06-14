@@ -1091,8 +1091,19 @@ class CHPContract(Contract):
         if len(nodes) != 2:
             raise ValueError('Length of nodes has to be 2; one node for power and one node for heat. Asset: ' + self.name)
 
-        if not (np.all(min_cap >= 0.)) and (np.all(max_cap >= 0.)):
-            raise ValueError('min_cap and max_cap have to be greater or equal to 0. Asset: ' + self.name)
+        if isinstance(self.min_cap, (float, int, np.ndarray)):
+            if not np.all(min_cap >= 0.):
+                raise ValueError('min_cap and has to be greater or equal to 0. Asset: ' + self.name)
+        else:
+            if not np.all(np.array(min_cap['values']) >= 0.):
+                raise ValueError('min_cap and has to be greater or equal to 0. Asset: ' + self.name)
+
+        if isinstance(self.max_cap, (float, int, np.ndarray)):
+            if not np.all(max_cap >= 0.):
+                raise ValueError('max_cap and has to be greater or equal to 0. Asset: ' + self.name)
+        else:
+            if not np.all(np.array(max_cap['values']) >= 0.):
+                raise ValueError('max_cap and has to be greater or equal to 0. Asset: ' + self.name)
 
 
     def setup_optim_problem(self, prices: dict, timegrid: Timegrid = None,
