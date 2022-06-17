@@ -1030,6 +1030,7 @@ class CHPContract(Contract):
                  running_costs: float = 0.,
                  min_runtime: int = 0,
                  time_already_running: int = 0,
+                 last_dispatch: Union[float, List[float]] = 0,
                  ):
         """ Contract: buy or sell (consume/produce) given price and limited capacity in/out
             Restrictions
@@ -1087,6 +1088,10 @@ class CHPContract(Contract):
         self.running_costs = running_costs
         self.min_runtime = min_runtime
         self.time_already_running = time_already_running
+        if isinstance(last_dispatch, List):
+            self.last_dispatch = last_dispatch[0] + alpha * last_dispatch[1]
+        else:
+            self.last_dispatch = last_dispatch
 
         if len(nodes) != 2:
             raise ValueError('Length of nodes has to be 2; one node for power and one node for heat. Asset: ' + self.name)
@@ -1151,6 +1156,16 @@ class CHPContract(Contract):
                     op.b = np.hstack([op.b, self.ramp])
                 I_past = I_curr
 
+        # Initial ramp constraint
+        a = sp.lil_matrix((1, n))
+        a[0, 0] = 1
+        op.A = sp.vstack([op.A, a])
+        op.cType += 'L'
+        op.b = np.hstack([op.b, -self.ramp + self.last_dispatch])
+        op.A = sp.vstack([op.A, a])
+        op.cType += 'U'
+        op.b = np.hstack([op.b, self.ramp + self.last_dispatch])
+
         # Divide each dispatch variable in power and heat:
         new_map = pd.DataFrame()
         for i, mynode in enumerate(self.nodes):
@@ -1187,7 +1202,7 @@ class CHPContract(Contract):
             # extend A for start variables (not relevant in exist. restrictions)
             op.A = sp.hstack((op.A, sp.lil_matrix((op.A.shape[0], len(map_bool)))))
 
-        # Upper and lower bounds:
+        # Minimum and maximum capacity:
         A_lower_bounds = sp.lil_matrix((n, op.A.shape[1]))
         A_upper_bounds = sp.lil_matrix((n, op.A.shape[1]))
         for i in range(n):
