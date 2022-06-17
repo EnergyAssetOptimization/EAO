@@ -1032,16 +1032,16 @@ class CHPContract(Contract):
                  time_already_running: int = 0,
                  last_dispatch: Union[float, List[float]] = 0,
                  ):
-        """ Contract: buy or sell (consume/produce) given price and limited capacity in/out
+        """ CHPContract: Generate heat and power
             Restrictions
             - time dependent capacity restrictions
             - MinTake & MaxTake for a list of periods
-            Examples
-            - with min_cap = max_cap and a detailed time series, implement must run RES assets such as wind
-            - with MinTake & MaxTake, implement structured gas contracts
+            - start costs
+            - minimum runtime
+            - ramps
         Args:
             name (str): Unique name of the asset                                              (asset parameter)
-            node (Node): Node, the constract is located in                                    (asset parameter)
+            nodes (Node): One node each for generated power and heat                          (asset parameter)
             start (dt.datetime) : start of asset being active. defaults to none (-> timegrid start relevant)
             end (dt.datetime)   : end of asset being active. defaults to none (-> timegrid start relevant)
             timegrid (Timegrid): Timegrid for discretization                                  (asset parameter)
@@ -1050,9 +1050,8 @@ class CHPContract(Contract):
                                     The more granular frequency of portf & asset is used
             profile (pd.Series, optional):  If freq(asset) > freq(portf) assuming this profile for granular dispatch (e.g. scaling hourly profile to week).
                                             Defaults to None, only relevant if freq is not none
-
-            min_cap (float) : Minimum flow/capacity for buying (negative) or selling (positive). Defaults to 0
-            max_cap (float) : Maximum flow/capacity for selling (positive). Defaults to 0
+            min_cap (float) : Minimum capacity for generating virtual dispatch (power + alpha * heat). Has to be greater or equal to 0. Defaults to 0.
+            max_cap (float) : Maximum capacity for generating virtual dispatch (power + alpha * heat). Has to be greater or equal to 0. Defaults to 0.
             min_take (float) : Minimum volume within given period. Defaults to None
             max_take (float) : Maximum volume within given period. Defaults to None
                               float: constant value
@@ -1061,10 +1060,17 @@ class CHPContract(Contract):
                                      dict['value'] = np.array
             price (str): Name of price vector for buying / selling
             extra_costs (float, optional): extra costs added to price vector (in or out). Defaults to 0.
-
             periodicity (str, pd freq style): Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)
             periodicity_duration (str, pd freq style): Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)
-
+            alpha (float): Conversion efficiency from heat to power. Defaults to 1.
+            beta (float): Defines upper bound for the heat dispatch as a percentage of the power dispatch. Defaults to 1.
+            ramp (float): Maximum increase/decrease of virtual dispatch (power + alpha * heat) in one timestep. Defaults to 1.
+            start_costs (float): Costs for starting. Defaults to 0.
+            running_costs (float): Costs when on. Defaults to 0.
+            min_runtime (int): Minimum runtime in frequency freq. Defaults to 0.
+            time_already_running (int): The number of timesteps the asset is already running in frequency freq. Defaults to 0.
+            last_dispatch (Union[float, List[float]]): List containing previous dispatch power and previous dispatch heat or
+                            float value containing dispatch power with assumed dispatch heat = 0. Defaults to 0.
         """
         super(CHPContract, self).__init__(name=name,
                                           nodes=nodes,
