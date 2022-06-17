@@ -1,4 +1,4 @@
-from typing import Union, List, Dict
+from typing import Union, List, Dict, Sequence
 import datetime as dt
 import abc
 import numpy as np
@@ -1030,7 +1030,7 @@ class CHPContract(Contract):
                  running_costs: float = 0.,
                  min_runtime: int = 0,
                  time_already_running: int = 0,
-                 last_dispatch: Union[float, List[float]] = 0,
+                 last_dispatch: Union[float, Sequence[float]] = 0,
                  ):
         """ CHPContract: Generate heat and power
             Restrictions
@@ -1094,7 +1094,7 @@ class CHPContract(Contract):
         self.running_costs = running_costs
         self.min_runtime = min_runtime
         self.time_already_running = time_already_running
-        if isinstance(last_dispatch, List):
+        if isinstance(last_dispatch, Sequence):
             self.last_dispatch = last_dispatch[0] + alpha * last_dispatch[1]
         else:
             self.last_dispatch = last_dispatch
