@@ -1284,7 +1284,7 @@ class CHPContract(Contract):
             for i in range(self.timegrid.restricted.T-1):
                 myA[i, 2 * n + i + 1] = 1
                 myA[i, 2 * n + i] = - 1
-                myA[i, 2 * n + self.timegrid.restricted.T + i + 1] = 1
+                myA[i, 2 * n + self.timegrid.restricted.T + i + 1] = -1
             op.A = sp.vstack((op.A, myA))
             op.cType += 'U' * (self.timegrid.restricted.T - 1)
             op.b = np.hstack((op.b, np.zeros(self.timegrid.restricted.T-1)))
