@@ -1041,8 +1041,8 @@ class CHPContract(Contract):
                  ramp: float = None,
                  start_costs: float = 0.,
                  running_costs: float = 0.,
-                 min_runtime: int = 0,
-                 time_already_running: int = 0,
+                 min_runtime: float = 0,
+                 time_already_running: float = 0,
                  last_dispatch: Union[float, Sequence[float]] = 0,
                  ):
         """ CHPContract: Generate heat and power
@@ -1153,6 +1153,7 @@ class CHPContract(Contract):
                   "' which corresponds to", min_runtime, "in freq '" + str(timegrid.freq) + "'.",
                   "This is not an integer and will therefore be rounded to", str(np.ceil(min_runtime)), "in freq '" + str(timegrid.freq) + "'.")
             min_runtime = np.ceil(min_runtime)
+        min_runtime = int(min_runtime)
         time_already_running = convert_time_unit(self.time_already_running, old_freq=timegrid.main_time_unit, new_freq=timegrid.freq)
         if not time_already_running.is_integer():
             print("Warning for asset", self.name + ": time_already_running is", self.time_already_running,
@@ -1161,6 +1162,7 @@ class CHPContract(Contract):
                   "This is not an integer and will therefore be rounded to", str(np.ceil(time_already_running)),
                   "in freq '" + str(timegrid.freq) + "'.")
             time_already_running = np.ceil(time_already_running)
+        time_already_running = int(time_already_running)
 
         op = super().setup_optim_problem(prices=prices, timegrid=timegrid, costs_only=costs_only)
 
