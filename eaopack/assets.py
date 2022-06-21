@@ -1169,10 +1169,13 @@ class CHPContract(Contract):
             c = op
         else:
             c = op.c
-        c = np.hstack([c,  self.alpha * c, np.ones(self.timegrid.restricted.T) * self. running_costs])
+        c = np.hstack([c,  self.alpha * c])  # costs for power and heat dispatch
         include_start_variables = min_runtime > 1 or self.start_costs != 0
+        include_on_variables = include_start_variables or np.any(self.min_cap != 0.)
+        if include_on_variables:
+            c = np.hstack([c, np.ones(self.timegrid.restricted.T) * self.running_costs])  # add costs for on variables
         if include_start_variables:
-            c = np.hstack(c, np.ones(self.timegrid.restricted.T) * self.start_costs)
+            c = np.hstack([c, np.ones(self.timegrid.restricted.T) * self.start_costs])  # add costs for start variables
         if costs_only:
             return c
         op.c = c
@@ -1225,25 +1228,24 @@ class CHPContract(Contract):
         op.A = sp.hstack([op.A, self.alpha * op.A])
 
         # Add on variables
-        op.mapping['bool'] = False
-        map_bool = pd.DataFrame()
-        map_bool['time_step'] = self.timegrid.restricted.I
-        map_bool['node'] = np.nan
-        map_bool['asset'] = self.name
-        map_bool['type'] = 'i'  # internal
-        map_bool['bool'] = True
-        map_bool['var_name'] = 'bool_on'
-        op.mapping = pd.concat([op.mapping, map_bool])
-        op.mapping.reset_index(inplace=True, drop=True)  # need to reset index (which enumerates variables)
+        if include_on_variables:
+            op.mapping['bool'] = False
+            map_bool = pd.DataFrame()
+            map_bool['time_step'] = self.timegrid.restricted.I
+            map_bool['node'] = np.nan
+            map_bool['asset'] = self.name
+            map_bool['type'] = 'i'  # internal
+            map_bool['bool'] = True
+            map_bool['var_name'] = 'bool_on'
+            op.mapping = pd.concat([op.mapping, map_bool])
 
-        # extend A for on variables (not relevant in exist. restrictions)
-        op.A = sp.hstack((op.A, sp.lil_matrix((op.A.shape[0], len(map_bool)))))
+            # extend A for on variables (not relevant in exist. restrictions)
+            op.A = sp.hstack((op.A, sp.lil_matrix((op.A.shape[0], len(map_bool)))))
 
         # Add start variables
         if include_start_variables:
             map_bool['var_name'] = 'bool_start'
             op.mapping = pd.concat([op.mapping, map_bool])
-            op.mapping.reset_index(inplace=True, drop=True)  # need to reset index (which enumerates variables)
 
             # extend A for start variables (not relevant in exist. restrictions)
             op.A = sp.hstack((op.A, sp.lil_matrix((op.A.shape[0], len(map_bool)))))
@@ -1259,18 +1261,21 @@ class CHPContract(Contract):
 
             A_lower_bounds[i, i] = 1
             A_lower_bounds[i, n + i] = self.alpha
-            A_lower_bounds[i, on_variable] = - op.l[i]
+            A_lower_bounds[i, on_variable] = - op.l[i]  # has no effect if no on variables found
 
             A_upper_bounds[i, i] = 1
             A_upper_bounds[i, n + i] = self.alpha
-            A_upper_bounds[i, on_variable] = - op.u[i]
+            A_upper_bounds[i, on_variable] = - op.u[i]  # has no effect if no on variables found
         op.A = sp.vstack((op.A, A_lower_bounds))
         op.cType += 'L' * n
         op.b = np.hstack((op.b, np.zeros(n)))
 
         op.A = sp.vstack((op.A, A_upper_bounds))
         op.cType += 'U' * n
-        op.b = np.hstack((op.b, np.zeros(n)))
+        if include_on_variables:
+            op.b = np.hstack((op.b, np.zeros(n)))
+        else:
+            op.b = np.hstack((op.b, op.u))
 
         # Start constraints:
         if include_start_variables:
@@ -1312,12 +1317,16 @@ class CHPContract(Contract):
         op.cType += 'U' * n
         op.b = np.hstack((op.b, np.zeros(n)))
 
+        # Set lower and upper bounds for all variables
         op.l = np.zeros(op.A.shape[1])
         op.u = np.hstack((op.u, self.beta * op.u, np.ones(op.A.shape[1]-op.u.shape[0]*2)))
 
-        # Enforce minimum runtime if CHP already on
+        # Enforce minimum runtime if asset already on
         if time_already_running > 0 and min_runtime - time_already_running>0:
             op.l[2*n:2*n+ min_runtime - time_already_running] = 1
+
+        # Reset mapping index:
+        op.mapping.reset_index(inplace=True, drop=True)  # need to reset index (which enumerates variables)
         return op
 
 
