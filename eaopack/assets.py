@@ -3,6 +3,7 @@ import datetime as dt
 import abc
 import numpy as np
 import pandas as pd
+from pandas.tseries.frequencies import to_offset
 import scipy.sparse as sp
 from scipy.sparse.lil import lil_matrix
 
@@ -1005,6 +1006,18 @@ class Contract(SimpleContract):
             op.__make_periodic__(freq_period = self.periodicity, freq_duration = self.periodicity_duration, timegrid = timegrid)
         return op
 
+def convert_time_unit(value: float, old_freq:str, new_freq:str) -> float:
+    """
+    Convert time value from old_freq to new_freq
+    Args:
+        value (float): the time value to convert
+        old_freq: pandas frequency string, e.g. 'd', 'h', 'm', '15min', '1d1h'
+        new_freq: pandas frequency string, e.g. 'd', 'h', 'm', '15min', '1d1h'
+
+    Returns:
+        the time value converted from old_freq to new_freq
+    """
+    return value * pd.to_timedelta(to_offset(old_freq)) / pd.to_timedelta(to_offset(new_freq))
 
 class CHPContract(Contract):
     def __init__(self,
@@ -1067,8 +1080,8 @@ class CHPContract(Contract):
             ramp (float): Maximum increase/decrease of virtual dispatch (power + alpha * heat) in one timestep. Defaults to 1.
             start_costs (float): Costs for starting. Defaults to 0.
             running_costs (float): Costs when on. Defaults to 0.
-            min_runtime (int): Minimum runtime in frequency freq. Defaults to 0.
-            time_already_running (int): The number of timesteps the asset is already running in frequency freq. Defaults to 0.
+            min_runtime (int): Minimum runtime in timegrids main_time_unit. Defaults to 0.
+            time_already_running (int): The number of timesteps the asset is already running in timegrids main_time_unit. Defaults to 0.
             last_dispatch (Union[float, List[float]]): List containing previous dispatch power and previous dispatch heat or
                             float value containing dispatch power with assumed dispatch heat = 0. Defaults to 0.
         """
@@ -1133,6 +1146,22 @@ class CHPContract(Contract):
         if self.freq != timegrid.freq:
             raise ValueError('Freq of asset' + self.name + ' is ' + str(self.freq) + ' which is unequal to freq ' + timegrid.freq + ' of timegrid.')
 
+        # convert min_runtime and time_already_running from timegrids main_time_unit to self.freq
+        min_runtime = convert_time_unit(self.min_runtime, old_freq=timegrid.main_time_unit, new_freq=self.freq)
+        if not min_runtime.is_integer():
+            print("Warning for asset", self.name + ": min_runtime is", self.min_runtime, "in freq '" + str(timegrid.main_time_unit) +
+                  "' which corresponds to", min_runtime, "in freq '" + str(self.freq) + "'.",
+                  "This is not an integer and will therefore be rounded to", str(np.ceil(min_runtime)), "in freq '" + str(self.freq) + "'.")
+            min_runtime = np.ceil(min_runtime)
+        time_already_running = convert_time_unit(self.time_already_running, old_freq=timegrid.main_time_unit, new_freq=self.freq)
+        if not time_already_running.is_integer():
+            print("Warning for asset", self.name + ": time_already_running is", self.time_already_running,
+                  "in freq '" + str(timegrid.main_time_unit) +
+                  "' which corresponds to", time_already_running, "in freq '" + str(self.freq) + "'.",
+                  "This is not an integer and will therefore be rounded to", str(np.ceil(time_already_running)),
+                  "in freq '" + str(self.freq) + "'.")
+            time_already_running = np.ceil(time_already_running)
+
         op = super().setup_optim_problem(prices=prices, timegrid=timegrid, costs_only=costs_only)
 
         # calculate costs:
@@ -1141,7 +1170,7 @@ class CHPContract(Contract):
         else:
             c = op.c
         c = np.hstack([c,  self.alpha * c, np.ones(self.timegrid.restricted.T) * self. running_costs])
-        include_start_variables = self.min_runtime > 1 or self.start_costs != 0
+        include_start_variables = min_runtime > 1 or self.start_costs != 0
         if include_start_variables:
             c = np.hstack(c, np.ones(self.timegrid.restricted.T) * self.start_costs)
         if costs_only:
@@ -1254,7 +1283,7 @@ class CHPContract(Contract):
             op.cType += 'U' * (self.timegrid.restricted.T - 1)
             op.b = np.hstack((op.b, np.zeros(self.timegrid.restricted.T-1)))
 
-            if self.time_already_running==0:
+            if time_already_running==0:
                 a = sp.lil_matrix((1, op.A.shape[1]))
                 a[0, 2*n] = 1
                 a[0, 2*n + self.timegrid.restricted.T] = -1
@@ -1264,7 +1293,7 @@ class CHPContract(Contract):
 
             # Minimum runtime:
             for t in range(self.timegrid.restricted.T):
-                for i in range(1, self.min_runtime):
+                for i in range(1, min_runtime):
                     if i > t:
                         continue
                     a = sp.lil_matrix((1, op.A.shape[1]))
@@ -1287,8 +1316,8 @@ class CHPContract(Contract):
         op.u = np.hstack((op.u, self.beta * op.u, np.ones(op.A.shape[1]-op.u.shape[0]*2)))
 
         # Enforce minimum runtime if CHP already on
-        if self.time_already_running > 0 and self.min_runtime - self.time_already_running>0:
-            op.l[2*n:2*n+ self.min_runtime - self.time_already_running] = 1
+        if time_already_running > 0 and min_runtime - time_already_running>0:
+            op.l[2*n:2*n+ min_runtime - time_already_running] = 1
         return op
 
 
