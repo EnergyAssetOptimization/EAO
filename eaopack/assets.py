@@ -1191,11 +1191,11 @@ class CHPContract(Contract):
         variables = op.mapping[["asset", "node", "var_name"]].drop_duplicates()
         for i in range(len(variables)):
             I_past = None
-            for t in range(timegrid.restricted.T):
+            for t in range(self.timegrid.restricted.T):
                 I_curr = np.where((op.mapping["asset"] == variables.iloc[i]["asset"])
                                   & (op.mapping["node"] == variables.iloc[i]["node"])
                                   & (op.mapping["var_name"] == variables.iloc[i]["var_name"])
-                                  & (op.mapping["time_step"] == timegrid.restricted.I[t]))
+                                  & (op.mapping["time_step"] == self.timegrid.restricted.I[t]))
                 if I_past and I_curr:
                     a = sp.lil_matrix((1, n))
                     a[0, I_curr] = 1
