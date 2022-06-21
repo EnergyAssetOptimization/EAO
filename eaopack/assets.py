@@ -1134,6 +1134,20 @@ class CHPContract(Contract):
             raise ValueError('Freq of asset' + self.name + ' is ' + str(self.freq) + ' which is unequal to freq ' + timegrid.freq + ' of timegrid.')
 
         op = super().setup_optim_problem(prices=prices, timegrid=timegrid, costs_only=costs_only)
+
+        # calculate costs:
+        if costs_only:
+            c = op
+        else:
+            c = op.c
+        c = np.hstack([c,  self.alpha * c, np.ones(self.timegrid.restricted.T) * self. running_costs])
+        include_start_variables = self.min_runtime > 1 or self.start_costs != 0
+        if include_start_variables:
+            c = np.hstack(c, np.ones(self.timegrid.restricted.T) * self.start_costs)
+        if costs_only:
+            return c
+        op.c = c
+
         n = len(op.l)
 
         if op.A is None:
@@ -1180,7 +1194,6 @@ class CHPContract(Contract):
             new_map = pd.concat([new_map, initial_map.copy()])
         op.mapping = new_map
         op.A = sp.hstack([op.A, self.alpha * op.A])
-        op.c = np.hstack([op.c,  self.alpha * op.c])
 
         # Add on variables
         op.mapping['bool'] = False
@@ -1193,17 +1206,15 @@ class CHPContract(Contract):
         map_bool['var_name'] = 'bool_on'
         op.mapping = pd.concat([op.mapping, map_bool])
         op.mapping.reset_index(inplace=True, drop=True)  # need to reset index (which enumerates variables)
-        op.c = np.hstack([op.c, np.ones(len(map_bool)) * self. running_costs])
 
         # extend A for on variables (not relevant in exist. restrictions)
         op.A = sp.hstack((op.A, sp.lil_matrix((op.A.shape[0], len(map_bool)))))
 
         # Add start variables
-        if self.min_runtime>1 or self.start_costs!=0:
+        if include_start_variables:
             map_bool['var_name'] = 'bool_start'
             op.mapping = pd.concat([op.mapping, map_bool])
             op.mapping.reset_index(inplace=True, drop=True)  # need to reset index (which enumerates variables)
-            op.c = np.hstack([op.c, np.ones(len(map_bool)) * self.start_costs])
 
             # extend A for start variables (not relevant in exist. restrictions)
             op.A = sp.hstack((op.A, sp.lil_matrix((op.A.shape[0], len(map_bool)))))
@@ -1233,7 +1244,7 @@ class CHPContract(Contract):
         op.b = np.hstack((op.b, np.zeros(n)))
 
         # Start constraints:
-        if self.min_runtime > 1 or self.start_costs != 0:
+        if include_start_variables:
             myA = sp.lil_matrix((self.timegrid.restricted.T-1, op.A.shape[1]))
             for i in range(self.timegrid.restricted.T-1):
                 myA[i, 2 * n + i + 1] = 1
