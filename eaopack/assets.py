@@ -1038,7 +1038,7 @@ class CHPContract(Contract):
                  periodicity_duration: str = None,
                  alpha: float = 1.,
                  beta: float = 1.,
-                 ramp: float = 1.,
+                 ramp: float = None,
                  start_costs: float = 0.,
                  running_costs: float = 0.,
                  min_runtime: int = 0,
@@ -1188,35 +1188,36 @@ class CHPContract(Contract):
             op.b = np.zeros(0)
 
         # Ramp constraints:
-        variables = op.mapping[["asset", "node", "var_name"]].drop_duplicates()
-        for i in range(len(variables)):
-            I_past = None
-            for t in range(self.timegrid.restricted.T):
-                I_curr = np.where((op.mapping["asset"] == variables.iloc[i]["asset"])
-                                  & (op.mapping["node"] == variables.iloc[i]["node"])
-                                  & (op.mapping["var_name"] == variables.iloc[i]["var_name"])
-                                  & (op.mapping["time_step"] == self.timegrid.restricted.I[t]))
-                if I_past and I_curr:
-                    a = sp.lil_matrix((1, n))
-                    a[0, I_curr] = 1
-                    a[0, I_past] = -1
-                    op.A = sp.vstack([op.A, a])
-                    op.cType += 'L'
-                    op.b = np.hstack([op.b, -self.ramp])
-                    op.A = sp.vstack([op.A, a])
-                    op.cType += 'U'
-                    op.b = np.hstack([op.b, self.ramp])
-                I_past = I_curr
+        if self.ramp is not None:
+            variables = op.mapping[["asset", "node", "var_name"]].drop_duplicates()
+            for i in range(len(variables)):
+                I_past = None
+                for t in range(self.timegrid.restricted.T):
+                    I_curr = np.where((op.mapping["asset"] == variables.iloc[i]["asset"])
+                                      & (op.mapping["node"] == variables.iloc[i]["node"])
+                                      & (op.mapping["var_name"] == variables.iloc[i]["var_name"])
+                                      & (op.mapping["time_step"] == self.timegrid.restricted.I[t]))
+                    if I_past and I_curr:
+                        a = sp.lil_matrix((1, n))
+                        a[0, I_curr] = 1
+                        a[0, I_past] = -1
+                        op.A = sp.vstack([op.A, a])
+                        op.cType += 'L'
+                        op.b = np.hstack([op.b, -self.ramp])
+                        op.A = sp.vstack([op.A, a])
+                        op.cType += 'U'
+                        op.b = np.hstack([op.b, self.ramp])
+                    I_past = I_curr
 
-        # Initial ramp constraint
-        a = sp.lil_matrix((1, n))
-        a[0, 0] = 1
-        op.A = sp.vstack([op.A, a])
-        op.cType += 'L'
-        op.b = np.hstack([op.b, -self.ramp + self.last_dispatch])
-        op.A = sp.vstack([op.A, a])
-        op.cType += 'U'
-        op.b = np.hstack([op.b, self.ramp + self.last_dispatch])
+            # Initial ramp constraint
+            a = sp.lil_matrix((1, n))
+            a[0, 0] = 1
+            op.A = sp.vstack([op.A, a])
+            op.cType += 'L'
+            op.b = np.hstack([op.b, -self.ramp + self.last_dispatch])
+            op.A = sp.vstack([op.A, a])
+            op.cType += 'U'
+            op.b = np.hstack([op.b, self.ramp + self.last_dispatch])
 
         # Divide each dispatch variable in power and heat:
         new_map = pd.DataFrame()
