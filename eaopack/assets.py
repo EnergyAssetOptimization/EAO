@@ -1143,23 +1143,23 @@ class CHPContract(Contract):
         Returns:
             OptimProblem: Optimization problem to be used by optimizer
         """
-        if self.freq != timegrid.freq:
+        if self.freq is not None and self.freq != timegrid.freq:
             raise ValueError('Freq of asset' + self.name + ' is ' + str(self.freq) + ' which is unequal to freq ' + timegrid.freq + ' of timegrid.')
 
-        # convert min_runtime and time_already_running from timegrids main_time_unit to self.freq
-        min_runtime = convert_time_unit(self.min_runtime, old_freq=timegrid.main_time_unit, new_freq=self.freq)
+        # convert min_runtime and time_already_running from timegrids main_time_unit to timegrid.freq
+        min_runtime = convert_time_unit(self.min_runtime, old_freq=timegrid.main_time_unit, new_freq=timegrid.freq)
         if not min_runtime.is_integer():
             print("Warning for asset", self.name + ": min_runtime is", self.min_runtime, "in freq '" + str(timegrid.main_time_unit) +
-                  "' which corresponds to", min_runtime, "in freq '" + str(self.freq) + "'.",
-                  "This is not an integer and will therefore be rounded to", str(np.ceil(min_runtime)), "in freq '" + str(self.freq) + "'.")
+                  "' which corresponds to", min_runtime, "in freq '" + str(timegrid.freq) + "'.",
+                  "This is not an integer and will therefore be rounded to", str(np.ceil(min_runtime)), "in freq '" + str(timegrid.freq) + "'.")
             min_runtime = np.ceil(min_runtime)
-        time_already_running = convert_time_unit(self.time_already_running, old_freq=timegrid.main_time_unit, new_freq=self.freq)
+        time_already_running = convert_time_unit(self.time_already_running, old_freq=timegrid.main_time_unit, new_freq=timegrid.freq)
         if not time_already_running.is_integer():
             print("Warning for asset", self.name + ": time_already_running is", self.time_already_running,
                   "in freq '" + str(timegrid.main_time_unit) +
-                  "' which corresponds to", time_already_running, "in freq '" + str(self.freq) + "'.",
+                  "' which corresponds to", time_already_running, "in freq '" + str(timegrid.freq) + "'.",
                   "This is not an integer and will therefore be rounded to", str(np.ceil(time_already_running)),
-                  "in freq '" + str(self.freq) + "'.")
+                  "in freq '" + str(timegrid.freq) + "'.")
             time_already_running = np.ceil(time_already_running)
 
         op = super().setup_optim_problem(prices=prices, timegrid=timegrid, costs_only=costs_only)
