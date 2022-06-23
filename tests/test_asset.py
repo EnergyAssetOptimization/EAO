@@ -395,6 +395,110 @@ class ContractTest(unittest.TestCase):
         sdisp = res.x.sum() * (End-Start)/(End-startA) - 20.        
         self.assertAlmostEqual(sdisp, 0., 5)
 
+class CHPContractTest(unittest.TestCase):
+    def test_optimization(self):
+        """ Unit test. Setting up a CHPContract with random prices
+            and check that it generates full load at negative prices and nothing at positive prices.
+        """
+        node_power = eao.assets.Node('node_power')
+        node_heat = eao.assets.Node('node_heat')
+        timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,2,1), freq = 'd')
+        a = eao.assets.CHPContract(name='CHP', price='rand_price', nodes = (node_power, node_heat) ,
+                        min_cap=5., max_cap=10.)
+        prices ={'rand_price': np.random.rand(timegrid.T)-0.5}
+        op = a.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        x_power = np.around(res.x[:timegrid.T], decimals = 3) # round
+        x_heat = np.around(res.x[timegrid.T:2*timegrid.T], decimals = 3) # round
+
+        check =     all(x_power[np.sign(op.c[:timegrid.T]) == -1]+a.alpha * x_heat[np.sign(op.c[:timegrid.T]) == -1] == op.u[:timegrid.T][np.sign(op.c[:timegrid.T]) == -1]) \
+                and all(x_power[np.sign(op.c[:timegrid.T]) == 1]+a.alpha * x_heat[np.sign(op.c[:timegrid.T]) == 1]  == 0)
+        tot_dcf = np.around((a.dcf(op, res)).sum(), decimals = 3) # asset dcf, calculated independently
+        check = check and (tot_dcf == np.around(res.value , decimals = 3))
+        self.assertTrue(check)
+
+    def test_min_cap_vector(self):
+        """ Unit test. Setting up a CHPContract with positive prices and a simple contract with a minimum demand that is
+            smaller than the min capacity. Check that it runs at minimum capacity.
+        """
+        node_power = eao.assets.Node('node_power')
+        node_heat = eao.assets.Node('node_heat')
+        Start = dt.date(2021, 1, 1)
+        End = dt.date(2021, 1, 10)
+        timegrid = eao.assets.Timegrid(Start, End, freq='h')
+
+        # capacities
+        restr_times = pd.date_range(Start, End, freq='d', closed='left')
+        min_cap = {}
+        min_cap['start'] = restr_times.to_list()
+        min_cap['end'] = (restr_times + dt.timedelta(days=1)).to_list()
+        min_cap['values'] = np.random.rand(len(min_cap['start']))
+        max_cap = 1.
+
+        max_cap_sc = min_cap.copy()
+        max_cap_sc['values'] = -0.5*min_cap['values']
+
+        sc_power = eao.assets.SimpleContract(name='SC_power', price='rand_price', nodes=node_power,
+                                            min_cap=-20., max_cap=max_cap_sc)
+
+        a = eao.assets.CHPContract(name='CHP', price='rand_price', nodes=(node_power, node_heat),
+                                   min_cap=min_cap, max_cap=max_cap)
+
+        prices = {'rand_price': np.ones(timegrid.T)}
+        p = eao.portfolio.Portfolio([a, sc_power])
+
+        op = p.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        x_power = np.around(res.x[:timegrid.T], decimals=3)  # round
+        x_heat = np.around(res.x[timegrid.T:2 * timegrid.T], decimals=3)  # round
+
+        self.assertAlmostEqual(np.abs(timegrid.values_to_grid(min_cap) - x_power + a.alpha * x_heat).max(), 0., 3)
+
+    def test_max_cap_vector(self):
+        """ Unit test. Setting up a CHPContract with negative prices
+            and check that it runs at maximum capacity.
+        """
+        node_power = eao.assets.Node('node_power')
+        node_heat = eao.assets.Node('node_heat')
+        Start = dt.date(2021, 1, 1)
+        End = dt.date(2021, 1, 10)
+        timegrid = eao.assets.Timegrid(Start, End, freq='h')
+
+        # capacities
+        restr_times = pd.date_range(Start, End, freq='d', closed='left')
+        min_cap = {}
+        min_cap['start'] = restr_times.to_list()
+        min_cap['end'] = (restr_times + dt.timedelta(days=1)).to_list()
+        min_cap['values'] = np.random.rand(len(min_cap['start']))
+        max_cap = min_cap.copy()
+
+        a = eao.assets.CHPContract(name='CHP', price='rand_price', nodes=(node_power, node_heat),
+                                min_cap=min_cap, max_cap=max_cap)
+
+        prices = {'rand_price': -np.ones(timegrid.T)}
+        op = a.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        self.assertAlmostEqual(np.abs(res.x[:timegrid.T] + a.alpha * res.x[timegrid.T:2*timegrid.T] - timegrid.values_to_grid(max_cap)).sum(), 0., 5)
+
+    def test_start_variables(self):
+        """ Unit test. Setting up a CHPContract with random prices
+            and check that it starts any time the prices change from positive to negative.
+        """
+        node_power = eao.assets.Node('node_power')
+        node_heat = eao.assets.Node('node_heat')
+        Start = dt.date(2021, 1, 1)
+        End = dt.date(2021, 1, 10)
+        timegrid = eao.assets.Timegrid(Start, End, freq='h')
+
+        a = eao.assets.CHPContract(name='CHP', price='rand_price', nodes=(node_power, node_heat), min_cap=1., max_cap=1, start_costs=0.001, running_costs=0)
+        prices ={'rand_price': np.random.rand(timegrid.T)-0.5}
+        op = a.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        start_variables = res.x[3*timegrid.T:]
+        for i in range(1, timegrid.T):
+            if np.sign(op.c[i]) == -1 and np.sign(np.sign(op.c[i-1])) == 1:
+                self.assertTrue(start_variables[i]==1)
+
 class MultiCommodity(unittest.TestCase):
 
     def test_predefined_multicommodity(self):
