@@ -499,6 +499,74 @@ class CHPContractTest(unittest.TestCase):
             if np.sign(op.c[i]) == -1 and np.sign(np.sign(op.c[i-1])) == 1:
                 self.assertTrue(start_variables[i]==1)
 
+    def test_minruntime(self):
+        """ Unit test. Setting up a CHPContract and check min run time restriction
+        """
+        node_power = eao.assets.Node('node_power')
+        node_heat = eao.assets.Node('node_heat')
+        Start = dt.date(2021, 1, 1)
+        End = dt.date(2021, 1, 2)
+        timegrid = eao.assets.Timegrid(Start, End, freq='h')
+
+        # simple case, no min run time
+        a = eao.assets.CHPContract(name='CHP', 
+                                   price='price', 
+                                   nodes=(node_power, node_heat), 
+                                   min_cap=1., 
+                                   max_cap=10., 
+                                   start_costs=1., 
+                                   running_costs=5.)
+        prices ={'price': 1.*np.ones(timegrid.T)}
+        prices['price'][0:10] = -100.
+
+        op = a.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        on_variables = res.x[2*timegrid.T:3*timegrid.T]
+        disp_variables = res.x[0*timegrid.T:1*timegrid.T]
+        start_variables = res.x[3*timegrid.T:]
+        self.assertAlmostEqual(res.value, 10*1000. + 10*(-5)-1., 4) 
+        # min run time 20
+        a = eao.assets.CHPContract(name='CHP', 
+                                   price='price', 
+                                   nodes=(node_power, node_heat), 
+                                   min_cap=1., 
+                                   max_cap=10., 
+                                   start_costs=1., 
+                                   running_costs=5.,
+                                   min_runtime=20)
+        prices ={'price': 1.*np.ones(timegrid.T)}
+        prices['price'][0:10] = -100.
+
+        op = a.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        on_variables = res.x[2*timegrid.T:3*timegrid.T]
+        disp_variables = res.x[0*timegrid.T:1*timegrid.T]
+        start_variables = res.x[3*timegrid.T:]
+        self.assertAlmostEqual(on_variables.sum(), 20., 4) 
+        # 10 times full load, 10 time min load
+        self.assertAlmostEqual(res.value, 10*10*100. - 10*1 + 20*(-5)-1., 4) 
+        # min run time 20 ... but 5 hours already on
+        a = eao.assets.CHPContract(name='CHP', 
+                                   price='price', 
+                                   nodes=(node_power, node_heat), 
+                                   min_cap=1., 
+                                   max_cap=10., 
+                                   start_costs=1., 
+                                   running_costs=5.,
+                                   min_runtime=20,
+                                   time_already_running=5)
+        prices ={'price': 1.*np.ones(timegrid.T)}
+        prices['price'][0:10] = -100.
+
+        op = a.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        on_variables = res.x[2*timegrid.T:3*timegrid.T]
+        disp_variables = res.x[0*timegrid.T:1*timegrid.T]
+        start_variables = res.x[3*timegrid.T:]
+        self.assertAlmostEqual(on_variables.sum(), 15., 4) 
+        # 10 times full load, 10 time min load, NO start!
+        self.assertAlmostEqual(res.value, 10*10*100. - 5*1 + 15*(-5), 4) 
+
 class MultiCommodity(unittest.TestCase):
 
     def test_predefined_multicommodity(self):
@@ -545,7 +613,7 @@ class ScaledAsset(unittest.TestCase):
         res = op.optimize()
         # out = eao.io.extract_output(portf=portf, op = op, res = res)
         # zero costs and limit at original size -- same result
-        self.assertAlmostEqual(res_std.value, res.value, 5)
+        self.assertAlmostEqual(res_std.value, res.value, 4)
 
 class DiscountRate(unittest.TestCase):
     def test_discount_simple_contract(self):
