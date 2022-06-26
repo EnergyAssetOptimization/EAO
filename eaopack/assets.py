@@ -479,8 +479,8 @@ class SimpleContract(Asset):
                 wacc: float = 0,
                 price:str = None,
                 extra_costs:float = 0.,
-                min_cap: Union[float, Dict] = 0.,
-                max_cap: Union[float, Dict] = 0.,
+                min_cap: Union[float, Dict, str] = 0.,
+                max_cap: Union[float, Dict, str] = 0.,
                 freq: str = None,
                 profile: pd.Series = None,
                 periodicity: str = None,
@@ -888,8 +888,8 @@ class Contract(SimpleContract):
                 wacc: float = 0,
                 price:str = None,
                 extra_costs:float = 0.,
-                min_cap: Union[float, Dict] = 0.,
-                max_cap: Union[float, Dict] = 0.,
+                min_cap: Union[float, Dict, str] = 0.,
+                max_cap: Union[float, Dict, str] = 0.,
                 min_take:Union[float, List[float], Dict] = None,
                 max_take:Union[float, List[float], Dict] = None,
                 freq: str = None,
@@ -915,8 +915,13 @@ class Contract(SimpleContract):
             profile (pd.Series, optional):  If freq(asset) > freq(portf) assuming this profile for granular dispatch (e.g. scaling hourly profile to week).
                                             Defaults to None, only relevant if freq is not none
 
-            min_cap (float) : Minimum flow/capacity for buying (negative) or selling (positive). Defaults to 0
-            max_cap (float) : Maximum flow/capacity for selling (positive). Defaults to 0
+            min_cap (float, dict, str) : Minimum flow/capacity for buying (negative) or selling (positive). Float or time series. Defaults to 0
+            max_cap (float, dict, str) : Maximum flow/capacity for selling (positive). Float or time series. Defaults to 0
+                                    float: constant value
+                                    dict:  dict['start'] = array
+                                           dict['end']   = array
+                                           dict['value'] = array
+                                    str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
             min_take (float) : Minimum volume within given period. Defaults to None
             max_take (float) : Maximum volume within given period. Defaults to None
                               float: constant value
@@ -1029,8 +1034,8 @@ class MultiCommodityContract(Contract):
                 wacc: float = 0,
                 price:str = None,
                 extra_costs:float = 0.,
-                min_cap: Union[float, Dict] = 0.,
-                max_cap: Union[float, Dict] = 0.,
+                min_cap: Union[float, Dict, str] = 0.,
+                max_cap: Union[float, Dict, str] = 0.,
                 min_take:Union[float, List[float], Dict] = None,
                 max_take:Union[float, List[float], Dict] = None,
                 factors_commodities: list = [1,1],
@@ -1058,6 +1063,11 @@ class MultiCommodityContract(Contract):
 
             min_cap (float) : Minimum flow/capacity for buying (negative) or selling (positive). Defaults to 0
             max_cap (float) : Maximum flow/capacity for selling (positive). Defaults to 0
+                                    float: constant value
+                                    dict:  dict['start'] = array
+                                           dict['end']   = array
+                                           dict['value'] = array
+                                    str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)            
             min_take (float) : Minimum volume within given period. Defaults to None
             max_take (float) : Maximum volume within given period. Defaults to None
                               float: constant value
