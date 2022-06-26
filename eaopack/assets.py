@@ -890,8 +890,8 @@ class Contract(SimpleContract):
                 extra_costs:float = 0.,
                 min_cap: Union[float, Dict, str] = 0.,
                 max_cap: Union[float, Dict, str] = 0.,
-                min_take:Union[float, List[float], Dict] = None,
-                max_take:Union[float, List[float], Dict] = None,
+                min_take: dict = None,
+                max_take: dict = None,
                 freq: str = None,
                 profile: pd.Series = None,
                 periodicity: str = None,
@@ -922,9 +922,8 @@ class Contract(SimpleContract):
                                            dict['end']   = array
                                            dict['value'] = array
                                     str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
-            min_take (float) : Minimum volume within given period. Defaults to None
-            max_take (float) : Maximum volume within given period. Defaults to None
-                              float: constant value
+            min_take (dict) : Minimum volume within given period. Defaults to None
+            max_take (dict) : Maximum volume within given period. Defaults to None
                               dict:  dict['start'] = np.array
                                      dict['end']   = np.array
                                      dict['value'] = np.array
@@ -949,6 +948,7 @@ class Contract(SimpleContract):
                                        periodicity= periodicity,
                                        periodicity_duration=periodicity_duration)
         if not min_take is None:
+            assert isinstance(min_take, dict), 'min_take must be dict with keys (start, end, value). Asset: '+self.name
             assert 'values' in min_take, 'min_take must be of dict type with start, end & values (values missing)'
             assert 'start' in min_take, 'min_take must be of dict type with start, end & values (start missing)'
             assert 'end' in min_take, 'min_take must be of dict type with start, end & values (end missing)'
@@ -957,6 +957,7 @@ class Contract(SimpleContract):
                 min_take['start'] = [min_take['start']]
                 min_take['end'] = [min_take['end']]
         if not max_take is None:
+            assert isinstance(max_take, dict), 'max_take must be dict with keys (start, end, value). Asset: '+self.name
             assert 'values' in max_take, 'min_take must be of dict type with start, end & values (values missing)'
             assert 'start' in max_take, 'min_take must be of dict type with start, end & values (start missing)'
             assert 'end' in max_take, 'min_take must be of dict type with start, end & values (end missing)'
@@ -1036,8 +1037,8 @@ class MultiCommodityContract(Contract):
                 extra_costs:float = 0.,
                 min_cap: Union[float, Dict, str] = 0.,
                 max_cap: Union[float, Dict, str] = 0.,
-                min_take:Union[float, List[float], Dict] = None,
-                max_take:Union[float, List[float], Dict] = None,
+                min_take: dict = None,
+                max_take: dict = None,
                 factors_commodities: list = [1,1],
                 freq: str = None,
                 profile: pd.Series = None,
@@ -1061,16 +1062,15 @@ class MultiCommodityContract(Contract):
             profile (pd.Series, optional):  If freq(asset) > freq(portf) assuming this profile for granular dispatch (e.g. scaling hourly profile to week).
                                             Defaults to None, only relevant if freq is not none
 
-            min_cap (float) : Minimum flow/capacity for buying (negative) or selling (positive). Defaults to 0
-            max_cap (float) : Maximum flow/capacity for selling (positive). Defaults to 0
+            min_cap (float, dict, str) : Minimum flow/capacity for buying (negative) or selling (positive). Defaults to 0
+            max_cap (float, dict, str) : Maximum flow/capacity for selling (positive). Defaults to 0
                                     float: constant value
                                     dict:  dict['start'] = array
                                            dict['end']   = array
                                            dict['value'] = array
                                     str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)            
-            min_take (float) : Minimum volume within given period. Defaults to None
-            max_take (float) : Maximum volume within given period. Defaults to None
-                              float: constant value
+            min_take (dict) : Minimum volume within given period. Defaults to None
+            max_take (dict) : Maximum volume within given period. Defaults to None
                               dict:  dict['start'] = np.array
                                      dict['end']   = np.array
                                      dict['value'] = np.array
@@ -1161,8 +1161,8 @@ class ExtendedTransport(Transport):
                 min_cap:float = 0.,
                 max_cap:float = 0.,
                 efficiency: float = 1.,
-                min_take:Union[float, List[float], Dict] = None,
-                max_take:Union[float, List[float], Dict] = None,
+                min_take: dict = None,
+                max_take: dict = None,
                 freq: str = None,
                 profile: pd.Series = None,
                 periodicity:str=None,
@@ -1198,11 +1198,8 @@ class ExtendedTransport(Transport):
             - with min_cap = max_cap and a detailed time series
             - with MinTake & MaxTake, implement structured gas contracts
         Additional args:
-            min_cap (float) : Minimum flow/capacity for buying (negative) or selling (positive). Defaults to 0
-            max_cap (float) : Maximum flow/capacity for selling (positive). Defaults to 0
-            min_take (float) : Minimum volume within given period. Defaults to None
-            max_take (float) : Maximum volume within given period. Defaults to None
-                              float: constant value
+            min_take (dict) : Minimum volume within given period. Defaults to None
+            max_take (dict) : Maximum volume within given period. Defaults to None
                               dict:  dict['start'] = np.array
                                      dict['end']   = np.array
                                      dict['value'] = np.array
@@ -1223,11 +1220,13 @@ class ExtendedTransport(Transport):
                                                 periodicity_duration=periodicity_duration
                                                 )
         if not min_take is None:
+            assert isinstance(min_take, dict), 'min_take must be dict with keys (start, end, value). Asset: '+self.name
             if isinstance(min_take['values'], (float, int)):
                 min_take['values'] = [min_take['values']]
                 min_take['start'] = [min_take['start']]
                 min_take['end'] = [min_take['end']]
         if not max_take is None:
+            assert isinstance(max_take, dict), 'max_take must be dict with keys (start, end, value). Asset: '+self.name
             if isinstance(max_take['values'], (float, int)):
                 max_take['values'] = [max_take['values']]
                 max_take['start'] = [max_take['start']]
