@@ -1044,6 +1044,9 @@ class CHPContract(Contract):
                  min_runtime: float = 0,
                  time_already_running: float = 0,
                  last_dispatch: Union[float, Sequence[float]] = 0,
+                 start_fuel: float = 0.,
+                 fuel_efficiency: float = 1.,
+                 consumption_if_on: float = 0.
                  ):
         """ CHPContract: Generate heat and power
             Restrictions
@@ -1055,6 +1058,7 @@ class CHPContract(Contract):
         Args:
             name (str): Unique name of the asset                                              (asset parameter)
             nodes (Node): One node each for generated power and heat                          (asset parameter)
+                          optional: node for fuel (e.g. gas)
             start (dt.datetime) : start of asset being active. defaults to none (-> timegrid start relevant)
             end (dt.datetime)   : end of asset being active. defaults to none (-> timegrid start relevant)
             timegrid (Timegrid): Timegrid for discretization                                  (asset parameter)
@@ -1084,6 +1088,11 @@ class CHPContract(Contract):
             time_already_running (int): The number of timesteps the asset is already running in timegrids main_time_unit. Defaults to 0.
             last_dispatch (Union[float, List[float]]): List containing previous dispatch power and previous dispatch heat or
                             float value containing dispatch power with assumed dispatch heat = 0. Defaults to 0.
+
+            Optional: Explicit fuel consumption (e.g. gas) for multi-commodity simulation
+                 start_fuel (float, optional): detaults to  0
+                 fuel_efficiency (float, optional): defaults to 1
+                 consumption_if_on (float, optional): defaults to 0
         """
         super(CHPContract, self).__init__(name=name,
                                           nodes=nodes,
@@ -1100,20 +1109,26 @@ class CHPContract(Contract):
                                           max_take=max_take,
                                           periodicity=periodicity,
                                           periodicity_duration=periodicity_duration)
-        self.alpha = alpha
-        self.beta = beta
-        self.ramp = ramp
-        self.start_costs = start_costs
-        self.running_costs = running_costs
-        self.min_runtime = min_runtime
+        self.alpha                = alpha
+        self.beta                 = beta
+        self.ramp                 = ramp
+        self.start_costs          = start_costs
+        self.running_costs        = running_costs
+        self.min_runtime          = min_runtime
         self.time_already_running = time_already_running
+        if len(nodes) >= 3:
+            assert (fuel_efficiency != 0.), 'fuel efficiency must not be zero'
+            self.fuel_efficiency      = fuel_efficiency
+            self.consumption_if_on    = consumption_if_on
+            self.start_fuel           = start_fuel
+
         if isinstance(last_dispatch, Sequence):
             self.last_dispatch = last_dispatch[0] + alpha * last_dispatch[1]
         else:
             self.last_dispatch = last_dispatch
 
-        if len(nodes) != 2:
-            raise ValueError('Length of nodes has to be 2; one node for power and one node for heat. Asset: ' + self.name)
+        if len(nodes) not in (2,3):
+            raise ValueError('Length of nodes has to be 2 or 3; power, heat and optionally fuel. Asset: ' + self.name)
 
         if isinstance(self.min_cap, (float, int, np.ndarray)):
             if not np.all(min_cap >= 0.):
@@ -1172,8 +1187,13 @@ class CHPContract(Contract):
         else:
             c = op.c
         c = np.hstack([c,  self.alpha * c])  # costs for power and heat dispatch
-        include_start_variables = min_runtime > 1 or self.start_costs != 0
-        include_on_variables = include_start_variables or np.any(self.min_cap != 0.)
+        if len(self.nodes)==2:
+            include_start_variables = min_runtime > 1 or self.start_costs != 0
+            include_on_variables = include_start_variables or np.any(self.min_cap != 0.)
+        else:
+            include_start_variables = min_runtime > 1 or self.start_costs != 0 or self.start_fuel !=0.
+            include_on_variables = include_start_variables or np.any(self.min_cap != 0.) or self.consumption_if_on != 0.
+
         if include_on_variables:
             c = np.hstack([c, np.ones(self.timegrid.restricted.T) * self.running_costs])  # add costs for on variables
         if include_start_variables:
@@ -1224,6 +1244,7 @@ class CHPContract(Contract):
         # Divide each dispatch variable in power and heat:
         new_map = pd.DataFrame()
         for i, mynode in enumerate(self.nodes):
+            if i>=2: continue # do only for power and heat
             initial_map = op.mapping[op.mapping['type'] == 'd'].copy()
             initial_map['node'] = mynode.name
             new_map = pd.concat([new_map, initial_map.copy()])
@@ -1330,6 +1351,38 @@ class CHPContract(Contract):
 
         # Reset mapping index:
         op.mapping.reset_index(inplace=True, drop=True)  # need to reset index (which enumerates variables)
+
+        # in case there is an explicit node for fuel, extend mapping
+        # idea: fuel consumption is  power disp + alpha * heat disp
+        # mapping extention equivalent to simpler asset type "MultiCommodityContract"
+        if len(self.nodes) >= 3:
+            # disp_factor determines the factor with which fuel is consumed
+            if 'disp_factor' not in op.mapping: op.mapping['disp_factor'] = np.nan
+            new_map     = op.mapping.copy()
+            for i in [0,1]: # nodes power and heat
+                initial_map = op.mapping[(op.mapping['var_name']=='disp') & (op.mapping['node']== self.node_names[i])].copy()
+                initial_map['node']        = self.node_names[2] # fuel node
+                if i == 0: 
+                    initial_map['disp_factor'] = -1./self.fuel_efficiency
+                elif i == 1:
+                    initial_map['disp_factor'] = -self.alpha/self.fuel_efficiency
+                new_map = pd.concat([new_map, initial_map.copy()])
+            # consumption  if on
+            initial_map = op.mapping[op.mapping['var_name']=='bool_on'].copy()
+            initial_map['node'] = self.node_names[2] # fuel node
+            #initial_map['var_name'] = 'fuel_if_on'
+            initial_map['type'] = 'd'
+            initial_map['disp_factor'] = -self.consumption_if_on
+            new_map = pd.concat([new_map, initial_map.copy()])
+            # consumption on start
+            initial_map = op.mapping[op.mapping['var_name']=='bool_start'].copy()
+            initial_map['node'] = self.node_names[2] # fuel node
+            #initial_map['var_name'] = 'fuel_start'
+            initial_map['type'] = 'd'
+            initial_map['disp_factor'] = -self.start_fuel
+            new_map = pd.concat([new_map, initial_map.copy()])
+
+            op.mapping = new_map
         return op
 
 

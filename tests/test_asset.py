@@ -452,7 +452,7 @@ class CHPContractTest(unittest.TestCase):
         x_power = np.around(res.x[:timegrid.T], decimals=3)  # round
         x_heat = np.around(res.x[timegrid.T:2 * timegrid.T], decimals=3)  # round
 
-        self.assertAlmostEqual(np.abs(timegrid.values_to_grid(min_cap) - x_power + a.alpha * x_heat).max(), 0., 3)
+        self.assertAlmostEqual(np.abs(timegrid.values_to_grid(min_cap) - x_power + a.alpha * x_heat).max(), 0., 2)
 
     def test_max_cap_vector(self):
         """ Unit test. Setting up a CHPContract with negative prices
@@ -566,6 +566,46 @@ class CHPContractTest(unittest.TestCase):
         self.assertAlmostEqual(on_variables.sum(), 15., 4) 
         # 10 times full load, 10 time min load, NO start!
         self.assertAlmostEqual(res.value, 10*10*100. - 5*1 + 15*(-5), 4) 
+
+    def test_gas_consumption(self):
+        """ Unit test. Setting up a CHPContract with explicit gas (fuel) consumption
+        """
+        node_power = eao.assets.Node('node_power')
+        node_heat = eao.assets.Node('node_heat')
+        node_gas = eao.assets.Node('node_gas')
+
+        Start = dt.date(2021, 1, 1)
+        End = dt.date(2021, 1, 2)
+        timegrid = eao.assets.Timegrid(Start, End, freq='h')
+
+        # simple case, no min run time
+        a = eao.assets.CHPContract(name='CHP', 
+                                   nodes=(node_power, node_heat, node_gas), 
+                                   min_cap=1., 
+                                   max_cap=10., 
+                                   start_costs=1., 
+                                   running_costs=5.,
+                                   alpha = 0.2,
+                                   beta  = 1,
+                                   start_fuel = 10,
+                                   fuel_efficiency= .5,
+                                   consumption_if_on= .1)
+        b = eao.assets.SimpleContract(name = 'powerMarket', price='price', nodes = node_power, min_cap=-100, max_cap=100)
+        c = eao.assets.SimpleContract(name = 'gasMarket', price='priceGas', nodes = node_gas, min_cap=-100, max_cap=100)
+        d = eao.assets.SimpleContract(name = 'heatMarket', price='priceGas', nodes = node_heat, min_cap=-100, max_cap=100)
+        prices ={'price': 50.*np.ones(timegrid.T), 'priceGas': 0.1*np.ones(timegrid.T)}
+        prices['price'][0:5] = -100.
+        portf = eao.portfolio.Portfolio([a, b, c, d])
+        op = portf.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        out = eao.io.extract_output(portf, op, res, prices)
+        # check manually checked values
+        check = out['dispatch']['CHP (node_power)'].sum()
+        self.assertAlmostEqual(check, 190. , 4) 
+        check = out['dispatch']['CHP (node_heat)'].sum()
+        self.assertAlmostEqual(check, 0. , 4) 
+        check = out['dispatch']['gasMarket (node_gas)'].sum()
+        self.assertAlmostEqual(check, 391.9 , 4) 
 
 class MultiCommodity(unittest.TestCase):
 
