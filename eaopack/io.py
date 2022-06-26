@@ -95,7 +95,7 @@ def extract_output(portf: Portfolio, op: OptimProblem, res:Results, prices: dict
         # add given prices to duals in output (relevant reference)
         if not prices is None:
             for myc in prices:
-                duals['input price: '+myc] = prices[myc]
+                duals['input data: '+myc] = prices[myc]
 
         # In case the result comes from an SLP, we cannot sum up the dispatch across samples.
         # rather it should be the average. Therefore divide summed dispatch by number of samples

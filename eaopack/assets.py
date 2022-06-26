@@ -506,6 +506,7 @@ class SimpleContract(Asset):
                                     dict:  dict['start'] = array
                                            dict['end']   = array
                                            dict['value'] = array
+                                    str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
             price (str): Name of price vector for buying / selling. Defaults to None
             extra_costs (float, optional): extra costs added to price vector (in or out). Defaults to 0.
 
@@ -587,10 +588,18 @@ class SimpleContract(Asset):
         # Make vector of single min/max capacities.
         if isinstance(self.max_cap, (float, int, np.ndarray)):
             max_cap = self.max_cap*np.ones(T)
+        elif isinstance(self.max_cap, str):
+            assert (self.max_cap in prices), 'data for max_cap not found for asset  '+self.name
+            max_cap = prices[self.max_cap].copy()
+            max_cap = max_cap[I] #  only in asset time window
         else: # given in form of dict (start/end/values)
             max_cap = timegrid.restricted.values_to_grid(self.max_cap)
         if isinstance(self.min_cap, (float, int, np.ndarray)):
             min_cap = self.min_cap*np.ones(T)
+        elif isinstance(self.min_cap, str):
+            assert (self.min_cap in prices), 'data for min_cap not found for asset  '+self.name
+            min_cap = prices[self.min_cap].copy()
+            min_cap = min_cap[I] #  only in asset time window
         else: # given in form of dict (start/end/values)
             min_cap = timegrid.restricted.values_to_grid(self.min_cap)
         # check integrity
