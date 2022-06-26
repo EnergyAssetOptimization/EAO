@@ -3,7 +3,6 @@ import pandas as pd
 import datetime as dt
 import abc
 import scipy.sparse as sp
-
 from typing import Union, List, Dict
 from eaopack.assets import Node, Asset, Timegrid
 from eaopack.optimization import OptimProblem          
@@ -97,20 +96,18 @@ class Portfolio:
         n_nodes = len(self.nodes) # number of nodes
         T = self.timegrid.T       # number of time steps
         # new index refers to portfolio
+        mapping.index.name = None
         mapping.reset_index(inplace = True) 
         mapping.rename(columns={'index':'index_assets'}, inplace=True) 
-        #### version WITH ability to handle same variable in two rows
-        ## ensure in index that it refers to variables
-        ## go through assets and their index, count through
-        mapping['new_ind'] = np.zeros(len(mapping))*np.nan
-        counter = 0
-        for all_vars in zip(mapping['index_assets'], mapping['asset']):
-            I = (mapping['index_assets']==all_vars[0]) & (mapping['asset'] == all_vars[1])
-            if any(np.isnan(mapping['new_ind'][I])): # not covered yet
-                mapping.loc[I, 'new_ind'] = counter
-                counter += 1
-        mapping['new_ind'] = mapping['new_ind'].astype(int)   
-        mapping.set_index('new_ind', inplace = True)
+        #### mapping may come with several rows per variable 
+        ## ensure index refers to variables: go through assets and their index, make unique
+        mapping['keys'] = mapping['index_assets'].astype(str) +mapping['asset'].astype(str)
+        idx = pd.DataFrame()
+        idx['keys'] = mapping['keys'].unique()
+        idx.reset_index(inplace = True)
+        mapping = pd.merge(mapping, idx, left_on = 'keys', right_on = 'keys', how = 'left')
+        mapping.drop(columns = ['keys'], inplace = True)
+        mapping.set_index('index', inplace = True)
         ################################################## put together asset restrictions
         A = sp.lil_matrix((0, n_vars)) # sparse format to incrementally change
         b = np.zeros(0)
@@ -132,25 +129,71 @@ class Portfolio:
         if 'disp_factor' not in mapping.columns:
             mapping['disp_factor'] = 1.
         mapping['disp_factor'].fillna(1., inplace = True)
-        n_restr = len(b) # so many restr so far
         mapping['nodal_restr'] = None
-        # mapping['index_restr'] = None # index of the nodal restriction in the op (rows of A & b)  # Note: Not needed and probably not well defined
-        n_nodal_restr = 0 # counter
-        for i_node, n in enumerate(self.nodes):
-            if not n in skip_nodes:
-                for t in self.timegrid.I:
-                    # identify variables belonging to this node n and time step t
-                    I = (mapping['type']=='d') & \
-                        (mapping['node']==n)   & \
-                        (mapping['time_step'] == t).values
-                    if any(I): # only then restriction needed
-                        myA = sp.lil_matrix((1, n_vars)) # one row only
-                        #### myA[0, I] = 1  # all filtered variables contribute
-                        myA[0, mapping.index[I]] = mapping.loc[I, 'disp_factor'].values ## extended with disp_factor logic
-                        mapping.loc[I, 'nodal_restr'] = n_nodal_restr
-                        # mapping.loc[I, 'index_restr'] = n_nodal_restr+n_restr # Note: Not needed and probably not well defined
-                        n_nodal_restr +=1
-                        A = sp.vstack((A, myA))
+
+        def create_nodal_restr(nodes, map_nodes, map_types, map_idx, map_dispf, map_times, timegrid_I, skip_nodes, n_vars):
+            """ Specific function creating nodal restrictions """
+            map_nodal_restr = np.zeros(map_idx.shape[0])
+            n_nodal_restr = 0
+            cols = np.zeros(0)
+            rows = np.zeros(0)
+            vals = np.zeros(0)
+            for n in nodes:
+                if (skip_nodes is None) or (not n in skip_nodes):
+                    Inode = (map_types=='d') & (map_nodes==n)
+                    for t in timegrid_I:
+                        # identify variables belonging to this node n and time step t
+                        I = (map_times[Inode] == t)
+                        if I.sum()>0: # only then restriction needed
+                            # myA = sp.lil_matrix((1, n_vars)) # one row only
+                            # myA[0, map_idx[Inode][I]] = map_dispf[Inode][I]
+                            newcols = map_idx[Inode][I]
+                            cols = np.append(cols,newcols)
+                            rows = np.append(rows, n_nodal_restr*np.ones(len(newcols)))
+                            vals = np.append(vals, map_dispf[Inode][I])
+                            Itemp = Inode.copy()
+                            Itemp[Itemp] = I
+                            map_nodal_restr[Itemp] = n_nodal_restr
+                            n_nodal_restr +=1
+                            # A = sp.vstack((A, myA))
+            return cols, rows, vals, map_nodal_restr, n_nodal_restr
+
+        # # easily readable version -  loop
+        # perf = time.perf_counter()
+        # n_nodal_restr = 0
+        # for n in self.nodes:
+        #     if not n in skip_nodes:
+        #         for t in self.timegrid.I:
+        #             # identify variables belonging to this node n and time step t
+        #             I = (mapping['type']=='d') & \
+        #                 (mapping['node']==n)   & \
+        #                 (mapping['time_step'] == t).values
+        #             if any(I): # only then restriction needed
+        #                 myA = sp.lil_matrix((1, n_vars)) # one row only
+        #                 myA[0, mapping.index[I]] = mapping.loc[I, 'disp_factor'].values ## extended with disp_factor logic
+        #                 mapping.loc[I, 'nodal_restr'] = n_nodal_restr
+        #                 n_nodal_restr +=1
+        #                 A = sp.vstack((A, myA))
+        # print('loop 1  duration '+'{:0.1f}'.format(time.perf_counter()-perf)+'s')
+        ### start cryptic but much faster version, all in numpy
+        map_nodes = mapping['node'].values
+        map_types = mapping['type'].values
+        map_idx = mapping.index.values
+        map_dispf = mapping['disp_factor'].values
+        map_times = mapping['time_step'].values
+        if len(skip_nodes) == 0:
+            my_skip_nodes = None
+        else:
+            my_skip_nodes = skip_nodes
+        cols, rows, vals, map_nodal_restr, n_nodal_restr = create_nodal_restr(list(self.nodes.keys()), 
+                                                                                map_nodes, 
+                                                                                map_types, map_idx, map_dispf, 
+                                                                                map_times, self.timegrid.I,my_skip_nodes, 
+                                                                                n_vars)
+        A = sp.vstack((A, sp.csr_matrix((vals, (rows.astype(np.int64), cols.astype(np.int64))), shape = (n_nodal_restr, n_vars))))
+        mapping['nodal_restr'] = map_nodal_restr.astype(np.int64)
+        ### end cryptic version
+
         b = np.hstack((b,np.zeros(n_nodal_restr))) # must add to zero
         cType = cType + ('N')*n_nodal_restr
 
@@ -241,6 +284,9 @@ class StructuredAsset(Asset):
         op.mapping.rename(columns={'index_assets':'index_internal_assets_'+self.name}, inplace = True)
         # store original asset name
         op.mapping['internal_asset'] = op.mapping['asset']
+        # record asset in variable name
+        if 'var_name' in op.mapping.columns:
+            op.mapping['var_name'] = op.mapping['var_name']+'__'+op.mapping['asset']
         # assign all variables to the struct asset
         op.mapping['asset'] = self.name
         # connect asset nodes to the outside and mark internal variables

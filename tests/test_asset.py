@@ -43,7 +43,7 @@ class SimpleContractTest(unittest.TestCase):
         timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,2,1), freq = 'd')
         a = eao.assets.SimpleContract(name = 'SC', price = 'rand_price', nodes = node ,
                         min_cap= -20., max_cap=+20., extra_costs= 0.3, start =dt.date(2021,1,3), end = dt.date(2021,1,25) )
-        a.set_timegrid(timegrid)                       
+        a.set_timegrid(timegrid)    
         prices ={'rand_price': np.random.rand(timegrid.T)-0.5}
         op = a.setup_optim_problem(prices)
         res = op.optimize()
