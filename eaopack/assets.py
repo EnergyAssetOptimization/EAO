@@ -1036,8 +1036,8 @@ class CHPAsset(Contract):
                  profile: pd.Series = None,
                  periodicity: str = None,
                  periodicity_duration: str = None,
-                 alpha: float = 1.,
-                 beta: float = 1.,
+                 conversion_factor_power_heat: float = 1.,
+                 max_share_heat: float = 1.,
                  ramp: float = None,
                  start_costs: float = 0.,
                  running_costs: float = 0.,
@@ -1067,8 +1067,8 @@ class CHPAsset(Contract):
                                     The more granular frequency of portf & asset is used
             profile (pd.Series, optional):  If freq(asset) > freq(portf) assuming this profile for granular dispatch (e.g. scaling hourly profile to week).
                                             Defaults to None, only relevant if freq is not none
-            min_cap (float) : Minimum capacity for generating virtual dispatch (power + alpha * heat). Has to be greater or equal to 0. Defaults to 0.
-            max_cap (float) : Maximum capacity for generating virtual dispatch (power + alpha * heat). Has to be greater or equal to 0. Defaults to 0.
+            min_cap (float) : Minimum capacity for generating virtual dispatch (power + conversion_factor_power_heat * heat). Has to be greater or equal to 0. Defaults to 0.
+            max_cap (float) : Maximum capacity for generating virtual dispatch (power + conversion_factor_power_heat * heat). Has to be greater or equal to 0. Defaults to 0.
             min_take (float) : Minimum volume within given period. Defaults to None
             max_take (float) : Maximum volume within given period. Defaults to None
                               float: constant value
@@ -1079,9 +1079,9 @@ class CHPAsset(Contract):
             extra_costs (float, optional): extra costs added to price vector (in or out). Defaults to 0.
             periodicity (str, pd freq style): Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)
             periodicity_duration (str, pd freq style): Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)
-            alpha (float): Conversion efficiency from heat to power. Defaults to 1.
-            beta (float): Defines upper bound for the heat dispatch as a percentage of the power dispatch. Defaults to 1.
-            ramp (float): Maximum increase/decrease of virtual dispatch (power + alpha * heat) in one timestep. Defaults to 1.
+            conversion_factor_power_heat (float): Conversion efficiency from heat to power. Defaults to 1.
+            max_share_heat (float): Defines upper bound for the heat dispatch as a percentage of the power dispatch. Defaults to 1.
+            ramp (float): Maximum increase/decrease of virtual dispatch (power + conversion_factor_power_heat * heat) in one timestep. Defaults to 1.
             start_costs (float): Costs for starting. Defaults to 0.
             running_costs (float): Costs when on. Defaults to 0.
             min_runtime (int): Minimum runtime in timegrids main_time_unit. Defaults to 0.
@@ -1109,8 +1109,8 @@ class CHPAsset(Contract):
                                        max_take=max_take,
                                        periodicity=periodicity,
                                        periodicity_duration=periodicity_duration)
-        self.alpha                = alpha
-        self.beta                 = beta
+        self.conversion_factor_power_heat                = conversion_factor_power_heat
+        self.max_share_heat                 = max_share_heat
         self.ramp                 = ramp
         self.start_costs          = start_costs
         self.running_costs        = running_costs
@@ -1123,7 +1123,7 @@ class CHPAsset(Contract):
             self.start_fuel           = start_fuel
 
         if isinstance(last_dispatch, Sequence):
-            self.last_dispatch = last_dispatch[0] + alpha * last_dispatch[1]
+            self.last_dispatch = last_dispatch[0] + conversion_factor_power_heat * last_dispatch[1]
         else:
             self.last_dispatch = last_dispatch
 
@@ -1186,7 +1186,7 @@ class CHPAsset(Contract):
             c = op
         else:
             c = op.c
-        c = np.hstack([c,  self.alpha * c])  # costs for power and heat dispatch
+        c = np.hstack([c, self.conversion_factor_power_heat * c])  # costs for power and heat dispatch
         if len(self.nodes)==2:
             include_start_variables = min_runtime > 1 or self.start_costs != 0
             include_on_variables = include_start_variables or np.any(self.min_cap != 0.)
@@ -1249,7 +1249,7 @@ class CHPAsset(Contract):
             initial_map['node'] = mynode.name
             new_map = pd.concat([new_map, initial_map.copy()])
         op.mapping = new_map
-        op.A = sp.hstack([op.A, self.alpha * op.A])
+        op.A = sp.hstack([op.A, self.conversion_factor_power_heat * op.A])
 
         # Add on variables
         if include_on_variables:
@@ -1284,11 +1284,11 @@ class CHPAsset(Contract):
                                    & (op.mapping["time_step"] == var["time_step"]))
 
             A_lower_bounds[i, i] = 1
-            A_lower_bounds[i, n + i] = self.alpha
+            A_lower_bounds[i, n + i] = self.conversion_factor_power_heat
             A_lower_bounds[i, on_variable] = - op.l[i]  # has no effect if no on variables found
 
             A_upper_bounds[i, i] = 1
-            A_upper_bounds[i, n + i] = self.alpha
+            A_upper_bounds[i, n + i] = self.conversion_factor_power_heat
             A_upper_bounds[i, on_variable] = - op.u[i]  # has no effect if no on variables found
         op.A = sp.vstack((op.A, A_lower_bounds))
         op.cType += 'L' * n
@@ -1336,14 +1336,14 @@ class CHPAsset(Contract):
         myA = sp.lil_matrix((n, op.A.shape[1]))
         for i in range(n):
             myA[i, n + i] = 1
-            myA[i, i] = - self.beta
+            myA[i, i] = - self.max_share_heat
         op.A = sp.vstack((op.A, myA))
         op.cType += 'U' * n
         op.b = np.hstack((op.b, np.zeros(n)))
 
         # Set lower and upper bounds for all variables
         op.l = np.zeros(op.A.shape[1])
-        op.u = np.hstack((op.u, self.beta * op.u, np.ones(op.A.shape[1]-op.u.shape[0]*2)))
+        op.u = np.hstack((op.u, self.max_share_heat * op.u, np.ones(op.A.shape[1] - op.u.shape[0] * 2)))
 
         # Enforce minimum runtime if asset already on
         if time_already_running > 0 and min_runtime - time_already_running>0:
@@ -1353,7 +1353,7 @@ class CHPAsset(Contract):
         op.mapping.reset_index(inplace=True, drop=True)  # need to reset index (which enumerates variables)
 
         # in case there is an explicit node for fuel, extend mapping
-        # idea: fuel consumption is  power disp + alpha * heat disp
+        # idea: fuel consumption is  power disp + conversion_factor_power_heat * heat disp
         # mapping extention equivalent to simpler asset type "MultiCommodityContract"
         if len(self.nodes) >= 3:
             # disp_factor determines the factor with which fuel is consumed
@@ -1365,7 +1365,7 @@ class CHPAsset(Contract):
                 if i == 0: 
                     initial_map['disp_factor'] = -1./self.fuel_efficiency
                 elif i == 1:
-                    initial_map['disp_factor'] = -self.alpha/self.fuel_efficiency
+                    initial_map['disp_factor'] = -self.conversion_factor_power_heat / self.fuel_efficiency
                 new_map = pd.concat([new_map, initial_map.copy()])
             # consumption  if on
             initial_map = op.mapping[op.mapping['var_name']=='bool_on'].copy()

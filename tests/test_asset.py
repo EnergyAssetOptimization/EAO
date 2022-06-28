@@ -411,8 +411,8 @@ class CHPContractTest(unittest.TestCase):
         x_power = np.around(res.x[:timegrid.T], decimals = 3) # round
         x_heat = np.around(res.x[timegrid.T:2*timegrid.T], decimals = 3) # round
 
-        check =     all(x_power[np.sign(op.c[:timegrid.T]) == -1]+a.alpha * x_heat[np.sign(op.c[:timegrid.T]) == -1] == op.u[:timegrid.T][np.sign(op.c[:timegrid.T]) == -1]) \
-                and all(x_power[np.sign(op.c[:timegrid.T]) == 1]+a.alpha * x_heat[np.sign(op.c[:timegrid.T]) == 1]  == 0)
+        check =     all(x_power[np.sign(op.c[:timegrid.T]) == -1] + a.conversion_factor_power_heat * x_heat[np.sign(op.c[:timegrid.T]) == -1] == op.u[:timegrid.T][np.sign(op.c[:timegrid.T]) == -1]) \
+                and all(x_power[np.sign(op.c[:timegrid.T]) == 1] + a.conversion_factor_power_heat * x_heat[np.sign(op.c[:timegrid.T]) == 1] == 0)
         tot_dcf = np.around((a.dcf(op, res)).sum(), decimals = 3) # asset dcf, calculated independently
         check = check and (tot_dcf == np.around(res.value , decimals = 3))
         self.assertTrue(check)
@@ -452,7 +452,7 @@ class CHPContractTest(unittest.TestCase):
         x_power = np.around(res.x[:timegrid.T], decimals=3)  # round
         x_heat = np.around(res.x[timegrid.T:2 * timegrid.T], decimals=3)  # round
 
-        self.assertAlmostEqual(np.abs(timegrid.values_to_grid(min_cap) - x_power + a.alpha * x_heat).max(), 0., 2)
+        self.assertAlmostEqual(np.abs(timegrid.values_to_grid(min_cap) - x_power + a.conversion_factor_power_heat * x_heat).max(), 0., 2)
 
     def test_max_cap_vector(self):
         """ Unit test. Setting up a CHPContract with negative prices
@@ -478,7 +478,7 @@ class CHPContractTest(unittest.TestCase):
         prices = {'rand_price': -np.ones(timegrid.T)}
         op = a.setup_optim_problem(prices, timegrid=timegrid)
         res = op.optimize()
-        self.assertAlmostEqual(np.abs(res.x[:timegrid.T] + a.alpha * res.x[timegrid.T:2*timegrid.T] - timegrid.values_to_grid(max_cap)).sum(), 0., 5)
+        self.assertAlmostEqual(np.abs(res.x[:timegrid.T] + a.conversion_factor_power_heat * res.x[timegrid.T:2 * timegrid.T] - timegrid.values_to_grid(max_cap)).sum(), 0., 5)
 
     def test_start_variables(self):
         """ Unit test. Setting up a CHPContract with random prices
@@ -585,8 +585,8 @@ class CHPContractTest(unittest.TestCase):
                                 max_cap=10.,
                                 start_costs=1.,
                                 running_costs=5.,
-                                alpha = 0.2,
-                                beta  = 1,
+                                conversion_factor_power_heat= 0.2,
+                                max_share_heat= 1,
                                 start_fuel = 10,
                                 fuel_efficiency= .5,
                                 consumption_if_on= .1)
