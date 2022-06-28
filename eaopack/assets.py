@@ -1019,7 +1019,7 @@ def convert_time_unit(value: float, old_freq:str, new_freq:str) -> float:
     """
     return value * pd.to_timedelta(to_offset(old_freq)) / pd.to_timedelta(to_offset(new_freq))
 
-class CHPContract(Contract):
+class CHPAsset(Contract):
     def __init__(self,
                  name: str = 'default_name_contract',
                  nodes: List[Node] = [Node(name = 'default_node_power'), Node(name = 'default_node_heat')],
@@ -1094,21 +1094,21 @@ class CHPContract(Contract):
                  fuel_efficiency (float, optional): defaults to 1
                  consumption_if_on (float, optional): defaults to 0
         """
-        super(CHPContract, self).__init__(name=name,
-                                          nodes=nodes,
-                                          start=start,
-                                          end=end,
-                                          wacc=wacc,
-                                          freq=freq,
-                                          profile=profile,
-                                          price=price,
-                                          extra_costs=extra_costs,
-                                          min_cap=min_cap,
-                                          max_cap=max_cap,
-                                          min_take=min_take,
-                                          max_take=max_take,
-                                          periodicity=periodicity,
-                                          periodicity_duration=periodicity_duration)
+        super(CHPAsset, self).__init__(name=name,
+                                       nodes=nodes,
+                                       start=start,
+                                       end=end,
+                                       wacc=wacc,
+                                       freq=freq,
+                                       profile=profile,
+                                       price=price,
+                                       extra_costs=extra_costs,
+                                       min_cap=min_cap,
+                                       max_cap=max_cap,
+                                       min_take=min_take,
+                                       max_take=max_take,
+                                       periodicity=periodicity,
+                                       periodicity_duration=periodicity_duration)
         self.alpha                = alpha
         self.beta                 = beta
         self.ramp                 = ramp

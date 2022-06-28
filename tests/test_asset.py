@@ -403,8 +403,8 @@ class CHPContractTest(unittest.TestCase):
         node_power = eao.assets.Node('node_power')
         node_heat = eao.assets.Node('node_heat')
         timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,2,1), freq = 'd')
-        a = eao.assets.CHPContract(name='CHP', price='rand_price', nodes = (node_power, node_heat) ,
-                        min_cap=5., max_cap=10.)
+        a = eao.assets.CHPAsset(name='CHP', price='rand_price', nodes = (node_power, node_heat),
+                                min_cap=5., max_cap=10.)
         prices ={'rand_price': np.random.rand(timegrid.T)-0.5}
         op = a.setup_optim_problem(prices, timegrid=timegrid)
         res = op.optimize()
@@ -441,8 +441,8 @@ class CHPContractTest(unittest.TestCase):
         sc_power = eao.assets.SimpleContract(name='SC_power', price='rand_price', nodes=node_power,
                                             min_cap=-20., max_cap=max_cap_sc)
 
-        a = eao.assets.CHPContract(name='CHP', price='rand_price', nodes=(node_power, node_heat),
-                                   min_cap=min_cap, max_cap=max_cap)
+        a = eao.assets.CHPAsset(name='CHP', price='rand_price', nodes=(node_power, node_heat),
+                                min_cap=min_cap, max_cap=max_cap)
 
         prices = {'rand_price': np.ones(timegrid.T)}
         p = eao.portfolio.Portfolio([a, sc_power])
@@ -472,7 +472,7 @@ class CHPContractTest(unittest.TestCase):
         min_cap['values'] = np.random.rand(len(min_cap['start']))
         max_cap = min_cap.copy()
 
-        a = eao.assets.CHPContract(name='CHP', price='rand_price', nodes=(node_power, node_heat),
+        a = eao.assets.CHPAsset(name='CHP', price='rand_price', nodes=(node_power, node_heat),
                                 min_cap=min_cap, max_cap=max_cap)
 
         prices = {'rand_price': -np.ones(timegrid.T)}
@@ -490,7 +490,7 @@ class CHPContractTest(unittest.TestCase):
         End = dt.date(2021, 1, 10)
         timegrid = eao.assets.Timegrid(Start, End, freq='h')
 
-        a = eao.assets.CHPContract(name='CHP', price='rand_price', nodes=(node_power, node_heat), min_cap=1., max_cap=1, start_costs=0.001, running_costs=0)
+        a = eao.assets.CHPAsset(name='CHP', price='rand_price', nodes=(node_power, node_heat), min_cap=1., max_cap=1, start_costs=0.001, running_costs=0)
         prices ={'rand_price': np.random.rand(timegrid.T)-0.5}
         op = a.setup_optim_problem(prices, timegrid=timegrid)
         res = op.optimize()
@@ -509,13 +509,13 @@ class CHPContractTest(unittest.TestCase):
         timegrid = eao.assets.Timegrid(Start, End, freq='h')
 
         # simple case, no min run time
-        a = eao.assets.CHPContract(name='CHP', 
-                                   price='price', 
-                                   nodes=(node_power, node_heat), 
-                                   min_cap=1., 
-                                   max_cap=10., 
-                                   start_costs=1., 
-                                   running_costs=5.)
+        a = eao.assets.CHPAsset(name='CHP',
+                                price='price',
+                                nodes=(node_power, node_heat),
+                                min_cap=1.,
+                                max_cap=10.,
+                                start_costs=1.,
+                                running_costs=5.)
         prices ={'price': 1.*np.ones(timegrid.T)}
         prices['price'][0:10] = -100.
 
@@ -526,14 +526,14 @@ class CHPContractTest(unittest.TestCase):
         start_variables = res.x[3*timegrid.T:]
         self.assertAlmostEqual(res.value, 10*1000. + 10*(-5)-1., 4) 
         # min run time 20
-        a = eao.assets.CHPContract(name='CHP', 
-                                   price='price', 
-                                   nodes=(node_power, node_heat), 
-                                   min_cap=1., 
-                                   max_cap=10., 
-                                   start_costs=1., 
-                                   running_costs=5.,
-                                   min_runtime=20)
+        a = eao.assets.CHPAsset(name='CHP',
+                                price='price',
+                                nodes=(node_power, node_heat),
+                                min_cap=1.,
+                                max_cap=10.,
+                                start_costs=1.,
+                                running_costs=5.,
+                                min_runtime=20)
         prices ={'price': 1.*np.ones(timegrid.T)}
         prices['price'][0:10] = -100.
 
@@ -546,15 +546,15 @@ class CHPContractTest(unittest.TestCase):
         # 10 times full load, 10 time min load
         self.assertAlmostEqual(res.value, 10*10*100. - 10*1 + 20*(-5)-1., 4) 
         # min run time 20 ... but 5 hours already on
-        a = eao.assets.CHPContract(name='CHP', 
-                                   price='price', 
-                                   nodes=(node_power, node_heat), 
-                                   min_cap=1., 
-                                   max_cap=10., 
-                                   start_costs=1., 
-                                   running_costs=5.,
-                                   min_runtime=20,
-                                   time_already_running=5)
+        a = eao.assets.CHPAsset(name='CHP',
+                                price='price',
+                                nodes=(node_power, node_heat),
+                                min_cap=1.,
+                                max_cap=10.,
+                                start_costs=1.,
+                                running_costs=5.,
+                                min_runtime=20,
+                                time_already_running=5)
         prices ={'price': 1.*np.ones(timegrid.T)}
         prices['price'][0:10] = -100.
 
@@ -579,17 +579,17 @@ class CHPContractTest(unittest.TestCase):
         timegrid = eao.assets.Timegrid(Start, End, freq='h')
 
         # simple case, no min run time
-        a = eao.assets.CHPContract(name='CHP', 
-                                   nodes=(node_power, node_heat, node_gas), 
-                                   min_cap=1., 
-                                   max_cap=10., 
-                                   start_costs=1., 
-                                   running_costs=5.,
-                                   alpha = 0.2,
-                                   beta  = 1,
-                                   start_fuel = 10,
-                                   fuel_efficiency= .5,
-                                   consumption_if_on= .1)
+        a = eao.assets.CHPAsset(name='CHP',
+                                nodes=(node_power, node_heat, node_gas),
+                                min_cap=1.,
+                                max_cap=10.,
+                                start_costs=1.,
+                                running_costs=5.,
+                                alpha = 0.2,
+                                beta  = 1,
+                                start_fuel = 10,
+                                fuel_efficiency= .5,
+                                consumption_if_on= .1)
         b = eao.assets.SimpleContract(name = 'powerMarket', price='price', nodes = node_power, min_cap=-100, max_cap=100)
         c = eao.assets.SimpleContract(name = 'gasMarket', price='priceGas', nodes = node_gas, min_cap=-100, max_cap=100)
         d = eao.assets.SimpleContract(name = 'heatMarket', price='priceGas', nodes = node_heat, min_cap=-100, max_cap=100)
