@@ -1202,6 +1202,10 @@ class CHPAsset(Contract):
             return c
         op.c = c
 
+        # Check that if include_on_variables is True, the minimum capacity is not 0. Otherwise the "on" variables cannot be computed correctly.
+        assert not (np.any(op.l==0) and include_on_variables), "If the minimum capacity is 0 at any point, the 'on' variables have to be disabled. Either set min_cap>0 or set min_runtime=0 and start_costs=0 and start_fuel=0"
+
+
         n = len(op.l)
 
         if op.A is None:
