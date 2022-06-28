@@ -1494,6 +1494,10 @@ class MultiCommodityContract(Contract):
 
         # set up Contract optimProblem
         op = super().setup_optim_problem(prices= prices, timegrid=timegrid, costs_only = costs_only)
+
+        if costs_only:
+            return op
+
         # the optimization problem remains basically the same
         # only the mapping needs to be amended
         ##### adjusting the mapping
