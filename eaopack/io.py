@@ -82,7 +82,7 @@ def extract_output(portf: Portfolio, op: OptimProblem, res:Results, prices: dict
                     internal_variables.loc[times[r.time_step], myCol] = res.x[i]
         # extract duals from nodal restrictions
         # looping through nodes and their recorded nodal restrictions and extract dual
-        if not res.duals is None:
+        if not res.duals is None and not res.duals['N'] is None:
             for i_node, n in enumerate(portf.nodes):
                 name_nodal_price = 'nodal price: '+n
                 duals[name_nodal_price] = np.nan # initialize column
