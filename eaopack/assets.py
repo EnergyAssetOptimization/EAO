@@ -1159,7 +1159,7 @@ class CHPAsset(Contract):
             OptimProblem: Optimization problem to be used by optimizer
         """
         if self.freq is not None and self.freq != timegrid.freq:
-            raise ValueError('Freq of asset' + self.name + ' is ' + str(self.freq) + ' which is unequal to freq ' + timegrid.freq + ' of timegrid.')
+            raise ValueError('Freq of asset' + self.name + ' is ' + str(self.freq) + ' which is unequal to freq ' + timegrid.freq + ' of timegrid. Asset: ' + self.name)
 
         # convert min_runtime and time_already_running from timegrids main_time_unit to timegrid.freq
         min_runtime = convert_time_unit(self.min_runtime, old_freq=timegrid.main_time_unit, new_freq=timegrid.freq)
@@ -1203,8 +1203,8 @@ class CHPAsset(Contract):
         op.c = c
 
         # Check that if include_on_variables is True, the minimum capacity is not 0. Otherwise the "on" variables cannot be computed correctly.
-        assert not (np.any(op.l==0) and include_on_variables), "If the minimum capacity is 0 at any point, the 'on' variables have to be disabled. Either set min_cap>0 or set min_runtime=0 and start_costs=0 and start_fuel=0"
-
+        if np.any(op.l == 0) and include_on_variables:
+            raise ValueError("If the minimum capacity is 0 at any point, the 'on' variables have to be disabled. Either set min_cap>0 or set min_runtime=0 and start_costs=0 and start_fuel=0 and consumption_if_on=0. Asset: " + self.name)
 
         n = len(op.l)
 
