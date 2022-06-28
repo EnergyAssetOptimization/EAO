@@ -1241,6 +1241,12 @@ class CHPAsset(Contract):
             op.cType += 'U'
             op.b = np.hstack([op.b, self.ramp + self.last_dispatch])
 
+        # Make sure that op.mapping contains only dispatch variables (i.e. with type=='d')
+        var_types = op.mapping['type'].unique()
+        assert np.all(var_types=='d'), "Only variables of type 'd' (i.e. dispatch variables) are allowed in op.mapping at this point. " \
+                                       "However, there are variables with types " + str(var_types[var_types != 'd']) + " in the mapping." \
+                                       "This is likely due to a change in a superclass."
+
         # Divide each dispatch variable in power and heat:
         new_map = pd.DataFrame()
         for i, mynode in enumerate(self.nodes):
@@ -1493,6 +1499,12 @@ class MultiCommodityContract(Contract):
         ##### adjusting the mapping
         # the contract mapping is the starting point
         # create a copy of the dispatching variables part for each commodity
+
+        # Make sure that op.mapping contains only dispatch variables (i.e. with type=='d')
+        var_types = op.mapping['type'].unique()
+        assert np.all(var_types == 'd'), "Only variables of type 'd' (i.e. dispatch variables) are allowed in op.mapping at this point. " \
+                                         "However, there are variables with types " + str(var_types[var_types != 'd']) + " in the mapping." \
+                                         "This is likely due to a change in a superclass."
         new_map     = pd.DataFrame()
         for i, mynode in enumerate(self.nodes):
             initial_map = op.mapping[op.mapping['type']=='d'].copy()
