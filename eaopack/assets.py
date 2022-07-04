@@ -1073,7 +1073,7 @@ class CHPAsset(Contract):
                  running_costs: Union[float, Dict, str] = 0.,
                  min_runtime: float = 0,
                  time_already_running: float = 0,
-                 last_dispatch: Union[float, Sequence[float]] = 0,
+                 last_dispatch: float = 0,
                  start_fuel: Union[float, Dict, str] = 0.,
                  fuel_efficiency: Union[float, Dict, str] = 1.,
                  consumption_if_on: Union[float, Dict, str] = 0.
