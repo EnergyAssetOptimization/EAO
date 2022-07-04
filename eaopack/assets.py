@@ -1164,20 +1164,6 @@ class CHPAsset(Contract):
         if len(nodes) not in (2,3):
             raise ValueError('Length of nodes has to be 2 or 3; power, heat and optionally fuel. Asset: ' + self.name)
 
-        if isinstance(self.min_cap, (float, int, np.ndarray)):
-            if not np.all(min_cap >= 0.):
-                raise ValueError('min_cap and has to be greater or equal to 0. Asset: ' + self.name)
-        else:
-            if not np.all(np.array(min_cap['values']) >= 0.):
-                raise ValueError('min_cap and has to be greater or equal to 0. Asset: ' + self.name)
-
-        if isinstance(self.max_cap, (float, int, np.ndarray)):
-            if not np.all(max_cap >= 0.):
-                raise ValueError('max_cap and has to be greater or equal to 0. Asset: ' + self.name)
-        else:
-            if not np.all(np.array(max_cap['values']) >= 0.):
-                raise ValueError('max_cap and has to be greater or equal to 0. Asset: ' + self.name)
-
     def setup_optim_problem(self, prices: dict, timegrid: Timegrid = None,
                             costs_only: bool = False) -> OptimProblem:
         """ Set up optimization problem for asset
@@ -1222,8 +1208,10 @@ class CHPAsset(Contract):
         consumption_if_on = self.make_vector(self.consumption_if_on, prices, default_value=0.)
         max_share_heat = self.make_vector(self.max_share_heat, prices, default_value=1.)
 
-        # Sanity checks for abpve variables:
-        assert np.all(fuel_efficiency!=0), 'fuel efficiency must not be zero'
+        # Sanity checks for above variables:
+        assert np.all(fuel_efficiency!=0), 'fuel efficiency must not be zero. Asset: ' + self.name
+        assert np.all(op.l >= 0.), 'min_cap has to be greater or equal to 0. Asset: ' + self.name
+        assert np.all(op.u >= 0.), 'max_cap has to be greater or equal to 0. Asset: ' + self.name
 
         # calculate costs:
         if costs_only:
