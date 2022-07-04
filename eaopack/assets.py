@@ -1070,7 +1070,7 @@ class CHPAsset(Contract):
                  max_share_heat: float = 1.,
                  ramp: float = None,
                  start_costs: Union[float, Sequence[float], Dict] = 0.,
-                 running_costs: float = 0.,
+                 running_costs: Union[float, Dict, str] = 0.,
                  min_runtime: float = 0,
                  time_already_running: float = 0,
                  last_dispatch: Union[float, Sequence[float]] = 0,
@@ -1218,7 +1218,7 @@ class CHPAsset(Contract):
 
         # Make vectors of input params:
         start_costs = self.make_vector(self.start_costs, prices, default_value=0.)
-        
+        running_costs = self.make_vector(self.running_costs, prices, default_value=0.)
 
         # calculate costs:
         if costs_only:
@@ -1234,7 +1234,7 @@ class CHPAsset(Contract):
             include_on_variables = include_start_variables or np.any(self.min_cap != 0.) or self.consumption_if_on != 0.
 
         if include_on_variables:
-            c = np.hstack([c, np.ones(self.timegrid.restricted.T) * self.running_costs])  # add costs for on variables
+            c = np.hstack([c, running_costs])  # add costs for on variables
         if include_start_variables:
             c = np.hstack([c, start_costs])  # add costs for start variables
         if costs_only:
