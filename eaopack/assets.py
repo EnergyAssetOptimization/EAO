@@ -1041,8 +1041,8 @@ def convert_time_unit(value: float, old_freq:str, new_freq:str) -> float:
     Convert time value from old_freq to new_freq
     Args:
         value (float): the time value to convert
-        old_freq: pandas frequency string, e.g. 'd', 'h', 'm', '15min', '1d1h'
-        new_freq: pandas frequency string, e.g. 'd', 'h', 'm', '15min', '1d1h'
+        old_freq: pandas frequency string, e.g. 'd', 'h', 'min', '15min', '1d1h'
+        new_freq: pandas frequency string, e.g. 'd', 'h', 'min', '15min', '1d1h'
 
     Returns:
         the time value converted from old_freq to new_freq

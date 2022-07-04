@@ -681,6 +681,31 @@ class CHPAsset(unittest.TestCase):
 
         self.assertAlmostEqual((disp_power[2*24:4*24]+conversion_factor_power_heat*disp_heat[2*24:4*24]).sum(), 20, 5)
 
+    def test_freq_conversion(self):
+        """
+        Check the time conversion function that is used to convert e.g. min_runtime and time_already_running in CHPAsset
+        """
+        old_value = np.random.rand() * 30
+        new_value = eao.assets.convert_time_unit(old_value, old_freq='h', new_freq='d')
+        self.assertAlmostEqual(new_value - old_value / 24, 0, 5)
+
+        old_value = np.random.rand() * 30
+        new_value = eao.assets.convert_time_unit(old_value, old_freq='h', new_freq='15min')
+        self.assertAlmostEqual(new_value - old_value * 4, 0, 5)
+
+        old_value = np.random.rand() * 30
+        new_value = eao.assets.convert_time_unit(old_value, old_freq='d', new_freq='15min')
+        self.assertAlmostEqual(new_value - old_value * 24 * 4, 0, 5)
+
+        old_value = np.random.rand() * 30
+        new_value = eao.assets.convert_time_unit(old_value, old_freq='30min', new_freq='min')
+        self.assertAlmostEqual(new_value - old_value * 30, 0, 5)
+
+        old_value = np.random.rand() * 30
+        new_value = eao.assets.convert_time_unit(old_value, old_freq='min', new_freq='h')
+        self.assertAlmostEqual(new_value - old_value / 60, 0, 5)
+
+
 class MultiCommodity(unittest.TestCase):
 
     def test_predefined_multicommodity(self):
