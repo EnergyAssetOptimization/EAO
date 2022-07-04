@@ -413,9 +413,9 @@ class ContractTest(unittest.TestCase):
         self.assertAlmostEqual(abs(min_cap - res.x).sum(), 0., 5)
 
 
-class CHPContractTest(unittest.TestCase):
+class CHPAsset(unittest.TestCase):
     def test_optimization(self):
-        """ Unit test. Setting up a CHPContract with random prices
+        """ Unit test. Setting up a CHPAsset with random prices
             and check that it generates full load at negative prices and nothing at positive prices.
         """
         node_power = eao.assets.Node('node_power')
@@ -436,7 +436,7 @@ class CHPContractTest(unittest.TestCase):
         self.assertTrue(check)
 
     def test_min_cap_vector(self):
-        """ Unit test. Setting up a CHPContract with positive prices and a simple contract with a minimum demand that is
+        """ Unit test. Setting up a CHPAsset with positive prices and a simple contract with a minimum demand that is
             smaller than the min capacity. Check that it runs at minimum capacity.
         """
         node_power = eao.assets.Node('node_power')
@@ -473,7 +473,7 @@ class CHPContractTest(unittest.TestCase):
         self.assertAlmostEqual(np.abs(timegrid.values_to_grid(min_cap) - x_power + a.conversion_factor_power_heat * x_heat).max(), 0., 2)
 
     def test_max_cap_vector(self):
-        """ Unit test. Setting up a CHPContract with negative prices
+        """ Unit test. Setting up a CHPAsset with negative prices
             and check that it runs at maximum capacity.
         """
         node_power = eao.assets.Node('node_power')
@@ -499,7 +499,7 @@ class CHPContractTest(unittest.TestCase):
         self.assertAlmostEqual(np.abs(res.x[:timegrid.T] + a.conversion_factor_power_heat * res.x[timegrid.T:2 * timegrid.T] - timegrid.values_to_grid(max_cap)).sum(), 0., 5)
 
     def test_start_variables(self):
-        """ Unit test. Setting up a CHPContract with random prices
+        """ Unit test. Setting up a CHPAsset with random prices
             and check that it starts any time the prices change from positive to negative.
         """
         node_power = eao.assets.Node('node_power')
@@ -518,7 +518,7 @@ class CHPContractTest(unittest.TestCase):
                 self.assertTrue(start_variables[i]==1)
 
     def test_minruntime(self):
-        """ Unit test. Setting up a CHPContract and check min run time restriction
+        """ Unit test. Setting up a CHPAsset and check min run time restriction
         """
         node_power = eao.assets.Node('node_power')
         node_heat = eao.assets.Node('node_heat')
@@ -586,7 +586,7 @@ class CHPContractTest(unittest.TestCase):
         self.assertAlmostEqual(res.value, 10*10*100. - 5*1 + 15*(-5), 4) 
 
     def test_gas_consumption(self):
-        """ Unit test. Setting up a CHPContract with explicit gas (fuel) consumption
+        """ Unit test. Setting up a CHPAsset with explicit gas (fuel) consumption
         """
         node_power = eao.assets.Node('node_power')
         node_heat = eao.assets.Node('node_heat')
@@ -626,6 +626,9 @@ class CHPContractTest(unittest.TestCase):
         self.assertAlmostEqual(check, 391.9 , 4)
 
     def test_min_take(self):
+        """
+        Unit test. Set up a CHPAsset with positive prices and check that the minTake is reached in the defined time frame.
+        """
         node_power = eao.assets.Node('node_power')
         node_heat = eao.assets.Node('node_heat')
         Start = dt.date(2021, 1, 1)
@@ -651,6 +654,9 @@ class CHPContractTest(unittest.TestCase):
         self.assertAlmostEqual((disp_power[2*24:4*24]+conversion_factor_power_heat*disp_heat[2*24:4*24]).sum(), 20, 5)
 
     def test_max_take(self):
+        """
+        Unit test. Set up a CHPAsset with negative prices and check that the max_Take is reached in the defined time frame.
+        """
         node_power = eao.assets.Node('node_power')
         node_heat = eao.assets.Node('node_heat')
         Start = dt.date(2021, 1, 1)
