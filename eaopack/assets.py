@@ -479,7 +479,7 @@ class SimpleContract(Asset):
                 end:   dt.datetime = None,
                 wacc: float = 0,
                 price:str = None,
-                extra_costs:Union[float, Dict] = 0.,
+                extra_costs: Union[float, Dict, str] = 0.,
                 min_cap: Union[float, Dict, str] = 0.,
                 max_cap: Union[float, Dict, str] = 0.,
                 freq: str = None,
@@ -509,11 +509,12 @@ class SimpleContract(Asset):
                                            dict['value'] = array
                                     str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
             price (str): Name of price vector for buying / selling. Defaults to None
-            extra_costs (float, optional): extra costs added to price vector (in or out). Defaults to 0.
-                                           float: constant value
-                                           dict:  dict['start'] = array
-                                                  dict['end']   = array
-                                                  dict['value'] = array
+            extra_costs (float, dict, str): extra costs added to price vector (in or out). Defaults to 0.
+                                            float: constant value
+                                            dict:  dict['start'] = array
+                                                   dict['end']   = array
+                                                   dict['value'] = array
+                                            str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
 
             periodicity (str, pd freq style): Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)
             periodicity_duration (str, pd freq style): Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)
@@ -617,6 +618,10 @@ class SimpleContract(Asset):
         # Make vector of extra_costs:
         if isinstance(self.extra_costs, (float, int, np.ndarray)):
             extra_costs = self.extra_costs*np.ones(T)
+        elif isinstance(self.extra_costs, str):
+            assert (self.extra_costs in prices), 'data for extra_costs not found for asset  '+self.name
+            extra_costs = prices[self.extra_costs].copy()
+            extra_costs = extra_costs[I] #  only in asset time window
         else: # given in form of dict (start/end/values)
             extra_costs = timegrid.restricted.values_to_grid(self.extra_costs)
             extra_costs[np.isnan(extra_costs)]=0
@@ -899,7 +904,7 @@ class Contract(SimpleContract):
                 end:   dt.datetime = None,
                 wacc: float = 0,
                 price:str = None,
-                extra_costs: Union[float, Dict] = 0.,
+                extra_costs: Union[float, Dict, str] = 0.,
                 min_cap: Union[float, Dict, str] = 0.,
                 max_cap: Union[float, Dict, str] = 0.,
                 min_take: dict = None,
@@ -940,11 +945,12 @@ class Contract(SimpleContract):
                                      dict['end']   = np.array
                                      dict['value'] = np.array
             price (str): Name of price vector for buying / selling
-            extra_costs (float, optional): extra costs added to price vector (in or out). Defaults to 0.
-                                          float: constant value
-                                          dict:  dict['start'] = np.array
-                                                 dict['end']   = np.array
-                                                 dict['value'] = np.array
+            extra_costs (float, dict, str): extra costs added to price vector (in or out). Defaults to 0.
+                                            float: constant value
+                                            dict:  dict['start'] = array
+                                                   dict['end']   = array
+                                                   dict['value'] = array
+                                            str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
 
             periodicity (str, pd freq style): Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)
             periodicity_duration (str, pd freq style): Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)
@@ -1057,9 +1063,9 @@ class CHPAsset(Contract):
                  end:   dt.datetime = None,
                  wacc: float = 0,
                  price:str = None,
-                 extra_costs: Union[float, Dict] = 0.,
-                 min_cap: Union[float, Dict] = 0.,
-                 max_cap: Union[float, Dict] = 0.,
+                 extra_costs: Union[float, Dict, str] = 0.,
+                 min_cap: Union[float, Dict, str] = 0.,
+                 max_cap: Union[float, Dict, str] = 0.,
                  min_take:dict = None,
                  max_take:dict = None,
                  freq: str = None,
@@ -1106,11 +1112,12 @@ class CHPAsset(Contract):
                                      dict['end']   = np.array
                                      dict['value'] = np.array
             price (str): Name of price vector for buying / selling
-            extra_costs (float, optional): extra costs added to price vector (in or out). Defaults to 0.
-                                           float: constant value
-                                           dict:  dict['start'] = np.array
-                                                  dict['end']   = np.array
-                                                  dict['value'] = np.array
+            extra_costs (float, dict, str): extra costs added to price vector (in or out). Defaults to 0.
+                                            float: constant value
+                                            dict:  dict['start'] = array
+                                                   dict['end']   = array
+                                                   dict['value'] = array
+                                            str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
             periodicity (str, pd freq style): Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)
             periodicity_duration (str, pd freq style): Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)
             conversion_factor_power_heat (float): Conversion efficiency from heat to power. Defaults to 1.
@@ -1451,7 +1458,7 @@ class MultiCommodityContract(Contract):
                 end:   dt.datetime = None,
                 wacc: float = 0,
                 price:str = None,
-                extra_costs: Union[float, List[float], Dict] = 0.,
+                extra_costs: Union[float, Dict, str] = 0.,
                 min_cap: Union[float, Dict, str] = 0.,
                 max_cap: Union[float, Dict, str] = 0.,
                 min_take: dict = None,
@@ -1492,11 +1499,12 @@ class MultiCommodityContract(Contract):
                                      dict['end']   = np.array
                                      dict['value'] = np.array
             price (str): Name of price vector for buying / selling
-            extra_costs (float, optional): extra costs added to price vector (in or out). Defaults to 0.
-                                           float: constant value
-                                           dict:  dict['start'] = np.array
-                                                  dict['end']   = np.array
-                                                  dict['value'] = np.array
+            extra_costs (float, dict, str): extra costs added to price vector (in or out). Defaults to 0.
+                                            float: constant value
+                                            dict:  dict['start'] = array
+                                                   dict['end']   = array
+                                                   dict['value'] = array
+                                            str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
             periodicity (str, pd freq style): Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)
             periodicity_duration (str, pd freq style): Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)
 
