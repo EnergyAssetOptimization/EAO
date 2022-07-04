@@ -592,22 +592,9 @@ class SimpleContract(Asset):
         ## if it's zero, one variable is enough
 
         # Make vector of single min/max capacities.
-        if isinstance(self.max_cap, (float, int, np.ndarray)):
-            max_cap = self.max_cap*np.ones(T)
-        elif isinstance(self.max_cap, str):
-            assert (self.max_cap in prices), 'data for max_cap not found for asset  '+self.name
-            max_cap = prices[self.max_cap].copy()
-            max_cap = max_cap[I] #  only in asset time window
-        else: # given in form of dict (start/end/values)
-            max_cap = timegrid.restricted.values_to_grid(self.max_cap)
-        if isinstance(self.min_cap, (float, int, np.ndarray)):
-            min_cap = self.min_cap*np.ones(T)
-        elif isinstance(self.min_cap, str):
-            assert (self.min_cap in prices), 'data for min_cap not found for asset  '+self.name
-            min_cap = prices[self.min_cap].copy()
-            min_cap = min_cap[I] #  only in asset time window
-        else: # given in form of dict (start/end/values)
-            min_cap = timegrid.restricted.values_to_grid(self.min_cap)
+        max_cap = self.make_vector(self.max_cap, prices)
+        min_cap = self.make_vector(self.min_cap, prices)
+
         # check integrity
         if any(min_cap>max_cap):
             raise ValueError('Asset --' + self.name+'--: Contract with min_cap > max_cap leads to ill-posed optimization problem')
@@ -616,15 +603,7 @@ class SimpleContract(Asset):
         max_cap = max_cap * self.timegrid.restricted.dt
 
         # Make vector of extra_costs:
-        if isinstance(self.extra_costs, (float, int, np.ndarray)):
-            extra_costs = self.extra_costs*np.ones(T)
-        elif isinstance(self.extra_costs, str):
-            assert (self.extra_costs in prices), 'data for extra_costs not found for asset  '+self.name
-            extra_costs = prices[self.extra_costs].copy()
-            extra_costs = extra_costs[I] #  only in asset time window
-        else: # given in form of dict (start/end/values)
-            extra_costs = timegrid.restricted.values_to_grid(self.extra_costs)
-            extra_costs[np.isnan(extra_costs)]=0
+        extra_costs = self.make_vector(self.extra_costs, prices, default_value=0)
 
         mapping = pd.DataFrame() ## mapping of variables for use in portfolio
         if (all(extra_costs==0.)) or (all(max_cap<=0.)) or (all(min_cap>=0.)):
@@ -680,6 +659,21 @@ class SimpleContract(Asset):
         else:
             return OptimProblem(c = c, l = l, u = u,
                                 mapping = mapping)
+
+    def make_vector(self, value, prices, default_value=None):
+        I = self.timegrid.restricted.I  # indices of restricted time grid
+        T = self.timegrid.restricted.T
+        if isinstance(value, (float, int, np.ndarray)):
+            vec = value * np.ones(T)
+        elif isinstance(value, str):
+            assert (value in prices), 'data for ' + value + 'not found for asset  ' + self.name
+            vec = prices[value].copy()
+            vec = vec[I]  # only in asset time window
+        else:  # given in form of dict (start/end/values)
+            vec = self.timegrid.restricted.values_to_grid(value)
+            if default_value is not None:
+                vec[np.isnan(vec)] = default_value
+        return vec
 
 
 class Transport(Asset):
@@ -1222,18 +1216,9 @@ class CHPAsset(Contract):
 
         op = super().setup_optim_problem(prices=prices, timegrid=timegrid, costs_only=costs_only)
 
-        # Make vector of start_costs:
-        I = self.timegrid.restricted.I  # indices of restricted time grid
-        T = timegrid.restricted.T
-        if isinstance(self.start_costs, (float, int, np.ndarray)):
-            start_costs = self.start_costs*np.ones(T)
-        elif isinstance(self.start_costs, str):
-            assert (self.start_costs in prices), 'data for start_costs not found for asset  '+self.name
-            start_costs = prices[self.start_costs].copy()
-            start_costs = start_costs[I]  # only in asset time window
-        else:  # given in form of dict (start/end/values)
-            start_costs = timegrid.restricted.values_to_grid(self.start_costs)
-            start_costs[np.isnan(start_costs)] = 0
+        # Make vectors of input params:
+        start_costs = self.make_vector(self.start_costs, prices, default_value=0.)
+        
 
         # calculate costs:
         if costs_only:
