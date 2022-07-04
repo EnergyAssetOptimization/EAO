@@ -479,7 +479,7 @@ class SimpleContract(Asset):
                 end:   dt.datetime = None,
                 wacc: float = 0,
                 price:str = None,
-                extra_costs:float = 0.,
+                extra_costs: Union[float, Dict] = 0.,
                 min_cap: Union[float, Dict] = 0.,
                 max_cap: Union[float, Dict] = 0.,
                 freq: str = None,
@@ -509,6 +509,10 @@ class SimpleContract(Asset):
                                            dict['value'] = array
             price (str): Name of price vector for buying / selling. Defaults to None
             extra_costs (float, optional): extra costs added to price vector (in or out). Defaults to 0.
+                                           float: constant value
+                                           dict:  dict['start'] = array
+                                                  dict['end']   = array
+                                                  dict['value'] = array
 
             periodicity (str, pd freq style): Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)
             periodicity_duration (str, pd freq style): Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)
@@ -601,16 +605,23 @@ class SimpleContract(Asset):
         min_cap = min_cap * self.timegrid.restricted.dt
         max_cap = max_cap * self.timegrid.restricted.dt
 
+        # Make vector of extra_costs:
+        if isinstance(self.extra_costs, (float, int, np.ndarray)):
+            extra_costs = self.extra_costs*np.ones(T)
+        else: # given in form of dict (start/end/values)
+            extra_costs = timegrid.restricted.values_to_grid(self.extra_costs)
+            extra_costs[np.isnan(extra_costs)]=0
+
         mapping = pd.DataFrame() ## mapping of variables for use in portfolio
-        if (self.extra_costs == 0) or (all(max_cap<=0.)) or (all(min_cap>=0.)):
+        if (all(extra_costs==0.)) or (all(max_cap<=0.)) or (all(min_cap>=0.)):
             # in this case no need for two variables per time step
             u =  max_cap # upper bound
             l =  min_cap # lower
-            if self.extra_costs !=0:
+            if any(extra_costs !=0):
                 if (all(max_cap<=0.)): # dispatch always negative
-                    price = price - self.extra_costs
+                    price = price - extra_costs
                 if (all(min_cap>=0.)): # dispatch always negative
-                    price = price + self.extra_costs
+                    price = price + extra_costs
             c = price * discount_factors # set price and discount
             mapping['time_step'] = I
             mapping['var_name']  = 'disp' # name variables for use e.g. in RI
@@ -621,7 +632,7 @@ class SimpleContract(Asset):
             # in full contract there may be different prices for in/out
             c = np.tile(price, (2,1))
             # add extra costs to in/out dispatch
-            ec = np.vstack((-np.ones(T)*self.extra_costs, np.ones(T)*self.extra_costs))
+            ec = np.vstack((-extra_costs, extra_costs))
             c  = c + ec
             # discount the cost vectors:
             c = c * (np.tile(discount_factors, (2,1)))
@@ -879,7 +890,7 @@ class Contract(SimpleContract):
                 end:   dt.datetime = None,
                 wacc: float = 0,
                 price:str = None,
-                extra_costs:float = 0.,
+                extra_costs: Union[float, Dict] = 0.,
                 min_cap: Union[float, Dict] = 0.,
                 max_cap: Union[float, Dict] = 0.,
                 min_take:Union[float, List[float], Dict] = None,
@@ -917,6 +928,10 @@ class Contract(SimpleContract):
                                      dict['value'] = np.array
             price (str): Name of price vector for buying / selling
             extra_costs (float, optional): extra costs added to price vector (in or out). Defaults to 0.
+                                          float: constant value
+                                          dict:  dict['start'] = np.array
+                                                 dict['end']   = np.array
+                                                 dict['value'] = np.array
 
             periodicity (str, pd freq style): Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)
             periodicity_duration (str, pd freq style): Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)
@@ -1027,7 +1042,7 @@ class CHPAsset(Contract):
                  end:   dt.datetime = None,
                  wacc: float = 0,
                  price:str = None,
-                 extra_costs:float = 0.,
+                 extra_costs: Union[float, Dict] = 0.,
                  min_cap: Union[float, Dict] = 0.,
                  max_cap: Union[float, Dict] = 0.,
                  min_take:Union[float, List[float], Dict] = None,
@@ -1077,6 +1092,10 @@ class CHPAsset(Contract):
                                      dict['value'] = np.array
             price (str): Name of price vector for buying / selling
             extra_costs (float, optional): extra costs added to price vector (in or out). Defaults to 0.
+                                           float: constant value
+                                           dict:  dict['start'] = np.array
+                                                  dict['end']   = np.array
+                                                  dict['value'] = np.array
             periodicity (str, pd freq style): Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)
             periodicity_duration (str, pd freq style): Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)
             conversion_factor_power_heat (float): Conversion efficiency from heat to power. Defaults to 1.
@@ -1409,7 +1428,7 @@ class MultiCommodityContract(Contract):
                 end:   dt.datetime = None,
                 wacc: float = 0,
                 price:str = None,
-                extra_costs:float = 0.,
+                extra_costs: Union[float, List[float], Dict] = 0.,
                 min_cap: Union[float, Dict] = 0.,
                 max_cap: Union[float, Dict] = 0.,
                 min_take:Union[float, List[float], Dict] = None,
@@ -1447,7 +1466,10 @@ class MultiCommodityContract(Contract):
                                      dict['value'] = np.array
             price (str): Name of price vector for buying / selling
             extra_costs (float, optional): extra costs added to price vector (in or out). Defaults to 0.
-
+                                           float: constant value
+                                           dict:  dict['start'] = np.array
+                                                  dict['end']   = np.array
+                                                  dict['value'] = np.array
             periodicity (str, pd freq style): Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)
             periodicity_duration (str, pd freq style): Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)
 
