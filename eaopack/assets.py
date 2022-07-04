@@ -1067,7 +1067,7 @@ class CHPAsset(Contract):
                  periodicity: str = None,
                  periodicity_duration: str = None,
                  conversion_factor_power_heat: float = 1.,
-                 max_share_heat: float = 1.,
+                 max_share_heat: Union[float, Dict, str] = 1.,
                  ramp: float = None,
                  start_costs: Union[float, Sequence[float], Dict] = 0.,
                  running_costs: Union[float, Dict, str] = 0.,
@@ -1115,7 +1115,7 @@ class CHPAsset(Contract):
             periodicity (str, pd freq style): Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)
             periodicity_duration (str, pd freq style): Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)
             conversion_factor_power_heat (float): Conversion efficiency from heat to power. Defaults to 1.
-            max_share_heat (float): Defines upper bound for the heat dispatch as a percentage of the power dispatch. Defaults to 1.
+            max_share_heat (float, dict, str): Defines upper bound for the heat dispatch as a percentage of the power dispatch. Defaults to 1.
             ramp (float): Maximum increase/decrease of virtual dispatch (power + conversion_factor_power_heat * heat) in one timestep. Defaults to 1.
             start_costs (float): Costs for starting. Defaults to 0.
             running_costs (float): Costs when on. Defaults to 0.
@@ -1220,6 +1220,7 @@ class CHPAsset(Contract):
         start_fuel = self.make_vector(self.start_fuel, prices, default_value=0.)
         fuel_efficiency = self.make_vector(self.fuel_efficiency, prices, default_value=1.)
         consumption_if_on = self.make_vector(self.consumption_if_on, prices, default_value=0.)
+        max_share_heat = self.make_vector(self.max_share_heat, prices, default_value=1.)
 
         # Sanity checks for abpve variables:
         assert np.all(fuel_efficiency!=0), 'fuel efficiency must not be zero'
@@ -1389,14 +1390,14 @@ class CHPAsset(Contract):
         myA = sp.lil_matrix((n, op.A.shape[1]))
         for i in range(n):
             myA[i, n + i] = 1
-            myA[i, i] = - self.max_share_heat
+            myA[i, i] = - max_share_heat[i]
         op.A = sp.vstack((op.A, myA))
         op.cType += 'U' * n
         op.b = np.hstack((op.b, np.zeros(n)))
 
         # Set lower and upper bounds for all variables
         op.l = np.zeros(op.A.shape[1])
-        op.u = np.hstack((op.u, self.max_share_heat * op.u, np.ones(op.A.shape[1] - op.u.shape[0] * 2)))
+        op.u = np.hstack((op.u, max_share_heat * op.u, np.ones(op.A.shape[1] - op.u.shape[0] * 2)))
 
         # Enforce minimum runtime if asset already on
         if time_already_running > 0 and min_runtime - time_already_running>0:
