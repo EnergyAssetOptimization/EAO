@@ -1223,12 +1223,17 @@ class CHPAsset(Contract):
         op = super().setup_optim_problem(prices=prices, timegrid=timegrid, costs_only=costs_only)
 
         # Make vector of start_costs:
+        I = self.timegrid.restricted.I  # indices of restricted time grid
         T = timegrid.restricted.T
         if isinstance(self.start_costs, (float, int, np.ndarray)):
             start_costs = self.start_costs*np.ones(T)
-        else: # given in form of dict (start/end/values)
+        elif isinstance(self.start_costs, str):
+            assert (self.start_costs in prices), 'data for start_costs not found for asset  '+self.name
+            start_costs = prices[self.start_costs].copy()
+            start_costs = start_costs[I]  # only in asset time window
+        else:  # given in form of dict (start/end/values)
             start_costs = timegrid.restricted.values_to_grid(self.start_costs)
-            start_costs[np.isnan(start_costs)]=0
+            start_costs[np.isnan(start_costs)] = 0
 
         # calculate costs:
         if costs_only:
