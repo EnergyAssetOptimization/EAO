@@ -1074,7 +1074,7 @@ class CHPAsset(Contract):
                  min_runtime: float = 0,
                  time_already_running: float = 0,
                  last_dispatch: Union[float, Sequence[float]] = 0,
-                 start_fuel: float = 0.,
+                 start_fuel: Union[float, Dict, str] = 0.,
                  fuel_efficiency: float = 1.,
                  consumption_if_on: float = 0.
                  ):
@@ -1179,7 +1179,6 @@ class CHPAsset(Contract):
             if not np.all(np.array(max_cap['values']) >= 0.):
                 raise ValueError('max_cap and has to be greater or equal to 0. Asset: ' + self.name)
 
-
     def setup_optim_problem(self, prices: dict, timegrid: Timegrid = None,
                             costs_only: bool = False) -> OptimProblem:
         """ Set up optimization problem for asset
@@ -1219,6 +1218,7 @@ class CHPAsset(Contract):
         # Make vectors of input params:
         start_costs = self.make_vector(self.start_costs, prices, default_value=0.)
         running_costs = self.make_vector(self.running_costs, prices, default_value=0.)
+        start_fuel = self.make_vector(self.start_fuel, prices, default_value=0.)
 
         # calculate costs:
         if costs_only:
@@ -1230,7 +1230,7 @@ class CHPAsset(Contract):
             include_start_variables = min_runtime > 1 or np.any(start_costs != 0)
             include_on_variables = include_start_variables or np.any(self.min_cap != 0.)
         else:
-            include_start_variables = min_runtime > 1 or np.any(start_costs != 0) or self.start_fuel !=0.
+            include_start_variables = min_runtime > 1 or np.any(start_costs != 0) or np.any(start_fuel !=0.)
             include_on_variables = include_start_variables or np.any(self.min_cap != 0.) or self.consumption_if_on != 0.
 
         if include_on_variables:
@@ -1428,7 +1428,7 @@ class CHPAsset(Contract):
             initial_map['node'] = self.node_names[2] # fuel node
             #initial_map['var_name'] = 'fuel_start'
             initial_map['type'] = 'd'
-            initial_map['disp_factor'] = -self.start_fuel
+            initial_map['disp_factor'] = -start_fuel
             new_map = pd.concat([new_map, initial_map.copy()])
 
             op.mapping = new_map
