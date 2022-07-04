@@ -1195,19 +1195,20 @@ class CHPAsset(Contract):
 
         op = super().setup_optim_problem(prices=prices, timegrid=timegrid, costs_only=costs_only)
 
+        # Check that min_cap and max_cap are >= 0
+        assert np.all(op.l >= 0.), 'min_cap has to be greater or equal to 0. Asset: ' + self.name
+        assert np.all(op.u >= 0.), 'max_cap has to be greater or equal to 0. Asset: ' + self.name
+
         # Make vectors of input params:
         start_costs = self.make_vector(self.start_costs, prices, default_value=0.)
         running_costs = self.make_vector(self.running_costs, prices, default_value=0.)
-        start_fuel = self.make_vector(self.start_fuel, prices, default_value=0.)
-        fuel_efficiency = self.make_vector(self.fuel_efficiency, prices, default_value=1.)
-        consumption_if_on = self.make_vector(self.consumption_if_on, prices, default_value=0.)
         max_share_heat = self.make_vector(self.max_share_heat, prices, default_value=1.)
         conversion_factor_power_heat = self.make_vector(self.conversion_factor_power_heat, prices, default_value=1.)
-
-        # Sanity checks for above variables:
-        assert np.all(fuel_efficiency!=0), 'fuel efficiency must not be zero. Asset: ' + self.name
-        assert np.all(op.l >= 0.), 'min_cap has to be greater or equal to 0. Asset: ' + self.name
-        assert np.all(op.u >= 0.), 'max_cap has to be greater or equal to 0. Asset: ' + self.name
+        if len(self.nodes) >= 3:
+            start_fuel = self.make_vector(self.start_fuel, prices, default_value=0.)
+            fuel_efficiency = self.make_vector(self.fuel_efficiency, prices, default_value=1.)
+            consumption_if_on = self.make_vector(self.consumption_if_on, prices, default_value=0.)
+            assert np.all(fuel_efficiency != 0), 'fuel efficiency must not be zero. Asset: ' + self.name
 
         # calculate costs:
         if costs_only:
