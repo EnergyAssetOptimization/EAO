@@ -1054,7 +1054,7 @@ class CHPAsset(Contract):
                  conversion_factor_power_heat: float = 1.,
                  max_share_heat: float = 1.,
                  ramp: float = None,
-                 start_costs: float = 0.,
+                 start_costs: Union[float, Sequence[float], Dict] = 0.,
                  running_costs: float = 0.,
                  min_runtime: float = 0,
                  time_already_running: float = 0,
@@ -1200,6 +1200,14 @@ class CHPAsset(Contract):
 
         op = super().setup_optim_problem(prices=prices, timegrid=timegrid, costs_only=costs_only)
 
+        # Make vector of start_costs:
+        T = timegrid.restricted.T
+        if isinstance(self.start_costs, (float, int, np.ndarray)):
+            start_costs = self.start_costs*np.ones(T)
+        else: # given in form of dict (start/end/values)
+            start_costs = timegrid.restricted.values_to_grid(self.start_costs)
+            start_costs[np.isnan(start_costs)]=0
+
         # calculate costs:
         if costs_only:
             c = op
@@ -1207,16 +1215,16 @@ class CHPAsset(Contract):
             c = op.c
         c = np.hstack([c, self.conversion_factor_power_heat * c])  # costs for power and heat dispatch
         if len(self.nodes)==2:
-            include_start_variables = min_runtime > 1 or self.start_costs != 0
+            include_start_variables = min_runtime > 1 or np.any(start_costs != 0)
             include_on_variables = include_start_variables or np.any(self.min_cap != 0.)
         else:
-            include_start_variables = min_runtime > 1 or self.start_costs != 0 or self.start_fuel !=0.
+            include_start_variables = min_runtime > 1 or np.any(start_costs != 0) or self.start_fuel !=0.
             include_on_variables = include_start_variables or np.any(self.min_cap != 0.) or self.consumption_if_on != 0.
 
         if include_on_variables:
             c = np.hstack([c, np.ones(self.timegrid.restricted.T) * self.running_costs])  # add costs for on variables
         if include_start_variables:
-            c = np.hstack([c, np.ones(self.timegrid.restricted.T) * self.start_costs])  # add costs for start variables
+            c = np.hstack([c, start_costs])  # add costs for start variables
         if costs_only:
             return c
         op.c = c
@@ -1225,8 +1233,8 @@ class CHPAsset(Contract):
         if np.any(op.l == 0) and include_on_variables:
             raise ValueError("If the minimum capacity is 0 at any point, the 'on' variables have to be disabled. Either set min_cap>0 or set min_runtime=0 and start_costs=0 and start_fuel=0 and consumption_if_on=0. Asset: " + self.name)
 
+        # Prepare matrix A:
         n = len(op.l)
-
         if op.A is None:
             op.A = sp.lil_matrix((0, n))
             op.cType = ''
