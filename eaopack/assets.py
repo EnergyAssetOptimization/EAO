@@ -1418,19 +1418,21 @@ class CHPAsset(Contract):
                     initial_map['disp_factor'] = -self.conversion_factor_power_heat / fuel_efficiency
                 new_map = pd.concat([new_map, initial_map.copy()])
             # consumption  if on
-            initial_map = op.mapping[op.mapping['var_name']=='bool_on'].copy()
-            initial_map['node'] = self.node_names[2] # fuel node
-            #initial_map['var_name'] = 'fuel_if_on'
-            initial_map['type'] = 'd'
-            initial_map['disp_factor'] = -self.consumption_if_on
-            new_map = pd.concat([new_map, initial_map.copy()])
+            if include_on_variables:
+                initial_map = op.mapping[op.mapping['var_name']=='bool_on'].copy()
+                initial_map['node'] = self.node_names[2] # fuel node
+                #initial_map['var_name'] = 'fuel_if_on'
+                initial_map['type'] = 'd'
+                initial_map['disp_factor'] = -self.consumption_if_on
+                new_map = pd.concat([new_map, initial_map.copy()])
             # consumption on start
-            initial_map = op.mapping[op.mapping['var_name']=='bool_start'].copy()
-            initial_map['node'] = self.node_names[2] # fuel node
-            #initial_map['var_name'] = 'fuel_start'
-            initial_map['type'] = 'd'
-            initial_map['disp_factor'] = -start_fuel
-            new_map = pd.concat([new_map, initial_map.copy()])
+            if include_start_variables:
+                initial_map = op.mapping[op.mapping['var_name']=='bool_start'].copy()
+                initial_map['node'] = self.node_names[2] # fuel node
+                #initial_map['var_name'] = 'fuel_start'
+                initial_map['type'] = 'd'
+                initial_map['disp_factor'] = -start_fuel
+                new_map = pd.concat([new_map, initial_map.copy()])
 
             op.mapping = new_map
         return op
