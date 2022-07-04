@@ -1075,7 +1075,7 @@ class CHPAsset(Contract):
                  time_already_running: float = 0,
                  last_dispatch: Union[float, Sequence[float]] = 0,
                  start_fuel: Union[float, Dict, str] = 0.,
-                 fuel_efficiency: float = 1.,
+                 fuel_efficiency: Union[float, Dict, str] = 1.,
                  consumption_if_on: float = 0.
                  ):
         """ CHPContract: Generate heat and power
@@ -1125,8 +1125,8 @@ class CHPAsset(Contract):
                             float value containing dispatch power with assumed dispatch heat = 0. Defaults to 0.
 
             Optional: Explicit fuel consumption (e.g. gas) for multi-commodity simulation
-                 start_fuel (float, optional): detaults to  0
-                 fuel_efficiency (float, optional): defaults to 1
+                 start_fuel (float, dict, str): detaults to  0
+                 fuel_efficiency (float, dict, str): defaults to 1
                  consumption_if_on (float, optional): defaults to 0
         """
         super(CHPAsset, self).__init__(name=name,
@@ -1152,7 +1152,6 @@ class CHPAsset(Contract):
         self.min_runtime          = min_runtime
         self.time_already_running = time_already_running
         if len(nodes) >= 3:
-            assert (fuel_efficiency != 0.), 'fuel efficiency must not be zero'
             self.fuel_efficiency      = fuel_efficiency
             self.consumption_if_on    = consumption_if_on
             self.start_fuel           = start_fuel
@@ -1219,6 +1218,8 @@ class CHPAsset(Contract):
         start_costs = self.make_vector(self.start_costs, prices, default_value=0.)
         running_costs = self.make_vector(self.running_costs, prices, default_value=0.)
         start_fuel = self.make_vector(self.start_fuel, prices, default_value=0.)
+        fuel_efficiency = self.make_vector(self.fuel_efficiency, prices, default_value=1.)
+        assert np.all(fuel_efficiency!=0), 'fuel efficiency must not be zero'
 
         # calculate costs:
         if costs_only:
@@ -1412,9 +1413,9 @@ class CHPAsset(Contract):
                 initial_map = op.mapping[(op.mapping['var_name']=='disp') & (op.mapping['node']== self.node_names[i])].copy()
                 initial_map['node']        = self.node_names[2] # fuel node
                 if i == 0:
-                    initial_map['disp_factor'] = -1./self.fuel_efficiency
+                    initial_map['disp_factor'] = -1./fuel_efficiency
                 elif i == 1:
-                    initial_map['disp_factor'] = -self.conversion_factor_power_heat / self.fuel_efficiency
+                    initial_map['disp_factor'] = -self.conversion_factor_power_heat / fuel_efficiency
                 new_map = pd.concat([new_map, initial_map.copy()])
             # consumption  if on
             initial_map = op.mapping[op.mapping['var_name']=='bool_on'].copy()
