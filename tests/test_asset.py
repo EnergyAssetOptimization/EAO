@@ -395,6 +395,24 @@ class ContractTest(unittest.TestCase):
         sdisp = res.x.sum() * (End-Start)/(End-startA) - 20.        
         self.assertAlmostEqual(sdisp, 0., 5)
 
+    def test_max_cap_vector_from_pricesDF(self):
+        node = eao.assets.Node('testNode')
+        Start = dt.date(2021, 1, 1)
+        End = dt.date(2021, 1, 10)
+        timegrid = eao.assets.Timegrid(Start, End, freq='h')
+
+        # capacities
+        min_cap = np.random.rand(timegrid.T)
+        prices = {'rand_price': -np.ones(timegrid.T), 'cap': min_cap}
+
+        a = eao.assets.Contract(name='SC', price='rand_price', nodes=node,
+                                min_cap='cap', max_cap='cap')
+
+        op = a.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        self.assertAlmostEqual(abs(min_cap - res.x).sum(), 0., 5)
+
+
 class CHPContractTest(unittest.TestCase):
     def test_optimization(self):
         """ Unit test. Setting up a CHPContract with random prices

@@ -479,9 +479,9 @@ class SimpleContract(Asset):
                 end:   dt.datetime = None,
                 wacc: float = 0,
                 price:str = None,
-                extra_costs: Union[float, Dict] = 0.,
-                min_cap: Union[float, Dict] = 0.,
-                max_cap: Union[float, Dict] = 0.,
+                extra_costs:Union[float, Dict] = 0.,
+                min_cap: Union[float, Dict, str] = 0.,
+                max_cap: Union[float, Dict, str] = 0.,
                 freq: str = None,
                 profile: pd.Series = None,
                 periodicity: str = None,
@@ -507,6 +507,7 @@ class SimpleContract(Asset):
                                     dict:  dict['start'] = array
                                            dict['end']   = array
                                            dict['value'] = array
+                                    str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
             price (str): Name of price vector for buying / selling. Defaults to None
             extra_costs (float, optional): extra costs added to price vector (in or out). Defaults to 0.
                                            float: constant value
@@ -592,10 +593,18 @@ class SimpleContract(Asset):
         # Make vector of single min/max capacities.
         if isinstance(self.max_cap, (float, int, np.ndarray)):
             max_cap = self.max_cap*np.ones(T)
+        elif isinstance(self.max_cap, str):
+            assert (self.max_cap in prices), 'data for max_cap not found for asset  '+self.name
+            max_cap = prices[self.max_cap].copy()
+            max_cap = max_cap[I] #  only in asset time window
         else: # given in form of dict (start/end/values)
             max_cap = timegrid.restricted.values_to_grid(self.max_cap)
         if isinstance(self.min_cap, (float, int, np.ndarray)):
             min_cap = self.min_cap*np.ones(T)
+        elif isinstance(self.min_cap, str):
+            assert (self.min_cap in prices), 'data for min_cap not found for asset  '+self.name
+            min_cap = prices[self.min_cap].copy()
+            min_cap = min_cap[I] #  only in asset time window
         else: # given in form of dict (start/end/values)
             min_cap = timegrid.restricted.values_to_grid(self.min_cap)
         # check integrity
@@ -891,10 +900,10 @@ class Contract(SimpleContract):
                 wacc: float = 0,
                 price:str = None,
                 extra_costs: Union[float, Dict] = 0.,
-                min_cap: Union[float, Dict] = 0.,
-                max_cap: Union[float, Dict] = 0.,
-                min_take:Union[float, List[float], Dict] = None,
-                max_take:Union[float, List[float], Dict] = None,
+                min_cap: Union[float, Dict, str] = 0.,
+                max_cap: Union[float, Dict, str] = 0.,
+                min_take: dict = None,
+                max_take: dict = None,
                 freq: str = None,
                 profile: pd.Series = None,
                 periodicity: str = None,
@@ -918,11 +927,15 @@ class Contract(SimpleContract):
             profile (pd.Series, optional):  If freq(asset) > freq(portf) assuming this profile for granular dispatch (e.g. scaling hourly profile to week).
                                             Defaults to None, only relevant if freq is not none
 
-            min_cap (float) : Minimum flow/capacity for buying (negative) or selling (positive). Defaults to 0
-            max_cap (float) : Maximum flow/capacity for selling (positive). Defaults to 0
-            min_take (float) : Minimum volume within given period. Defaults to None
-            max_take (float) : Maximum volume within given period. Defaults to None
-                              float: constant value
+            min_cap (float, dict, str) : Minimum flow/capacity for buying (negative) or selling (positive). Float or time series. Defaults to 0
+            max_cap (float, dict, str) : Maximum flow/capacity for selling (positive). Float or time series. Defaults to 0
+                                    float: constant value
+                                    dict:  dict['start'] = array
+                                           dict['end']   = array
+                                           dict['value'] = array
+                                    str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
+            min_take (dict) : Minimum volume within given period. Defaults to None
+            max_take (dict) : Maximum volume within given period. Defaults to None
                               dict:  dict['start'] = np.array
                                      dict['end']   = np.array
                                      dict['value'] = np.array
@@ -951,6 +964,7 @@ class Contract(SimpleContract):
                                        periodicity= periodicity,
                                        periodicity_duration=periodicity_duration)
         if not min_take is None:
+            assert isinstance(min_take, dict), 'min_take must be dict with keys (start, end, value). Asset: '+self.name
             assert 'values' in min_take, 'min_take must be of dict type with start, end & values (values missing)'
             assert 'start' in min_take, 'min_take must be of dict type with start, end & values (start missing)'
             assert 'end' in min_take, 'min_take must be of dict type with start, end & values (end missing)'
@@ -959,6 +973,7 @@ class Contract(SimpleContract):
                 min_take['start'] = [min_take['start']]
                 min_take['end'] = [min_take['end']]
         if not max_take is None:
+            assert isinstance(max_take, dict), 'max_take must be dict with keys (start, end, value). Asset: '+self.name
             assert 'values' in max_take, 'min_take must be of dict type with start, end & values (values missing)'
             assert 'start' in max_take, 'min_take must be of dict type with start, end & values (start missing)'
             assert 'end' in max_take, 'min_take must be of dict type with start, end & values (end missing)'
@@ -1045,8 +1060,8 @@ class CHPAsset(Contract):
                  extra_costs: Union[float, Dict] = 0.,
                  min_cap: Union[float, Dict] = 0.,
                  max_cap: Union[float, Dict] = 0.,
-                 min_take:Union[float, List[float], Dict] = None,
-                 max_take:Union[float, List[float], Dict] = None,
+                 min_take:dict = None,
+                 max_take:dict = None,
                  freq: str = None,
                  profile: pd.Series = None,
                  periodicity: str = None,
@@ -1399,7 +1414,7 @@ class CHPAsset(Contract):
             for i in [0,1]: # nodes power and heat
                 initial_map = op.mapping[(op.mapping['var_name']=='disp') & (op.mapping['node']== self.node_names[i])].copy()
                 initial_map['node']        = self.node_names[2] # fuel node
-                if i == 0: 
+                if i == 0:
                     initial_map['disp_factor'] = -1./self.fuel_efficiency
                 elif i == 1:
                     initial_map['disp_factor'] = -self.conversion_factor_power_heat / self.fuel_efficiency
@@ -1437,10 +1452,10 @@ class MultiCommodityContract(Contract):
                 wacc: float = 0,
                 price:str = None,
                 extra_costs: Union[float, List[float], Dict] = 0.,
-                min_cap: Union[float, Dict] = 0.,
-                max_cap: Union[float, Dict] = 0.,
-                min_take:Union[float, List[float], Dict] = None,
-                max_take:Union[float, List[float], Dict] = None,
+                min_cap: Union[float, Dict, str] = 0.,
+                max_cap: Union[float, Dict, str] = 0.,
+                min_take: dict = None,
+                max_take: dict = None,
                 factors_commodities: list = [1,1],
                 freq: str = None,
                 profile: pd.Series = None,
@@ -1464,11 +1479,15 @@ class MultiCommodityContract(Contract):
             profile (pd.Series, optional):  If freq(asset) > freq(portf) assuming this profile for granular dispatch (e.g. scaling hourly profile to week).
                                             Defaults to None, only relevant if freq is not none
 
-            min_cap (float) : Minimum flow/capacity for buying (negative) or selling (positive). Defaults to 0
-            max_cap (float) : Maximum flow/capacity for selling (positive). Defaults to 0
-            min_take (float) : Minimum volume within given period. Defaults to None
-            max_take (float) : Maximum volume within given period. Defaults to None
-                              float: constant value
+            min_cap (float, dict, str) : Minimum flow/capacity for buying (negative) or selling (positive). Defaults to 0
+            max_cap (float, dict, str) : Maximum flow/capacity for selling (positive). Defaults to 0
+                                    float: constant value
+                                    dict:  dict['start'] = array
+                                           dict['end']   = array
+                                           dict['value'] = array
+                                    str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
+            min_take (dict) : Minimum volume within given period. Defaults to None
+            max_take (dict) : Maximum volume within given period. Defaults to None
                               dict:  dict['start'] = np.array
                                      dict['end']   = np.array
                                      dict['value'] = np.array
@@ -1572,8 +1591,8 @@ class ExtendedTransport(Transport):
                 min_cap:float = 0.,
                 max_cap:float = 0.,
                 efficiency: float = 1.,
-                min_take:Union[float, List[float], Dict] = None,
-                max_take:Union[float, List[float], Dict] = None,
+                min_take: dict = None,
+                max_take: dict = None,
                 freq: str = None,
                 profile: pd.Series = None,
                 periodicity:str=None,
@@ -1609,11 +1628,8 @@ class ExtendedTransport(Transport):
             - with min_cap = max_cap and a detailed time series
             - with MinTake & MaxTake, implement structured gas contracts
         Additional args:
-            min_cap (float) : Minimum flow/capacity for buying (negative) or selling (positive). Defaults to 0
-            max_cap (float) : Maximum flow/capacity for selling (positive). Defaults to 0
-            min_take (float) : Minimum volume within given period. Defaults to None
-            max_take (float) : Maximum volume within given period. Defaults to None
-                              float: constant value
+            min_take (dict) : Minimum volume within given period. Defaults to None
+            max_take (dict) : Maximum volume within given period. Defaults to None
                               dict:  dict['start'] = np.array
                                      dict['end']   = np.array
                                      dict['value'] = np.array
@@ -1634,11 +1650,13 @@ class ExtendedTransport(Transport):
                                                 periodicity_duration=periodicity_duration
                                                 )
         if not min_take is None:
+            assert isinstance(min_take, dict), 'min_take must be dict with keys (start, end, value). Asset: '+self.name
             if isinstance(min_take['values'], (float, int)):
                 min_take['values'] = [min_take['values']]
                 min_take['start'] = [min_take['start']]
                 min_take['end'] = [min_take['end']]
         if not max_take is None:
+            assert isinstance(max_take, dict), 'max_take must be dict with keys (start, end, value). Asset: '+self.name
             if isinstance(max_take['values'], (float, int)):
                 max_take['values'] = [max_take['values']]
                 max_take['start'] = [max_take['start']]
