@@ -1076,7 +1076,7 @@ class CHPAsset(Contract):
                  last_dispatch: Union[float, Sequence[float]] = 0,
                  start_fuel: Union[float, Dict, str] = 0.,
                  fuel_efficiency: Union[float, Dict, str] = 1.,
-                 consumption_if_on: float = 0.
+                 consumption_if_on: Union[float, Dict, str] = 0.
                  ):
         """ CHPContract: Generate heat and power
             Restrictions
@@ -1127,7 +1127,7 @@ class CHPAsset(Contract):
             Optional: Explicit fuel consumption (e.g. gas) for multi-commodity simulation
                  start_fuel (float, dict, str): detaults to  0
                  fuel_efficiency (float, dict, str): defaults to 1
-                 consumption_if_on (float, optional): defaults to 0
+                 consumption_if_on (float, dict, str): defaults to 0
         """
         super(CHPAsset, self).__init__(name=name,
                                        nodes=nodes,
@@ -1219,6 +1219,9 @@ class CHPAsset(Contract):
         running_costs = self.make_vector(self.running_costs, prices, default_value=0.)
         start_fuel = self.make_vector(self.start_fuel, prices, default_value=0.)
         fuel_efficiency = self.make_vector(self.fuel_efficiency, prices, default_value=1.)
+        consumption_if_on = self.make_vector(self.consumption_if_on, prices, default_value=0.)
+
+        # Sanity checks for abpve variables:
         assert np.all(fuel_efficiency!=0), 'fuel efficiency must not be zero'
 
         # calculate costs:
@@ -1232,7 +1235,7 @@ class CHPAsset(Contract):
             include_on_variables = include_start_variables or np.any(self.min_cap != 0.)
         else:
             include_start_variables = min_runtime > 1 or np.any(start_costs != 0) or np.any(start_fuel !=0.)
-            include_on_variables = include_start_variables or np.any(self.min_cap != 0.) or self.consumption_if_on != 0.
+            include_on_variables = include_start_variables or np.any(self.min_cap != 0.) or np.any(consumption_if_on != 0.)
 
         if include_on_variables:
             c = np.hstack([c, running_costs])  # add costs for on variables
@@ -1423,7 +1426,7 @@ class CHPAsset(Contract):
                 initial_map['node'] = self.node_names[2] # fuel node
                 #initial_map['var_name'] = 'fuel_if_on'
                 initial_map['type'] = 'd'
-                initial_map['disp_factor'] = -self.consumption_if_on
+                initial_map['disp_factor'] = -consumption_if_on
                 new_map = pd.concat([new_map, initial_map.copy()])
             # consumption on start
             if include_start_variables:
