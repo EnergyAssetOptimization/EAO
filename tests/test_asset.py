@@ -623,7 +623,57 @@ class CHPContractTest(unittest.TestCase):
         check = out['dispatch']['CHP (node_heat)'].sum()
         self.assertAlmostEqual(check, 0. , 4) 
         check = out['dispatch']['gasMarket (node_gas)'].sum()
-        self.assertAlmostEqual(check, 391.9 , 4) 
+        self.assertAlmostEqual(check, 391.9 , 4)
+
+    def test_min_take(self):
+        node_power = eao.assets.Node('node_power')
+        node_heat = eao.assets.Node('node_heat')
+        Start = dt.date(2021, 1, 1)
+        End = dt.date(2021, 1, 10)
+        timegrid = eao.assets.Timegrid(Start, End, freq='h')
+
+        min_take = {}
+        min_take['start'] = dt.date(2021, 1, 3)
+        min_take['end'] = dt.date(2021, 1, 5)
+        min_take['values'] = 20
+        # max_take = min_take.copy()
+        max_take = None
+        conversion_factor_power_heat = 0.5
+
+        a = eao.assets.CHPAsset(name='CHP', price='rand_price', nodes=(node_power, node_heat), min_cap=0., max_cap=20,
+                                min_take=min_take, max_take=max_take, conversion_factor_power_heat=conversion_factor_power_heat)
+        prices = {'rand_price': np.ones(timegrid.T)}
+        op = a.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        disp_power = res.x[:timegrid.T]
+        disp_heat = res.x[timegrid.T:2*timegrid.T]
+
+        self.assertAlmostEqual((disp_power[2*24:4*24]+conversion_factor_power_heat*disp_heat[2*24:4*24]).sum(), 20, 5)
+
+    def test_max_take(self):
+        node_power = eao.assets.Node('node_power')
+        node_heat = eao.assets.Node('node_heat')
+        Start = dt.date(2021, 1, 1)
+        End = dt.date(2021, 1, 10)
+        timegrid = eao.assets.Timegrid(Start, End, freq='h')
+
+        max_take = {}
+        max_take['start'] = dt.date(2021, 1, 3)
+        max_take['end'] = dt.date(2021, 1, 5)
+        max_take['values'] = 20
+        # max_take = min_take.copy()
+        min_take = None
+        conversion_factor_power_heat = 0.5
+
+        a = eao.assets.CHPAsset(name='CHP', price='rand_price', nodes=(node_power, node_heat), min_cap=0., max_cap=20,
+                                min_take=min_take, max_take=max_take, conversion_factor_power_heat=conversion_factor_power_heat)
+        prices = {'rand_price': -np.ones(timegrid.T)}
+        op = a.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        disp_power = res.x[:timegrid.T]
+        disp_heat = res.x[timegrid.T:2*timegrid.T]
+
+        self.assertAlmostEqual((disp_power[2*24:4*24]+conversion_factor_power_heat*disp_heat[2*24:4*24]).sum(), 20, 5)
 
 class MultiCommodity(unittest.TestCase):
 
