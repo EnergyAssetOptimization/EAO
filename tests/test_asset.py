@@ -413,7 +413,7 @@ class ContractTest(unittest.TestCase):
         self.assertAlmostEqual(abs(min_cap - res.x).sum(), 0., 5)
 
 
-class CHPAsset(unittest.TestCase):
+class CHPAssetTest(unittest.TestCase):
     def test_optimization(self):
         """ Unit test. Setting up a CHPAsset with random prices
             and check that it generates full load at negative prices and nothing at positive prices.
