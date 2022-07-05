@@ -660,7 +660,22 @@ class SimpleContract(Asset):
             return OptimProblem(c = c, l = l, u = u,
                                 mapping = mapping)
 
-    def make_vector(self, value, prices, default_value=None):
+    def make_vector(self, value:  Union[float, Dict, str], prices:dict, default_value: float = None):
+        """
+        Make a vector out of value
+        Args:
+            value (float, dict, str): The value to be converted to a vector
+                                      float: constant value
+                                      dict:  dict['start'] = array
+                                             dict['end']   = array
+                                             dict['value'] = array
+                                      str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
+            prices (dict): Dictionary of price arrays needed by assets in portfolio
+            default_value (float): The value that is used if any of the entries of the resulting vector are not specified
+
+        Returns:
+
+        """
         I = self.timegrid.restricted.I  # indices of restricted time grid
         T = self.timegrid.restricted.T
         if isinstance(value, (float, int, np.ndarray)):
