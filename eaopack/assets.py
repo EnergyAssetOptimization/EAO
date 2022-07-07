@@ -1248,7 +1248,10 @@ class CHPAsset(Contract):
 
         # Check that if include_on_variables is True, the minimum capacity is not 0. Otherwise the "on" variables cannot be computed correctly.
         if np.any(op.l == 0) and include_on_variables:
-            raise ValueError("If the minimum capacity is 0 at any point, the 'on' variables have to be disabled. Either set min_cap>0 or set min_runtime=0 and start_costs=0 and start_fuel=0 and consumption_if_on=0. Asset: " + self.name)
+            print("Warning for asset " + self.name + ": The minimum capacity is 0 at some point and 'on'-variables are included" 
+                  ". This can lead to incorrect 'on' and 'start' variables. "
+                  "To prevent this either set min_cap>0 or set min_runtime=0 and start_costs=0 and start_fuel=0"
+                  " and consumption_if_on=0.")
 
         # Prepare matrix A:
         n = len(op.l)
