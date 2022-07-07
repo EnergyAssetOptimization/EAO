@@ -233,6 +233,34 @@ class Portfolio:
             res.append(self.setup_optim_problem(ps, timegrid, costs_only = True))
         return res
 
+    def get_asset(self, asset_name: str) -> Asset:
+        """ Return the asset with name asset_name or None if no asset with this name exists in the portfolio.
+
+            Args:
+                asset_name(str): The name of the asset
+
+            Returns:
+                asset (Asset): The asset with name asset_name
+        """
+        if asset_name in self.asset_names:
+            idx = self.asset_names.index(asset_name)
+            return self.assets[idx]
+        else:
+            return None
+
+    def get_node(self, node_name: str) -> Node:
+        """ Return the node with name node_name or None if no nodes with this name exists in the portfolio.
+
+            Args:
+                node_name(str): The name of the node
+
+            Returns:
+                node (Node): The node with name node_name
+        """
+        if node_name in self.nodes:
+            return self.nodes[node_name]
+        else:
+            return None
 
 class StructuredAsset(Asset):
     """ Structured asset that wraps a portfolio in one asset
@@ -303,26 +331,27 @@ class StructuredAsset(Asset):
 
 class LinkedAsset(StructuredAsset):
     def __init__(self, portfolio,
-                 variable_desc1: Tuple[Union[Asset, str], str, Union[Node, str]],
-                 variable_desc2: Tuple[Union[Asset, str], str, Union[Node, str]],
+                 asset1_variable: Tuple[Union[Asset, str], str, Union[Node, str]],
+                 asset2_variable: Tuple[Union[Asset, str], str, Union[Node, str]],
+                 asset2_time_already_running: Union[str, float] = "time_already_running",
                  time_back: float = 1,
                  time_forward: float = 0,
                  *args, **kwargs):
 
         super().__init__(portfolio, *args, **kwargs)
 
-        a1, v1, node1 = variable_desc1
-        a2, v2, node2 = variable_desc2
+        a1, v1, node1 = asset1_variable
+        a2, v2, node2 = asset2_variable
 
         if isinstance(a1, Asset):
-            self.asset1_name = a1.name
+            self.asset1 = a1
         else:
-            self.asset1_name = a1
+            self.asset1 = self.portfolio.get_asset(a1)
 
         if isinstance(a2, Asset):
-            self.asset2_name = a2.name
+            self.asset2 = a2
         else:
-            self.asset2_name = a2
+            self.asset2 = self.portfolio.get_asset(a2)
 
         self.variable1_name = v1
         self.variable2_name = v2
@@ -341,34 +370,27 @@ class LinkedAsset(StructuredAsset):
             if self.node2 not in self.node_names:
                 self.node2 = self.name + '_internal_' + self.node2
 
+        if isinstance(asset2_time_already_running, str):
+            self.asset2_time_already_running = getattr(self.asset2, asset2_time_already_running, None)
+            if self.asset2_time_already_running is None:
+                print("Warning: Asset", self.name, "has no attribute", asset2_time_already_running + ". "
+                      "Therefore, 0 is used per default.")
+                self.asset2_time_already_running = 0
+        else:
+            self.asset2_time_already_running = asset2_time_already_running
         self.time_back = time_back
         self.time_forward = time_forward
 
     def setup_optim_problem(self, prices: dict, timegrid: Timegrid = None, costs_only: bool = False) -> OptimProblem:
-        # convert time_back and time_forward from timegrids main_time_unit to timegrid.freq
-        time_back = convert_time_unit(self.time_back, old_freq=timegrid.main_time_unit, new_freq=timegrid.freq)
-        if not time_back.is_integer():
-            print("Warning for asset", self.name + ": min_runtime is", self.time_back,
-                  "in freq '" + str(timegrid.main_time_unit) +
-                  "' which corresponds to", time_back, "in freq '" + str(timegrid.freq) + "'.",
-                  "This is not an integer and will therefore be rounded to", str(np.ceil(time_back)),
-                  "in freq '" + str(timegrid.freq) + "'.")
-            time_back = np.ceil(time_back)
-        time_back = int(time_back)
-        time_forward = convert_time_unit(self.time_forward, old_freq=timegrid.main_time_unit, new_freq=timegrid.freq)
-        if not time_forward.is_integer():
-            print("Warning for asset", self.name + ": min_runtime is", self.time_forward,
-                  "in freq '" + str(timegrid.main_time_unit) +
-                  "' which corresponds to", time_forward, "in freq '" + str(timegrid.freq) + "'.",
-                  "This is not an integer and will therefore be rounded to", str(np.ceil(time_forward)),
-                  "in freq '" + str(timegrid.freq) + "'.")
-            time_forward = np.ceil(time_forward)
-        time_forward = int(time_forward)
-
         op = super().setup_optim_problem(prices, timegrid, costs_only)
 
+        # convert time_back and time_forward from timegrids main_time_unit to timegrid.freq
+        time_back = self.convert_to_timegrid_freq(self.time_back, "time_back")
+        time_forward = self.convert_to_timegrid_freq(self.time_forward, "time_forward")
+        asset2_time_already_running = self.convert_to_timegrid_freq(self.asset2_time_already_running, "asset2_time_already_running")
+
         for t in range(self.timegrid.restricted.T):
-            condition = (op.mapping['var_name'] == self.variable1_name + '__' + self.asset1_name) & (op.mapping["time_step"] == t)
+            condition = (op.mapping['var_name'] == self.variable1_name + '__' + self.asset1.name) & (op.mapping["time_step"] == t)
             if self.node1_name is not None:
                 condition = condition & (op.mapping["node"] == self.node1_name)
             else:
@@ -376,23 +398,26 @@ class LinkedAsset(StructuredAsset):
             I1_t = op.mapping.index[condition]
             assert I1_t[0].size == 1
             for i in np.arange(-time_back, time_forward + 1):
-                if i+t < 0 or i+t >= self.timegrid.restricted.T:
+                if i + t < -asset2_time_already_running:
+                    # asset2 has not been running long enough, so variable1 of asset1 has to be 0
+                    op.u[I1_t] = 0
                     continue
-                condition = (op.mapping['var_name'] == self.variable2_name + '__' + self.asset2_name) & (op.mapping["time_step"] == i+t)
+                if i + t < 0 or i + t >= self.timegrid.restricted.T:
+                    continue
+                condition = (op.mapping['var_name'] == self.variable2_name + '__' + self.asset2.name) & (op.mapping["time_step"] == i + t)
                 if self.node2 is not None:
                     condition = condition & (op.mapping["node"] == self.node2)
                 else:
                     condition = condition & (op.mapping["node"].isnull())
-                I2_i = op.mapping.index[condition]
-                assert I2_i[0].size == 1
+                I2_it = op.mapping.index[condition]
+                assert I2_it[0].size == 1
                 a = sp.lil_matrix((1, op.A.shape[1]))
                 a[0, I1_t] = 1
-                a[0, I2_i] = -op.u[I1_t]
+                a[0, I2_it] = -op.u[I1_t]
                 op.A = sp.vstack((op.A, a))
                 op.cType += 'U'
                 op.b = np.hstack((op.b, 0))
 
-        #TODO Randconstraints
 
 
 if __name__ == "__main__" :
