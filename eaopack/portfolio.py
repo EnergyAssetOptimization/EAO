@@ -330,15 +330,53 @@ class StructuredAsset(Asset):
 
 
 class LinkedAsset(StructuredAsset):
+    """
+    Linked asset that wraps a portfolio in one asset and poses additional constraints on variables.
+    This can be used to ensure that one asset turns on only after another asset has been running for at
+    least a set amount of time.
+    """
     def __init__(self, portfolio,
                  asset1_variable: Tuple[Union[Asset, str], str, Union[Node, str]],
                  asset2_variable: Tuple[Union[Asset, str], str, Union[Node, str]],
                  asset2_time_already_running: Union[str, float] = "time_already_running",
                  time_back: float = 1,
                  time_forward: float = 0,
+                 name: str = 'default_name_linkedAsset',
                  *args, **kwargs):
+        """ Linked asset that wraps a portfolio in one asset and poses the following additional constraints on variable
+        v1 of asset1 and (bool) variable v2 of asset2:
 
-        super().__init__(portfolio, *args, **kwargs)
+        v1_t <= u1_t * v2_{t+i}, for all i = -time_back,...,time_forward   and   timesteps t = 0,...,timegrid.T
+
+        Here, v1_t and v2_t stand for variable v1 of asset1 at timestep t and variable v2 of asset2 at timestep t, respectively.
+        u1_t stands for the upper bound for variable v1_t as specified in asset1.
+
+        This can be used to ensure that a dispatch or "on" variable v1 is 0 (or "off") depending on the value of an "on" variable v2.
+        For example, it can be ensured that asset1 only turns "on" or has positive dispatch once asset2 has
+        been running for a minimum amount of time.
+
+        Args:
+            portf (Portfolio): Portfolio to be wrapped
+            nodes (nodes as in std. asset): where to connect the asset to the outside.
+                                            Must correspond to (a) node(s) of the internal structure
+            name (str): name of the linked asset
+            asset1_variable (Tuple[Union[Asset, str], str, Union[Node, str]]): Tuple specifying the variable v1 consisting of
+                - asset1 (Asset, str): asset or asset_name of asset in portfolio
+                - v1 (str): name of a variable in asset1
+                - node1 (Node, str): node or node_name of node in portfolio
+            asset2_variable (Tuple[Union[Asset, str], str, Union[Node, str]]): Tuple specifying the variable v2 consisting of
+                - asset2 (Asset, str): asset or asset_name of asset in portfolio
+                - v2 (str): name of a variable in asset1
+                - node2 (Node, str): node or node_name of node in portfolio
+            asset2_time_already_running (Union[str, float]): Indicating the runtime asset2 has already been running for
+                float: the time in the timegrids main_time_unit that asset2 has been 'on' for
+                str: the name of an attribute of asset2 that indicates the time asset2 has been running
+                This defaults to "time_already_running"
+            time_back(float): The minimum amount of time asset2 has to be running before v1 of asset1 can be > 0
+            time_forward(float): The minimum amount of time v1 of asset1 has to be 0 before asset2  is turned off
+        """
+
+        super().__init__(portfolio=portfolio, name=name, *args, **kwargs)
 
         a1, v1, node1 = asset1_variable
         a2, v2, node2 = asset2_variable
@@ -373,7 +411,7 @@ class LinkedAsset(StructuredAsset):
         if isinstance(asset2_time_already_running, str):
             self.asset2_time_already_running = getattr(self.asset2, asset2_time_already_running, None)
             if self.asset2_time_already_running is None:
-                print("Warning: Asset", self.name, "has no attribute", asset2_time_already_running + ". "
+                print("Warning: Asset", self.asset2.name, "has no attribute", asset2_time_already_running + ". "
                       "Therefore, 0 is used per default.")
                 self.asset2_time_already_running = 0
         else:
@@ -382,6 +420,17 @@ class LinkedAsset(StructuredAsset):
         self.time_forward = time_forward
 
     def setup_optim_problem(self, prices: dict, timegrid: Timegrid = None, costs_only: bool = False) -> OptimProblem:
+        """ set up optimization problem for the asset
+
+        Args:
+            prices (dict): dictionary of price np.arrays. dict must contain a key that corresponds
+                            to str "price" in asset (if prices are required by the asset)
+            timegrid (Timegrid): Grid to be used for optim problem. Defaults to none
+            costs_only (bool): Only create costs vector (speed up e.g. for sampling prices). Defaults to False
+
+        Returns:
+            OptimProblem: Optimization problem that may be used by optimizer
+        """
         op = super().setup_optim_problem(prices, timegrid, costs_only)
 
         # convert time_back and time_forward from timegrids main_time_unit to timegrid.freq
@@ -417,6 +466,7 @@ class LinkedAsset(StructuredAsset):
                 op.A = sp.vstack((op.A, a))
                 op.cType += 'U'
                 op.b = np.hstack((op.b, 0))
+        return op
 
 
 
