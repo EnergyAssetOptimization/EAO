@@ -3,8 +3,8 @@ import pandas as pd
 import datetime as dt
 import abc
 import scipy.sparse as sp
-from typing import Union, List, Dict
-from eaopack.assets import Node, Asset, Timegrid
+from typing import Union, List, Tuple, Dict, Sequence
+from eaopack.assets import Node, Asset, Timegrid, convert_time_unit
 from eaopack.optimization import OptimProblem          
 from eaopack.optimization import Results 
 
@@ -299,6 +299,100 @@ class StructuredAsset(Asset):
             # define variables as internal
                 op.mapping.loc[In, 'type'] = 'i'
         return op
+
+
+class LinkedAsset(StructuredAsset):
+    def __init__(self, portfolio,
+                 variable_desc1: Tuple[Union[Asset, str], str, Union[Node, str]],
+                 variable_desc2: Tuple[Union[Asset, str], str, Union[Node, str]],
+                 time_back: float = 1,
+                 time_forward: float = 0,
+                 *args, **kwargs):
+
+        super().__init__(portfolio, *args, **kwargs)
+
+        a1, v1, node1 = variable_desc1
+        a2, v2, node2 = variable_desc2
+
+        if isinstance(a1, Asset):
+            self.asset1_name = a1.name
+        else:
+            self.asset1_name = a1
+
+        if isinstance(a2, Asset):
+            self.asset2_name = a2.name
+        else:
+            self.asset2_name = a2
+
+        self.variable1_name = v1
+        self.variable2_name = v2
+
+        self.node1_name = node1
+        if self.node1_name is not None:
+            if isinstance(self.node1_name, Node):
+                self.node1_name = self.node1_name.name
+            if self.node1_name not in self.node_names:
+                self.node1_name = self.name + '_internal_' + self.node1_name
+
+        self.node2 = node2
+        if self.node2 is not None:
+            if isinstance(self.node2, Node):
+                self.node2 = self.node2.name
+            if self.node2 not in self.node_names:
+                self.node2 = self.name + '_internal_' + self.node2
+
+        self.time_back = time_back
+        self.time_forward = time_forward
+
+    def setup_optim_problem(self, prices: dict, timegrid: Timegrid = None, costs_only: bool = False) -> OptimProblem:
+        # convert time_back and time_forward from timegrids main_time_unit to timegrid.freq
+        time_back = convert_time_unit(self.time_back, old_freq=timegrid.main_time_unit, new_freq=timegrid.freq)
+        if not time_back.is_integer():
+            print("Warning for asset", self.name + ": min_runtime is", self.time_back,
+                  "in freq '" + str(timegrid.main_time_unit) +
+                  "' which corresponds to", time_back, "in freq '" + str(timegrid.freq) + "'.",
+                  "This is not an integer and will therefore be rounded to", str(np.ceil(time_back)),
+                  "in freq '" + str(timegrid.freq) + "'.")
+            time_back = np.ceil(time_back)
+        time_back = int(time_back)
+        time_forward = convert_time_unit(self.time_forward, old_freq=timegrid.main_time_unit, new_freq=timegrid.freq)
+        if not time_forward.is_integer():
+            print("Warning for asset", self.name + ": min_runtime is", self.time_forward,
+                  "in freq '" + str(timegrid.main_time_unit) +
+                  "' which corresponds to", time_forward, "in freq '" + str(timegrid.freq) + "'.",
+                  "This is not an integer and will therefore be rounded to", str(np.ceil(time_forward)),
+                  "in freq '" + str(timegrid.freq) + "'.")
+            time_forward = np.ceil(time_forward)
+        time_forward = int(time_forward)
+
+        op = super().setup_optim_problem(prices, timegrid, costs_only)
+
+        for t in range(self.timegrid.restricted.T):
+            condition = (op.mapping['var_name'] == self.variable1_name + '__' + self.asset1_name) & (op.mapping["time_step"] == t)
+            if self.node1_name is not None:
+                condition = condition & (op.mapping["node"] == self.node1_name)
+            else:
+                condition = condition & (op.mapping["node"].isnull())
+            I1_t = op.mapping.index[condition]
+            assert I1_t[0].size == 1
+            for i in np.arange(-time_back, time_forward + 1):
+                if i+t < 0 or i+t >= self.timegrid.restricted.T:
+                    continue
+                condition = (op.mapping['var_name'] == self.variable2_name + '__' + self.asset2_name) & (op.mapping["time_step"] == i+t)
+                if self.node2 is not None:
+                    condition = condition & (op.mapping["node"] == self.node2)
+                else:
+                    condition = condition & (op.mapping["node"].isnull())
+                I2_i = op.mapping.index[condition]
+                assert I2_i[0].size == 1
+                a = sp.lil_matrix((1, op.A.shape[1]))
+                a[0, I1_t] = 1
+                a[0, I2_i] = -op.u[I1_t]
+                op.A = sp.vstack((op.A, a))
+                op.cType += 'U'
+                op.b = np.hstack((op.b, 0))
+
+        #TODO Randconstraints
 
 
 if __name__ == "__main__" :
