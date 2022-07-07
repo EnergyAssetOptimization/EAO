@@ -366,7 +366,7 @@ class LinkedAsset(StructuredAsset):
                 - node1 (Node, str): node or node_name of node in portfolio
             asset2_variable (Tuple[Union[Asset, str], str, Union[Node, str]]): Tuple specifying the variable v2 consisting of
                 - asset2 (Asset, str): asset or asset_name of asset in portfolio
-                - v2 (str): name of a variable in asset1
+                - v2 (str): name of a bool variable in asset2
                 - node2 (Node, str): node or node_name of node in portfolio
             asset2_time_already_running (Union[str, float]): Indicating the runtime asset2 has already been running for
                 float: the time in the timegrids main_time_unit that asset2 has been 'on' for
