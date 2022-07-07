@@ -678,7 +678,9 @@ class SimpleContract(Asset):
         """
         I = self.timegrid.restricted.I  # indices of restricted time grid
         T = self.timegrid.restricted.T
-        if isinstance(value, (float, int, np.ndarray)):
+        if value is None:
+            return value
+        elif isinstance(value, (float, int, np.ndarray)):
             vec = value * np.ones(T)
         elif isinstance(value, str):
             assert (value in prices), 'data for ' + value + 'not found for asset  ' + self.name
@@ -1082,7 +1084,7 @@ class CHPAsset(Contract):
                  periodicity: str = None,
                  periodicity_duration: str = None,
                  conversion_factor_power_heat: Union[float, Dict, str] = 1.,
-                 max_share_heat: Union[float, Dict, str] = 1.,
+                 max_share_heat: Union[float, Dict, str] = None,
                  ramp: float = None,
                  start_costs: Union[float, Sequence[float], Dict] = 0.,
                  running_costs: Union[float, Dict, str] = 0.,
@@ -1219,6 +1221,7 @@ class CHPAsset(Contract):
         running_costs = self.make_vector(self.running_costs, prices, default_value=0.)
         max_share_heat = self.make_vector(self.max_share_heat, prices, default_value=1.)
         conversion_factor_power_heat = self.make_vector(self.conversion_factor_power_heat, prices, default_value=1.)
+        assert np.all(conversion_factor_power_heat != 0), 'conversion_factor_power_heat must not be zero. Asset: ' + self.name
         if len(self.nodes) >= 3:
             start_fuel = self.make_vector(self.start_fuel, prices, default_value=0.)
             fuel_efficiency = self.make_vector(self.fuel_efficiency, prices, default_value=1.)
@@ -1390,17 +1393,22 @@ class CHPAsset(Contract):
                     op.b = np.hstack((op.b, 0))
 
         # Boundaries for the heat variable:
-        myA = sp.lil_matrix((n, op.A.shape[1]))
-        for i in range(n):
-            myA[i, n + i] = 1
-            myA[i, i] = - max_share_heat[i]
-        op.A = sp.vstack((op.A, myA))
-        op.cType += 'U' * n
-        op.b = np.hstack((op.b, np.zeros(n)))
+        if max_share_heat is not None:
+            myA = sp.lil_matrix((n, op.A.shape[1]))
+            for i in range(n):
+                myA[i, n + i] = 1
+                myA[i, i] = - max_share_heat[i]
+            op.A = sp.vstack((op.A, myA))
+            op.cType += 'U' * n
+            op.b = np.hstack((op.b, np.zeros(n)))
 
         # Set lower and upper bounds for all variables
         op.l = np.zeros(op.A.shape[1])
-        op.u = np.hstack((op.u, max_share_heat * op.u, np.ones(op.A.shape[1] - op.u.shape[0] * 2)))
+        if max_share_heat is not None:
+            u_heat = max_share_heat * op.u
+        else:
+            u_heat = op.u / conversion_factor_power_heat
+        op.u = np.hstack((op.u, u_heat, np.ones(op.A.shape[1] - op.u.shape[0] * 2)))
 
         # Enforce minimum runtime if asset already on
         if time_already_running > 0 and min_runtime - time_already_running>0:
