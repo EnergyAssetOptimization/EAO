@@ -1,8 +1,9 @@
-from typing import Union, List, Dict
+from typing import Union, List, Dict, Sequence
 import datetime as dt
 import abc
 import numpy as np
 import pandas as pd
+from pandas.tseries.frequencies import to_offset
 import scipy.sparse as sp
 from scipy.sparse.lil import lil_matrix
 
@@ -478,9 +479,9 @@ class SimpleContract(Asset):
                 end:   dt.datetime = None,
                 wacc: float = 0,
                 price:str = None,
-                extra_costs:float = 0.,
-                min_cap: Union[float, Dict] = 0.,
-                max_cap: Union[float, Dict] = 0.,
+                extra_costs: Union[float, Dict, str] = 0.,
+                min_cap: Union[float, Dict, str] = 0.,
+                max_cap: Union[float, Dict, str] = 0.,
                 freq: str = None,
                 profile: pd.Series = None,
                 periodicity: str = None,
@@ -506,8 +507,14 @@ class SimpleContract(Asset):
                                     dict:  dict['start'] = array
                                            dict['end']   = array
                                            dict['value'] = array
+                                    str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
             price (str): Name of price vector for buying / selling. Defaults to None
-            extra_costs (float, optional): extra costs added to price vector (in or out). Defaults to 0.
+            extra_costs (float, dict, str): extra costs added to price vector (in or out). Defaults to 0.
+                                            float: constant value
+                                            dict:  dict['start'] = array
+                                                   dict['end']   = array
+                                                   dict['value'] = array
+                                            str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
 
             periodicity (str, pd freq style): Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)
             periodicity_duration (str, pd freq style): Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)
@@ -585,14 +592,9 @@ class SimpleContract(Asset):
         ## if it's zero, one variable is enough
 
         # Make vector of single min/max capacities.
-        if isinstance(self.max_cap, (float, int, np.ndarray)):
-            max_cap = self.max_cap*np.ones(T)
-        else: # given in form of dict (start/end/values)
-            max_cap = timegrid.restricted.values_to_grid(self.max_cap)
-        if isinstance(self.min_cap, (float, int, np.ndarray)):
-            min_cap = self.min_cap*np.ones(T)
-        else: # given in form of dict (start/end/values)
-            min_cap = timegrid.restricted.values_to_grid(self.min_cap)
+        max_cap = self.make_vector(self.max_cap, prices)
+        min_cap = self.make_vector(self.min_cap, prices)
+
         # check integrity
         if any(min_cap>max_cap):
             raise ValueError('Asset --' + self.name+'--: Contract with min_cap > max_cap leads to ill-posed optimization problem')
@@ -600,16 +602,19 @@ class SimpleContract(Asset):
         min_cap = min_cap * self.timegrid.restricted.dt
         max_cap = max_cap * self.timegrid.restricted.dt
 
+        # Make vector of extra_costs:
+        extra_costs = self.make_vector(self.extra_costs, prices, default_value=0)
+
         mapping = pd.DataFrame() ## mapping of variables for use in portfolio
-        if (self.extra_costs == 0) or (all(max_cap<=0.)) or (all(min_cap>=0.)):
+        if (all(extra_costs==0.)) or (all(max_cap<=0.)) or (all(min_cap>=0.)):
             # in this case no need for two variables per time step
             u =  max_cap # upper bound
             l =  min_cap # lower
-            if self.extra_costs !=0:
+            if any(extra_costs !=0):
                 if (all(max_cap<=0.)): # dispatch always negative
-                    price = price - self.extra_costs
+                    price = price - extra_costs
                 if (all(min_cap>=0.)): # dispatch always negative
-                    price = price + self.extra_costs
+                    price = price + extra_costs
             c = price * discount_factors # set price and discount
             mapping['time_step'] = I
             mapping['var_name']  = 'disp' # name variables for use e.g. in RI
@@ -620,7 +625,7 @@ class SimpleContract(Asset):
             # in full contract there may be different prices for in/out
             c = np.tile(price, (2,1))
             # add extra costs to in/out dispatch
-            ec = np.vstack((-np.ones(T)*self.extra_costs, np.ones(T)*self.extra_costs))
+            ec = np.vstack((-extra_costs, extra_costs))
             c  = c + ec
             # discount the cost vectors:
             c = c * (np.tile(discount_factors, (2,1)))
@@ -654,6 +659,38 @@ class SimpleContract(Asset):
         else:
             return OptimProblem(c = c, l = l, u = u,
                                 mapping = mapping)
+
+    def make_vector(self, value:  Union[float, Dict, str], prices:dict, default_value: float = None):
+        """
+        Make a vector out of value
+        Args:
+            value (float, dict, str): The value to be converted to a vector
+                                      float: constant value
+                                      dict:  dict['start'] = array
+                                             dict['end']   = array
+                                             dict['value'] = array
+                                      str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
+            prices (dict): Dictionary of price arrays needed by assets in portfolio
+            default_value (float): The value that is used if any of the entries of the resulting vector are not specified
+
+        Returns:
+
+        """
+        I = self.timegrid.restricted.I  # indices of restricted time grid
+        T = self.timegrid.restricted.T
+        if value is None:
+            return value
+        elif isinstance(value, (float, int, np.ndarray)):
+            vec = value * np.ones(T)
+        elif isinstance(value, str):
+            assert (value in prices), 'data for ' + value + 'not found for asset  ' + self.name
+            vec = prices[value].copy()
+            vec = vec[I]  # only in asset time window
+        else:  # given in form of dict (start/end/values)
+            vec = self.timegrid.restricted.values_to_grid(value)
+            if default_value is not None:
+                vec[np.isnan(vec)] = default_value
+        return vec
 
 
 class Transport(Asset):
@@ -878,11 +915,11 @@ class Contract(SimpleContract):
                 end:   dt.datetime = None,
                 wacc: float = 0,
                 price:str = None,
-                extra_costs:float = 0.,
-                min_cap: Union[float, Dict] = 0.,
-                max_cap: Union[float, Dict] = 0.,
-                min_take:Union[float, List[float], Dict] = None,
-                max_take:Union[float, List[float], Dict] = None,
+                extra_costs: Union[float, Dict, str] = 0.,
+                min_cap: Union[float, Dict, str] = 0.,
+                max_cap: Union[float, Dict, str] = 0.,
+                min_take: dict = None,
+                max_take: dict = None,
                 freq: str = None,
                 profile: pd.Series = None,
                 periodicity: str = None,
@@ -906,16 +943,25 @@ class Contract(SimpleContract):
             profile (pd.Series, optional):  If freq(asset) > freq(portf) assuming this profile for granular dispatch (e.g. scaling hourly profile to week).
                                             Defaults to None, only relevant if freq is not none
 
-            min_cap (float) : Minimum flow/capacity for buying (negative) or selling (positive). Defaults to 0
-            max_cap (float) : Maximum flow/capacity for selling (positive). Defaults to 0
-            min_take (float) : Minimum volume within given period. Defaults to None
-            max_take (float) : Maximum volume within given period. Defaults to None
-                              float: constant value
+            min_cap (float, dict, str) : Minimum flow/capacity for buying (negative) or selling (positive). Float or time series. Defaults to 0
+            max_cap (float, dict, str) : Maximum flow/capacity for selling (positive). Float or time series. Defaults to 0
+                                    float: constant value
+                                    dict:  dict['start'] = array
+                                           dict['end']   = array
+                                           dict['value'] = array
+                                    str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
+            min_take (dict) : Minimum volume within given period. Defaults to None
+            max_take (dict) : Maximum volume within given period. Defaults to None
                               dict:  dict['start'] = np.array
                                      dict['end']   = np.array
                                      dict['value'] = np.array
             price (str): Name of price vector for buying / selling
-            extra_costs (float, optional): extra costs added to price vector (in or out). Defaults to 0.
+            extra_costs (float, dict, str): extra costs added to price vector (in or out). Defaults to 0.
+                                            float: constant value
+                                            dict:  dict['start'] = array
+                                                   dict['end']   = array
+                                                   dict['value'] = array
+                                            str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
 
             periodicity (str, pd freq style): Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)
             periodicity_duration (str, pd freq style): Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)
@@ -935,6 +981,7 @@ class Contract(SimpleContract):
                                        periodicity= periodicity,
                                        periodicity_duration=periodicity_duration)
         if not min_take is None:
+            assert isinstance(min_take, dict), 'min_take must be dict with keys (start, end, value). Asset: '+self.name
             assert 'values' in min_take, 'min_take must be of dict type with start, end & values (values missing)'
             assert 'start' in min_take, 'min_take must be of dict type with start, end & values (start missing)'
             assert 'end' in min_take, 'min_take must be of dict type with start, end & values (end missing)'
@@ -943,6 +990,7 @@ class Contract(SimpleContract):
                 min_take['start'] = [min_take['start']]
                 min_take['end'] = [min_take['end']]
         if not max_take is None:
+            assert isinstance(max_take, dict), 'max_take must be dict with keys (start, end, value). Asset: '+self.name
             assert 'values' in max_take, 'min_take must be of dict type with start, end & values (values missing)'
             assert 'start' in max_take, 'min_take must be of dict type with start, end & values (start missing)'
             assert 'end' in max_take, 'min_take must be of dict type with start, end & values (end missing)'
@@ -1005,6 +1053,405 @@ class Contract(SimpleContract):
             op.__make_periodic__(freq_period = self.periodicity, freq_duration = self.periodicity_duration, timegrid = timegrid)
         return op
 
+def convert_time_unit(value: float, old_freq:str, new_freq:str) -> float:
+    """
+    Convert time value from old_freq to new_freq
+    Args:
+        value (float): the time value to convert
+        old_freq: pandas frequency string, e.g. 'd', 'h', 'min', '15min', '1d1h'
+        new_freq: pandas frequency string, e.g. 'd', 'h', 'min', '15min', '1d1h'
+
+    Returns:
+        the time value converted from old_freq to new_freq
+    """
+    return value * pd.to_timedelta(to_offset(old_freq)) / pd.to_timedelta(to_offset(new_freq))
+
+class CHPAsset(Contract):
+    def __init__(self,
+                 name: str = 'default_name_contract',
+                 nodes: List[Node] = [Node(name = 'default_node_power'), Node(name = 'default_node_heat')],
+                 start: dt.datetime = None,
+                 end:   dt.datetime = None,
+                 wacc: float = 0,
+                 price:str = None,
+                 extra_costs: Union[float, Dict, str] = 0.,
+                 min_cap: Union[float, Dict, str] = 0.,
+                 max_cap: Union[float, Dict, str] = 0.,
+                 min_take:dict = None,
+                 max_take:dict = None,
+                 freq: str = None,
+                 profile: pd.Series = None,
+                 periodicity: str = None,
+                 periodicity_duration: str = None,
+                 conversion_factor_power_heat: Union[float, Dict, str] = 1.,
+                 max_share_heat: Union[float, Dict, str] = None,
+                 ramp: float = None,
+                 start_costs: Union[float, Sequence[float], Dict] = 0.,
+                 running_costs: Union[float, Dict, str] = 0.,
+                 min_runtime: float = 0,
+                 time_already_running: float = 0,
+                 last_dispatch: float = 0,
+                 start_fuel: Union[float, Dict, str] = 0.,
+                 fuel_efficiency: Union[float, Dict, str] = 1.,
+                 consumption_if_on: Union[float, Dict, str] = 0.
+                 ):
+        """ CHPContract: Generate heat and power
+            Restrictions
+            - time dependent capacity restrictions
+            - MinTake & MaxTake for a list of periods
+            - start costs
+            - minimum runtime
+            - ramps
+        Args:
+            name (str): Unique name of the asset                                              (asset parameter)
+            nodes (Node): One node each for generated power and heat                          (asset parameter)
+                          optional: node for fuel (e.g. gas)
+            start (dt.datetime) : start of asset being active. defaults to none (-> timegrid start relevant)
+            end (dt.datetime)   : end of asset being active. defaults to none (-> timegrid start relevant)
+            timegrid (Timegrid): Timegrid for discretization                                  (asset parameter)
+            wacc (float): Weighted average cost of capital to discount cash flows in target   (asset parameter)
+            freq (str, optional):   Frequency for optimization - in case different from portfolio (defaults to None, using portfolio's freq)
+                                    The more granular frequency of portf & asset is used
+            profile (pd.Series, optional):  If freq(asset) > freq(portf) assuming this profile for granular dispatch (e.g. scaling hourly profile to week).
+                                            Defaults to None, only relevant if freq is not none
+            min_cap (float) : Minimum capacity for generating virtual dispatch (power + conversion_factor_power_heat * heat). Has to be greater or equal to 0. Defaults to 0.
+            max_cap (float) : Maximum capacity for generating virtual dispatch (power + conversion_factor_power_heat * heat). Has to be greater or equal to 0. Defaults to 0.
+            min_take (float) : Minimum volume within given period. Defaults to None
+            max_take (float) : Maximum volume within given period. Defaults to None
+                              float: constant value
+                              dict:  dict['start'] = np.array
+                                     dict['end']   = np.array
+                                     dict['value'] = np.array
+            price (str): Name of price vector for buying / selling
+            extra_costs (float, dict, str): extra costs added to price vector (in or out). Defaults to 0.
+                                            float: constant value
+                                            dict:  dict['start'] = array
+                                                   dict['end']   = array
+                                                   dict['value'] = array
+                                            str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
+            periodicity (str, pd freq style): Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)
+            periodicity_duration (str, pd freq style): Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)
+            conversion_factor_power_heat (float, dict, str): Conversion efficiency from heat to power. Defaults to 1.
+            max_share_heat (float, dict, str): Defines upper bound for the heat dispatch as a percentage of the power dispatch. Defaults to 1.
+            ramp (float): Maximum increase/decrease of virtual dispatch (power + conversion_factor_power_heat * heat) in one timestep. Defaults to 1.
+            start_costs (float): Costs for starting. Defaults to 0.
+            running_costs (float): Costs when on. Defaults to 0.
+            min_runtime (int): Minimum runtime in timegrids main_time_unit. Defaults to 0.
+            time_already_running (int): The number of timesteps the asset is already running in timegrids main_time_unit. Defaults to 0.
+            last_dispatch (float): Previous virtual dispatch (power + conversion_factor_power_heat * heat). Defaults to 0.
+
+            Optional: Explicit fuel consumption (e.g. gas) for multi-commodity simulation
+                 start_fuel (float, dict, str): detaults to  0
+                 fuel_efficiency (float, dict, str): defaults to 1
+                 consumption_if_on (float, dict, str): defaults to 0
+        """
+        super(CHPAsset, self).__init__(name=name,
+                                       nodes=nodes,
+                                       start=start,
+                                       end=end,
+                                       wacc=wacc,
+                                       freq=freq,
+                                       profile=profile,
+                                       price=price,
+                                       extra_costs=extra_costs,
+                                       min_cap=min_cap,
+                                       max_cap=max_cap,
+                                       min_take=min_take,
+                                       max_take=max_take,
+                                       periodicity=periodicity,
+                                       periodicity_duration=periodicity_duration)
+        self.conversion_factor_power_heat                = conversion_factor_power_heat
+        self.max_share_heat                 = max_share_heat
+        self.ramp                 = ramp
+        self.start_costs          = start_costs
+        self.running_costs        = running_costs
+        self.min_runtime          = min_runtime
+        self.time_already_running = time_already_running
+        self.last_dispatch = last_dispatch
+        if len(nodes) >= 3:
+            self.fuel_efficiency      = fuel_efficiency
+            self.consumption_if_on    = consumption_if_on
+            self.start_fuel           = start_fuel
+
+        if len(nodes) not in (2,3):
+            raise ValueError('Length of nodes has to be 2 or 3; power, heat and optionally fuel. Asset: ' + self.name)
+
+    def setup_optim_problem(self, prices: dict, timegrid: Timegrid = None,
+                            costs_only: bool = False) -> OptimProblem:
+        """ Set up optimization problem for asset
+
+        Args:
+            prices (dict): Dictionary of price arrays needed by assets in portfolio
+            timegrid (Timegrid, optional): Discretization grid for asset. Defaults to None,
+                                           in which case it must have been set previously
+            costs_only (bool): Only create costs vector (speed up e.g. for sampling prices). Defaults to False
+
+        Returns:
+            OptimProblem: Optimization problem to be used by optimizer
+        """
+        if self.freq is not None and self.freq != timegrid.freq:
+            raise ValueError('Freq of asset' + self.name + ' is ' + str(self.freq) + ' which is unequal to freq ' + timegrid.freq + ' of timegrid. Asset: ' + self.name)
+
+        # convert min_runtime and time_already_running from timegrids main_time_unit to timegrid.freq
+        min_runtime = convert_time_unit(self.min_runtime, old_freq=timegrid.main_time_unit, new_freq=timegrid.freq)
+        if not min_runtime.is_integer():
+            print("Warning for asset", self.name + ": min_runtime is", self.min_runtime, "in freq '" + str(timegrid.main_time_unit) +
+                  "' which corresponds to", min_runtime, "in freq '" + str(timegrid.freq) + "'.",
+                  "This is not an integer and will therefore be rounded to", str(np.ceil(min_runtime)), "in freq '" + str(timegrid.freq) + "'.")
+            min_runtime = np.ceil(min_runtime)
+        min_runtime = int(min_runtime)
+        time_already_running = convert_time_unit(self.time_already_running, old_freq=timegrid.main_time_unit, new_freq=timegrid.freq)
+        if not time_already_running.is_integer():
+            print("Warning for asset", self.name + ": time_already_running is", self.time_already_running,
+                  "in freq '" + str(timegrid.main_time_unit) +
+                  "' which corresponds to", time_already_running, "in freq '" + str(timegrid.freq) + "'.",
+                  "This is not an integer and will therefore be rounded to", str(np.ceil(time_already_running)),
+                  "in freq '" + str(timegrid.freq) + "'.")
+            time_already_running = np.ceil(time_already_running)
+        time_already_running = int(time_already_running)
+
+        op = super().setup_optim_problem(prices=prices, timegrid=timegrid, costs_only=costs_only)
+
+        # Check that min_cap and max_cap are >= 0
+        assert np.all(op.l >= 0.), 'min_cap has to be greater or equal to 0. Asset: ' + self.name
+        assert np.all(op.u >= 0.), 'max_cap has to be greater or equal to 0. Asset: ' + self.name
+
+        # Make vectors of input params:
+        start_costs = self.make_vector(self.start_costs, prices, default_value=0.)
+        running_costs = self.make_vector(self.running_costs, prices, default_value=0.)
+        max_share_heat = self.make_vector(self.max_share_heat, prices, default_value=1.)
+        conversion_factor_power_heat = self.make_vector(self.conversion_factor_power_heat, prices, default_value=1.)
+        assert np.all(conversion_factor_power_heat != 0), 'conversion_factor_power_heat must not be zero. Asset: ' + self.name
+        if len(self.nodes) >= 3:
+            start_fuel = self.make_vector(self.start_fuel, prices, default_value=0.)
+            fuel_efficiency = self.make_vector(self.fuel_efficiency, prices, default_value=1.)
+            consumption_if_on = self.make_vector(self.consumption_if_on, prices, default_value=0.)
+            assert np.all(fuel_efficiency != 0), 'fuel efficiency must not be zero. Asset: ' + self.name
+
+        # calculate costs:
+        if costs_only:
+            c = op
+        else:
+            c = op.c
+        c = np.hstack([c, conversion_factor_power_heat * c])  # costs for power and heat dispatch
+        if len(self.nodes)==2:
+            include_start_variables = min_runtime > 1 or np.any(start_costs != 0)
+            include_on_variables = include_start_variables or np.any(self.min_cap != 0.)
+        else:
+            include_start_variables = min_runtime > 1 or np.any(start_costs != 0) or np.any(start_fuel !=0.)
+            include_on_variables = include_start_variables or np.any(self.min_cap != 0.) or np.any(consumption_if_on != 0.)
+
+        if include_on_variables:
+            c = np.hstack([c, running_costs])  # add costs for on variables
+        if include_start_variables:
+            c = np.hstack([c, start_costs])  # add costs for start variables
+        if costs_only:
+            return c
+        op.c = c
+
+        # Check that if include_on_variables is True, the minimum capacity is not 0. Otherwise the "on" variables cannot be computed correctly.
+        if np.any(op.l == 0) and include_on_variables:
+            print("Warning for asset " + self.name + ": The minimum capacity is 0 at some point and 'on'-variables are included" 
+                  ". This can lead to incorrect 'on' and 'start' variables. "
+                  "To prevent this either set min_cap>0 or set min_runtime=0 and start_costs=0 and start_fuel=0"
+                  " and consumption_if_on=0.")
+
+        # Prepare matrix A:
+        n = len(op.l)
+        if op.A is None:
+            op.A = sp.lil_matrix((0, n))
+            op.cType = ''
+            op.b = np.zeros(0)
+
+        # Ramp constraints:
+        if self.ramp is not None:
+            variables = op.mapping[["asset", "node", "var_name"]].drop_duplicates()
+            for i in range(len(variables)):
+                I_past = None
+                for t in range(self.timegrid.restricted.T):
+                    I_curr = np.where((op.mapping["asset"] == variables.iloc[i]["asset"])
+                                      & (op.mapping["node"] == variables.iloc[i]["node"])
+                                      & (op.mapping["var_name"] == variables.iloc[i]["var_name"])
+                                      & (op.mapping["time_step"] == self.timegrid.restricted.I[t]))
+                    if I_past and I_curr:
+                        a = sp.lil_matrix((1, n))
+                        a[0, I_curr] = 1
+                        a[0, I_past] = -1
+                        op.A = sp.vstack([op.A, a])
+                        op.cType += 'L'
+                        op.b = np.hstack([op.b, -self.ramp])
+                        op.A = sp.vstack([op.A, a])
+                        op.cType += 'U'
+                        op.b = np.hstack([op.b, self.ramp])
+                    I_past = I_curr
+
+            # Initial ramp constraint
+            a = sp.lil_matrix((1, n))
+            a[0, 0] = 1
+            op.A = sp.vstack([op.A, a])
+            op.cType += 'L'
+            op.b = np.hstack([op.b, -self.ramp + self.last_dispatch])
+            op.A = sp.vstack([op.A, a])
+            op.cType += 'U'
+            op.b = np.hstack([op.b, self.ramp + self.last_dispatch])
+
+        # Make sure that op.mapping contains only dispatch variables (i.e. with type=='d')
+        var_types = op.mapping['type'].unique()
+        assert np.all(var_types=='d'), "Only variables of type 'd' (i.e. dispatch variables) are allowed in op.mapping at this point. " \
+                                       "However, there are variables with types " + str(var_types[var_types != 'd']) + " in the mapping." \
+                                       "This is likely due to a change in a superclass."
+
+        # Divide each dispatch variable in power and heat:
+        new_map = pd.DataFrame()
+        for i, mynode in enumerate(self.nodes):
+            if i>=2: continue # do only for power and heat
+            initial_map = op.mapping[op.mapping['type'] == 'd'].copy()
+            initial_map['node'] = mynode.name
+            new_map = pd.concat([new_map, initial_map.copy()])
+        op.mapping = new_map
+        op.A = sp.hstack([op.A, sp.coo_matrix(conversion_factor_power_heat * op.A.toarray())])
+
+        # Add on variables
+        if include_on_variables:
+            op.mapping['bool'] = False
+            map_bool = pd.DataFrame()
+            map_bool['time_step'] = self.timegrid.restricted.I
+            map_bool['node'] = np.nan
+            map_bool['asset'] = self.name
+            map_bool['type'] = 'i'  # internal
+            map_bool['bool'] = True
+            map_bool['var_name'] = 'bool_on'
+            op.mapping = pd.concat([op.mapping, map_bool])
+
+            # extend A for on variables (not relevant in exist. restrictions)
+            op.A = sp.hstack((op.A, sp.lil_matrix((op.A.shape[0], len(map_bool)))))
+
+        # Add start variables
+        if include_start_variables:
+            map_bool['var_name'] = 'bool_start'
+            op.mapping = pd.concat([op.mapping, map_bool])
+
+            # extend A for start variables (not relevant in exist. restrictions)
+            op.A = sp.hstack((op.A, sp.lil_matrix((op.A.shape[0], len(map_bool)))))
+
+        # Minimum and maximum capacity:
+        A_lower_bounds = sp.lil_matrix((n, op.A.shape[1]))
+        A_upper_bounds = sp.lil_matrix((n, op.A.shape[1]))
+        for i in range(n):
+            var = op.mapping.iloc[i]
+            on_variable = np.where((op.mapping["asset"] == var["asset"])
+                                   & (op.mapping["var_name"] == "bool_on")
+                                   & (op.mapping["time_step"] == var["time_step"]))
+
+            A_lower_bounds[i, i] = 1
+            A_lower_bounds[i, n + i] = conversion_factor_power_heat[i]
+            A_lower_bounds[i, on_variable] = - op.l[i]  # has no effect if no on variables found
+
+            A_upper_bounds[i, i] = 1
+            A_upper_bounds[i, n + i] = conversion_factor_power_heat[i]
+            A_upper_bounds[i, on_variable] = - op.u[i]  # has no effect if no on variables found
+        op.A = sp.vstack((op.A, A_lower_bounds))
+        op.cType += 'L' * n
+        op.b = np.hstack((op.b, np.zeros(n)))
+
+        op.A = sp.vstack((op.A, A_upper_bounds))
+        op.cType += 'U' * n
+        if include_on_variables:
+            op.b = np.hstack((op.b, np.zeros(n)))
+        else:
+            op.b = np.hstack((op.b, op.u))
+
+        # Start constraints:
+        if include_start_variables:
+            myA = sp.lil_matrix((self.timegrid.restricted.T-1, op.A.shape[1]))
+            for i in range(self.timegrid.restricted.T-1):
+                myA[i, 2 * n + i + 1] = 1
+                myA[i, 2 * n + i] = - 1
+                myA[i, 2 * n + self.timegrid.restricted.T + i + 1] = -1
+            op.A = sp.vstack((op.A, myA))
+            op.cType += 'U' * (self.timegrid.restricted.T - 1)
+            op.b = np.hstack((op.b, np.zeros(self.timegrid.restricted.T-1)))
+
+            if time_already_running==0:
+                a = sp.lil_matrix((1, op.A.shape[1]))
+                a[0, 2*n] = 1
+                a[0, 2*n + self.timegrid.restricted.T] = -1
+                op.A = sp.vstack((op.A, a))
+                op.cType += 'U'
+                op.b = np.hstack((op.b, 0))
+
+            # Minimum runtime:
+            for t in range(self.timegrid.restricted.T):
+                for i in range(1, min_runtime):
+                    if i > t:
+                        continue
+                    a = sp.lil_matrix((1, op.A.shape[1]))
+                    a[0, 2 * n + t] = 1
+                    a[0, 2 * n + self.timegrid.restricted.T + t - i] = -1
+                    op.A = sp.vstack((op.A, a))
+                    op.cType += 'L'
+                    op.b = np.hstack((op.b, 0))
+
+        # Boundaries for the heat variable:
+        if max_share_heat is not None:
+            myA = sp.lil_matrix((n, op.A.shape[1]))
+            for i in range(n):
+                myA[i, n + i] = 1
+                myA[i, i] = - max_share_heat[i]
+            op.A = sp.vstack((op.A, myA))
+            op.cType += 'U' * n
+            op.b = np.hstack((op.b, np.zeros(n)))
+
+        # Set lower and upper bounds for all variables
+        op.l = np.zeros(op.A.shape[1])
+        if max_share_heat is not None:
+            u_heat = max_share_heat * op.u
+        else:
+            u_heat = op.u / conversion_factor_power_heat
+        op.u = np.hstack((op.u, u_heat, np.ones(op.A.shape[1] - op.u.shape[0] * 2)))
+
+        # Enforce minimum runtime if asset already on
+        if time_already_running > 0 and min_runtime - time_already_running>0:
+            op.l[2*n:2*n+ min_runtime - time_already_running] = 1
+
+        # Reset mapping index:
+        op.mapping.reset_index(inplace=True, drop=True)  # need to reset index (which enumerates variables)
+
+        # in case there is an explicit node for fuel, extend mapping
+        # idea: fuel consumption is  power disp + conversion_factor_power_heat * heat disp
+        # mapping extention equivalent to simpler asset type "MultiCommodityContract"
+        if len(self.nodes) >= 3:
+            # disp_factor determines the factor with which fuel is consumed
+            if 'disp_factor' not in op.mapping: op.mapping['disp_factor'] = np.nan
+            new_map     = op.mapping.copy()
+            for i in [0,1]: # nodes power and heat
+                initial_map = op.mapping[(op.mapping['var_name']=='disp') & (op.mapping['node']== self.node_names[i])].copy()
+                initial_map['node']        = self.node_names[2] # fuel node
+                if i == 0:
+                    initial_map['disp_factor'] = -1./fuel_efficiency
+                elif i == 1:
+                    initial_map['disp_factor'] = -conversion_factor_power_heat / fuel_efficiency
+                new_map = pd.concat([new_map, initial_map.copy()])
+            # consumption  if on
+            if include_on_variables:
+                initial_map = op.mapping[op.mapping['var_name']=='bool_on'].copy()
+                initial_map['node'] = self.node_names[2] # fuel node
+                #initial_map['var_name'] = 'fuel_if_on'
+                initial_map['type'] = 'd'
+                initial_map['disp_factor'] = -consumption_if_on
+                new_map = pd.concat([new_map, initial_map.copy()])
+            # consumption on start
+            if include_start_variables:
+                initial_map = op.mapping[op.mapping['var_name']=='bool_start'].copy()
+                initial_map['node'] = self.node_names[2] # fuel node
+                #initial_map['var_name'] = 'fuel_start'
+                initial_map['type'] = 'd'
+                initial_map['disp_factor'] = -start_fuel
+                new_map = pd.concat([new_map, initial_map.copy()])
+
+            op.mapping = new_map
+        return op
+
 
 class MultiCommodityContract(Contract):
     """ Multi commodity contract class - implements a Contract that generates two or more commoditites at a time.
@@ -1019,11 +1466,11 @@ class MultiCommodityContract(Contract):
                 end:   dt.datetime = None,
                 wacc: float = 0,
                 price:str = None,
-                extra_costs:float = 0.,
-                min_cap: Union[float, Dict] = 0.,
-                max_cap: Union[float, Dict] = 0.,
-                min_take:Union[float, List[float], Dict] = None,
-                max_take:Union[float, List[float], Dict] = None,
+                extra_costs: Union[float, Dict, str] = 0.,
+                min_cap: Union[float, Dict, str] = 0.,
+                max_cap: Union[float, Dict, str] = 0.,
+                min_take: dict = None,
+                max_take: dict = None,
                 factors_commodities: list = [1,1],
                 freq: str = None,
                 profile: pd.Series = None,
@@ -1047,17 +1494,25 @@ class MultiCommodityContract(Contract):
             profile (pd.Series, optional):  If freq(asset) > freq(portf) assuming this profile for granular dispatch (e.g. scaling hourly profile to week).
                                             Defaults to None, only relevant if freq is not none
 
-            min_cap (float) : Minimum flow/capacity for buying (negative) or selling (positive). Defaults to 0
-            max_cap (float) : Maximum flow/capacity for selling (positive). Defaults to 0
-            min_take (float) : Minimum volume within given period. Defaults to None
-            max_take (float) : Maximum volume within given period. Defaults to None
-                              float: constant value
+            min_cap (float, dict, str) : Minimum flow/capacity for buying (negative) or selling (positive). Defaults to 0
+            max_cap (float, dict, str) : Maximum flow/capacity for selling (positive). Defaults to 0
+                                    float: constant value
+                                    dict:  dict['start'] = array
+                                           dict['end']   = array
+                                           dict['value'] = array
+                                    str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
+            min_take (dict) : Minimum volume within given period. Defaults to None
+            max_take (dict) : Maximum volume within given period. Defaults to None
                               dict:  dict['start'] = np.array
                                      dict['end']   = np.array
                                      dict['value'] = np.array
             price (str): Name of price vector for buying / selling
-            extra_costs (float, optional): extra costs added to price vector (in or out). Defaults to 0.
-
+            extra_costs (float, dict, str): extra costs added to price vector (in or out). Defaults to 0.
+                                            float: constant value
+                                            dict:  dict['start'] = array
+                                                   dict['end']   = array
+                                                   dict['value'] = array
+                                            str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
             periodicity (str, pd freq style): Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)
             periodicity_duration (str, pd freq style): Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)
 
@@ -1108,11 +1563,21 @@ class MultiCommodityContract(Contract):
 
         # set up Contract optimProblem
         op = super().setup_optim_problem(prices= prices, timegrid=timegrid, costs_only = costs_only)
+
+        if costs_only:
+            return op
+
         # the optimization problem remains basically the same
         # only the mapping needs to be amended
         ##### adjusting the mapping
         # the contract mapping is the starting point
         # create a copy of the dispatching variables part for each commodity
+
+        # Make sure that op.mapping contains only dispatch variables (i.e. with type=='d')
+        var_types = op.mapping['type'].unique()
+        assert np.all(var_types == 'd'), "Only variables of type 'd' (i.e. dispatch variables) are allowed in op.mapping at this point. " \
+                                         "However, there are variables with types " + str(var_types[var_types != 'd']) + " in the mapping." \
+                                         "This is likely due to a change in a superclass."
         new_map     = pd.DataFrame()
         for i, mynode in enumerate(self.nodes):
             initial_map = op.mapping[op.mapping['type']=='d'].copy()
@@ -1142,8 +1607,8 @@ class ExtendedTransport(Transport):
                 min_cap:float = 0.,
                 max_cap:float = 0.,
                 efficiency: float = 1.,
-                min_take:Union[float, List[float], Dict] = None,
-                max_take:Union[float, List[float], Dict] = None,
+                min_take: dict = None,
+                max_take: dict = None,
                 freq: str = None,
                 profile: pd.Series = None,
                 periodicity:str=None,
@@ -1179,11 +1644,8 @@ class ExtendedTransport(Transport):
             - with min_cap = max_cap and a detailed time series
             - with MinTake & MaxTake, implement structured gas contracts
         Additional args:
-            min_cap (float) : Minimum flow/capacity for buying (negative) or selling (positive). Defaults to 0
-            max_cap (float) : Maximum flow/capacity for selling (positive). Defaults to 0
-            min_take (float) : Minimum volume within given period. Defaults to None
-            max_take (float) : Maximum volume within given period. Defaults to None
-                              float: constant value
+            min_take (dict) : Minimum volume within given period. Defaults to None
+            max_take (dict) : Maximum volume within given period. Defaults to None
                               dict:  dict['start'] = np.array
                                      dict['end']   = np.array
                                      dict['value'] = np.array
@@ -1204,11 +1666,13 @@ class ExtendedTransport(Transport):
                                                 periodicity_duration=periodicity_duration
                                                 )
         if not min_take is None:
+            assert isinstance(min_take, dict), 'min_take must be dict with keys (start, end, value). Asset: '+self.name
             if isinstance(min_take['values'], (float, int)):
                 min_take['values'] = [min_take['values']]
                 min_take['start'] = [min_take['start']]
                 min_take['end'] = [min_take['end']]
         if not max_take is None:
+            assert isinstance(max_take, dict), 'max_take must be dict with keys (start, end, value). Asset: '+self.name
             if isinstance(max_take['values'], (float, int)):
                 max_take['values'] = [max_take['values']]
                 max_take['start'] = [max_take['start']]

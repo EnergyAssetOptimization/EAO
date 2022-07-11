@@ -174,6 +174,42 @@ class PortfolioTests(unittest.TestCase):
         for v in df.groupby('month').sum()['trans (n1)']:
             self.assertAlmostEqual(v, -22, 5)
         
+
+    def test_portf_min_cap_from_price_DF(self):
+        """ Unit test. Setting up a simple portfolio and check workflow with restriction from price DF
+        """
+
+        node1 = eao.assets.Node('node_1')
+        node2 = eao.assets.Node('node_2')
+        timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,2,1), freq = 'd')
+        a1 = eao.assets.SimpleContract(name = 'SC_1', price = 'rand_price_1', nodes = node1 ,
+                        min_cap= -20., max_cap=20.)
+        #a1.set_timegrid(timegrid)
+        a2 = eao.assets.SimpleContract(name = 'SC_2', price = 'rand_price_2', nodes = node1 ,
+                        min_cap= 'CAP', max_cap='CAP', start = dt.date(2021,1,10), end = dt.date(2021,1,20), extra_costs=1.)
+        #a2.set_timegrid(timegrid)
+        a3 = eao.assets.SimpleContract(name = 'SC_3', price = 'rand_price_2', nodes = node2 ,
+                        min_cap= -1., max_cap=10., extra_costs= 1.)
+        a5 = eao.assets.Storage('storage', nodes = node1, \
+             start=dt.date(2021,1,1), end=dt.date(2021,2,1),size=10, \
+             cap_in=1.0/24.0, cap_out=1.0/24.0, start_level=5, end_level=5)
+        #a3.set_timegrid(timegrid)
+        prices ={'rand_price_1': np.random.rand(timegrid.T)-0.5,
+                'rand_price_2' : 5.*(np.random.rand(timegrid.T)-0.5),
+                'CAP'          : np.random.randn(timegrid.T)
+                }
+        
+        portf = eao.portfolio.Portfolio([a1, a2, a3, a5])
+        op    = portf.setup_optim_problem(prices, timegrid)
+        res = op.optimize()
+        out = eao.io.extract_output(portf, op, res, prices)
+        cap_out = out['prices']['input data: CAP'].values
+        disp    = out['dispatch']['SC_2 (node_1)'].values/24 # 24h per day!
+        # outside start & end zero
+        self.assertAlmostEqual(abs(disp[0:9]).sum(), 0., 5)
+        self.assertAlmostEqual(abs(disp[19:]).sum(), 0., 5)
+        self.assertAlmostEqual(abs(disp[9:19]-prices['CAP'][9:19]).sum(), 0., 5)
+
 ###########################################################################################################
 
 ###########################################################################################################

@@ -185,7 +185,8 @@ class OptimProblem:
     def optimize(self, target = 'value',
                        samples = None,
                        interface:str = 'cvxpy', 
-                       solver = None, 
+                       solver = None,
+                       make_soft_problem=False,
                        rel_tol:float = 1e-3, 
                        iterations:int = 5000)->Results:
         """ optimize the optimization problem
@@ -197,6 +198,7 @@ class OptimProblem:
                             - Robust optimization: list of costs arrays (maximizing minimal DCF)
             interface (str, optional): Chosen interface architecture. Defaults to 'cvxpy'.
             solver (str, optional): Solver for interface. Defaults to None
+            make_soft_problem (bool, optional): If true, relax the boolean variables and allow float values instead. Defaults to False
             INACTIVE   rel_tol (float): relative tolerance for solver
             INACTIVE   iterations (int): max number of iterations for solver
             INACTIVE   decimals_res (int): rounding results to ... decimals. Defaults to 5
@@ -208,7 +210,11 @@ class OptimProblem:
             # Construct the problem
 
             # variable to optimize. Note: may add differentiation of variables and constants in case lower and upper bounds are equal
-            map = self.mapping # abbreviation
+            map = self.mapping.copy()  # abbreviation
+
+            if make_soft_problem:
+                map['bool'] = False
+
             isMIP = False
             if 'bool' in map:
                 my_bools = map.loc[(~map.index.duplicated(keep='first'))&(map['bool'])].index.values.tolist()
