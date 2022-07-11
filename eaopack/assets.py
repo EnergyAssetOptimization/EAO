@@ -148,6 +148,35 @@ class Asset:
         mapping['time_step'] = mapping['time_step'].astype('int64')
         return mapping
 
+    def convert_to_timegrid_freq(self, time_value: float, attribute_name: str, timegrid:Timegrid = None, round: bool = True) -> Union[float, int]:
+        """ Convert time_value from the timegrids main_time_unit to the timegrid.freq
+
+        Args:
+            time_value (float): The time value in timegrid.main_time_unit
+            attribute_name (str): The name of the attribute to be converted (only relevant for more specific warning)
+            timegrid (Timegrid): The timegrid from with main_time_unit and freq are used. If timegrid is None,
+                                 the asset's own timegrid self.timegrid is taken instead. Defaults to None.
+            round: If true the result is rounded to the next highest integer.
+
+        Returns:
+            converted_time_value: time_value converted to timegrid.freq
+        """
+        if timegrid is None:
+            timegrid = self.timegrid
+            if timegrid is None:
+                raise ValueError("Timegrid is not specified.")
+        time_value_converted = convert_time_unit(time_value, old_freq=timegrid.main_time_unit, new_freq=timegrid.freq)
+        if round:
+            if not time_value_converted.is_integer():
+                print("Warning for asset ", self.name, ": ", attribute_name, " is ", time_value,
+                      " in freq '", timegrid.main_time_unit,
+                      "' which corresponds to ", time_value_converted, " in freq '", timegrid.freq,"'. ",
+                      "This is not an integer and will therefore be rounded to ", np.ceil(time_value_converted),
+                      " in freq '", timegrid.freq, "'.", sep='')
+                time_value_converted = np.ceil(time_value_converted)
+            time_value_converted = int(time_value_converted)
+        return time_value_converted
+
 ##########################
 
 class Storage(Asset):
@@ -1193,22 +1222,8 @@ class CHPAsset(Contract):
             raise ValueError('Freq of asset' + self.name + ' is ' + str(self.freq) + ' which is unequal to freq ' + timegrid.freq + ' of timegrid. Asset: ' + self.name)
 
         # convert min_runtime and time_already_running from timegrids main_time_unit to timegrid.freq
-        min_runtime = convert_time_unit(self.min_runtime, old_freq=timegrid.main_time_unit, new_freq=timegrid.freq)
-        if not min_runtime.is_integer():
-            print("Warning for asset", self.name + ": min_runtime is", self.min_runtime, "in freq '" + str(timegrid.main_time_unit) +
-                  "' which corresponds to", min_runtime, "in freq '" + str(timegrid.freq) + "'.",
-                  "This is not an integer and will therefore be rounded to", str(np.ceil(min_runtime)), "in freq '" + str(timegrid.freq) + "'.")
-            min_runtime = np.ceil(min_runtime)
-        min_runtime = int(min_runtime)
-        time_already_running = convert_time_unit(self.time_already_running, old_freq=timegrid.main_time_unit, new_freq=timegrid.freq)
-        if not time_already_running.is_integer():
-            print("Warning for asset", self.name + ": time_already_running is", self.time_already_running,
-                  "in freq '" + str(timegrid.main_time_unit) +
-                  "' which corresponds to", time_already_running, "in freq '" + str(timegrid.freq) + "'.",
-                  "This is not an integer and will therefore be rounded to", str(np.ceil(time_already_running)),
-                  "in freq '" + str(timegrid.freq) + "'.")
-            time_already_running = np.ceil(time_already_running)
-        time_already_running = int(time_already_running)
+        min_runtime = self.convert_to_timegrid_freq(self.min_runtime, "min_runtime", timegrid)
+        time_already_running = self.convert_to_timegrid_freq(self.time_already_running, "time_already_running", timegrid)
 
         op = super().setup_optim_problem(prices=prices, timegrid=timegrid, costs_only=costs_only)
 
