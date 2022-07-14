@@ -14,6 +14,7 @@
         <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
         <script src="../../_static/jquery.js"></script>
         <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -375,13 +376,13 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Stochastic-linear-program-(SLP)-to-take-into-account-uncertainty">
-<h1>Stochastic linear program (SLP) to take into account uncertainty<a class="headerlink" href="#Stochastic-linear-program-(SLP)-to-take-into-account-uncertainty" title="Permalink to this headline"></a></h1>
+<h1>Stochastic linear program (SLP) to take into account uncertainty<a class="headerlink" href="#Stochastic-linear-program-(SLP)-to-take-into-account-uncertainty" title="Permalink to this heading"></a></h1>
 <p>In this sample we illustrate the usage of SLP for energy portfolios. Our demonstration implements a two-stage problem for a simple portfolio. It may be extended to any portfolio.</p>
 </section>
 <section id="Some-prerequisites">
-<h1>Some prerequisites<a class="headerlink" href="#Some-prerequisites" title="Permalink to this headline"></a></h1>
+<h1>Some prerequisites<a class="headerlink" href="#Some-prerequisites" title="Permalink to this heading"></a></h1>
 <section id="Basics">
-<h2>Basics<a class="headerlink" href="#Basics" title="Permalink to this headline"></a></h2>
+<h2>Basics<a class="headerlink" href="#Basics" title="Permalink to this heading"></a></h2>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
@@ -409,7 +410,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Parameter-setting">
-<h2>Parameter setting<a class="headerlink" href="#Parameter-setting" title="Permalink to this headline"></a></h2>
+<h2>Parameter setting<a class="headerlink" href="#Parameter-setting" title="Permalink to this heading"></a></h2>
 <p>Defining timegrid and main portfolio settings as well as settings for SLP. Note that we do not explain the setup in detail. Please refer to the basic samples to understand the concepts and parameters</p>
 <p>For the SLP part we define the number of samples to be used. Using the parameter ‘sigma’ we can adjust uncertainty in price samples. The parameter ‘start_future’ defines the transition between the two stages of the SLP - present and future. In the two-stage setup we determine the optimal steps in the present given an uncertain future</p>
 <div class="nbinput nblast docutils container">
@@ -427,7 +428,7 @@ div.rendered_html tbody tr:hover {
 </section>
 </section>
 <section id="Set-up-portfolio">
-<h1>Set up portfolio<a class="headerlink" href="#Set-up-portfolio" title="Permalink to this headline"></a></h1>
+<h1>Set up portfolio<a class="headerlink" href="#Set-up-portfolio" title="Permalink to this heading"></a></h1>
 <ol class="arabic simple">
 <li><p>defining the assets of the portfolio (here a battery and a market with uncertain prices)</p></li>
 <li><p>definition of how prices are sampled</p></li>
@@ -485,7 +486,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Perform-the-optimization">
-<h1>Perform the optimization<a class="headerlink" href="#Perform-the-optimization" title="Permalink to this headline"></a></h1>
+<h1>Perform the optimization<a class="headerlink" href="#Perform-the-optimization" title="Permalink to this heading"></a></h1>
 <p>For comparison we perform a deterministic optimization on the ‘mean price’ and an SLP on given samples for the future</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
@@ -504,7 +505,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Create-charts-and-interpret-the-results">
-<h1>Create charts and interpret the results<a class="headerlink" href="#Create-charts-and-interpret-the-results" title="Permalink to this headline"></a></h1>
+<h1>Create charts and interpret the results<a class="headerlink" href="#Create-charts-and-interpret-the-results" title="Permalink to this heading"></a></h1>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
@@ -541,18 +542,18 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <section id="Interpretation">
-<h2>Interpretation<a class="headerlink" href="#Interpretation" title="Permalink to this headline"></a></h2>
+<h2>Interpretation<a class="headerlink" href="#Interpretation" title="Permalink to this heading"></a></h2>
 <p>The red line indicates the start of the uncertain future (Jan 3). While for the pending decision (stage 1) prices are certain, for the future (stage 2) we have five price samples that encode the uncertainty. Solutions in this example are relatively similar – but note that the deterministic optimization charges the storage maximally until Jan 03 as future prices are higher than present prices. Since uncertainty is high, the SLP solution starts discharching earlier, as future prices may be higher
 today but are uncertain.</p>
 </section>
 <section id="Two-stage-vs. multi-stage-problem:">
-<h2>Two-stage vs. multi-stage problem:<a class="headerlink" href="#Two-stage-vs. multi-stage-problem:" title="Permalink to this headline"></a></h2>
+<h2>Two-stage vs. multi-stage problem:<a class="headerlink" href="#Two-stage-vs. multi-stage-problem:" title="Permalink to this heading"></a></h2>
 <p>In our implementation we provide a formulation of a two-stage SLP generically for any portfolio structure. For the two-stage case problems can typically be handled and often already provide a good appoximation. For the multi-stage case we believe that it will be necessary to resort to numerical approximations, strategies that are specific to the given portfolio or others such as methods from machine learning. Providing a solution to the SLP for a relevant problem class could be a valuable
 research thread for further work.</p>
 </section>
 </section>
 <section id="Backtesting:-SLP-vs. hard-optimization">
-<h1>Backtesting: SLP vs. hard optimization<a class="headerlink" href="#Backtesting:-SLP-vs. hard-optimization" title="Permalink to this headline"></a></h1>
+<h1>Backtesting: SLP vs. hard optimization<a class="headerlink" href="#Backtesting:-SLP-vs. hard-optimization" title="Permalink to this heading"></a></h1>
 <p>We’re backtesting the decisions of the hard and SLP decision by sampling over future price outcomes. Naturally, this backtest is more of an illustration for this specific example.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:

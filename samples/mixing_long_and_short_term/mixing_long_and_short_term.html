@@ -14,6 +14,7 @@
         <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
         <script src="../../_static/jquery.js"></script>
         <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -369,14 +370,14 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Mixing-long-term-and-short-term-optimization-targets">
-<h1>Mixing long-term and short-term optimization targets<a class="headerlink" href="#Mixing-long-term-and-short-term-optimization-targets" title="Permalink to this headline"></a></h1>
+<h1>Mixing long-term and short-term optimization targets<a class="headerlink" href="#Mixing-long-term-and-short-term-optimization-targets" title="Permalink to this heading"></a></h1>
 <p>In energy, we typically face very short-term optimization tasks (e.g. 15min intervals in power) as well as long-term effects such as saisonality. Bringing both together in optimization can easily make complexity explode – if we optimize all assets on the most granular time grid. In our approach we allow all assets bring along their own time-scale, which may be different from the time-scale that is used on portfolio level.</p>
 <p>In this example we explain the feature using a rather simple example: * power market with hourly prices that exhibit an hourly as well as a seasonal structure * a short-term storage such as a smaller pump storage or a battery that is optimized hourly on a daily basis - but not across more than a week * a long-term storage such as a high-volume hydro reservoir that is optimized across the whole seaon on a biweekly basis</p>
 </section>
 <section id="Some-prerequisites">
-<h1>Some prerequisites<a class="headerlink" href="#Some-prerequisites" title="Permalink to this headline"></a></h1>
+<h1>Some prerequisites<a class="headerlink" href="#Some-prerequisites" title="Permalink to this heading"></a></h1>
 <section id="Basics">
-<h2>Basics<a class="headerlink" href="#Basics" title="Permalink to this headline"></a></h2>
+<h2>Basics<a class="headerlink" href="#Basics" title="Permalink to this heading"></a></h2>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
@@ -402,7 +403,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Define-portfolio">
-<h2>Define portfolio<a class="headerlink" href="#Define-portfolio" title="Permalink to this headline"></a></h2>
+<h2>Define portfolio<a class="headerlink" href="#Define-portfolio" title="Permalink to this heading"></a></h2>
 <p>We use three different assets: * Market: a simple contract with a given market price * Short-term storage, acting on an hourly basis. We reduce the complexity by enforcing that the optimization is done for every day, but not across weeks * Long-term storage acting on a weekly level for the whole season: We reduce complexity by assuming the same (here flat) profile for all hours within two weeks</p>
 <p>Note: For sake of clarity in the charts we do the optimization on daily granularity. Finer overall granularity (e.g. hours) is defined on portfolio level in the timegrid</p>
 <div class="nbinput nblast docutils container">
@@ -456,7 +457,7 @@ div.rendered_html tbody tr:hover {
 </section>
 </section>
 <section id="Perform-the-optimization">
-<h1>Perform the optimization<a class="headerlink" href="#Perform-the-optimization" title="Permalink to this headline"></a></h1>
+<h1>Perform the optimization<a class="headerlink" href="#Perform-the-optimization" title="Permalink to this heading"></a></h1>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
@@ -469,7 +470,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Create-charts-and-interpret-the-results">
-<h1>Create charts and interpret the results<a class="headerlink" href="#Create-charts-and-interpret-the-results" title="Permalink to this headline"></a></h1>
+<h1>Create charts and interpret the results<a class="headerlink" href="#Create-charts-and-interpret-the-results" title="Permalink to this heading"></a></h1>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>

@@ -14,6 +14,7 @@
         <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
         <script src="../../_static/jquery.js"></script>
         <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -371,14 +372,14 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Marginal-costs---basic-concept-and-example">
-<h1>Marginal costs - basic concept and example<a class="headerlink" href="#Marginal-costs---basic-concept-and-example" title="Permalink to this headline"></a></h1>
+<h1>Marginal costs - basic concept and example<a class="headerlink" href="#Marginal-costs---basic-concept-and-example" title="Permalink to this heading"></a></h1>
 <p>In this sample, we illustrate the concept of marginal costs. We use a very simple portfolio of generation assets that are used to cover a given load. The marginal costs of the portfolio indicate at which prices it would be valuable to buy or sell electricity into / out of the portfolio.</p>
 <p>While the example portfolio is simple, the concept is valid for any other case of more complex portfolio or asset</p>
 </section>
 <section id="Some-prerequisites">
-<h1>Some prerequisites<a class="headerlink" href="#Some-prerequisites" title="Permalink to this headline"></a></h1>
+<h1>Some prerequisites<a class="headerlink" href="#Some-prerequisites" title="Permalink to this heading"></a></h1>
 <section id="Basic-definitions">
-<h2>Basic definitions<a class="headerlink" href="#Basic-definitions" title="Permalink to this headline"></a></h2>
+<h2>Basic definitions<a class="headerlink" href="#Basic-definitions" title="Permalink to this heading"></a></h2>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
@@ -407,7 +408,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Parameter-setting">
-<h2>Parameter setting<a class="headerlink" href="#Parameter-setting" title="Permalink to this headline"></a></h2>
+<h2>Parameter setting<a class="headerlink" href="#Parameter-setting" title="Permalink to this heading"></a></h2>
 <p>Defining timegrid and main portfolio settings. Note that we do not explain the setup in detail. Please refer to the basic samples to understand the concepts and parameters</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -429,7 +430,7 @@ div.rendered_html tbody tr:hover {
 </section>
 </section>
 <section id="Set-up-portfolio">
-<h1>Set up portfolio<a class="headerlink" href="#Set-up-portfolio" title="Permalink to this headline"></a></h1>
+<h1>Set up portfolio<a class="headerlink" href="#Set-up-portfolio" title="Permalink to this heading"></a></h1>
 <ol class="arabic simple">
 <li><p>a given load to cover</p></li>
 <li><p>generation assets with different production costs</p></li>
@@ -451,7 +452,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Perform-the-optimization">
-<h1>Perform the optimization<a class="headerlink" href="#Perform-the-optimization" title="Permalink to this headline"></a></h1>
+<h1>Perform the optimization<a class="headerlink" href="#Perform-the-optimization" title="Permalink to this heading"></a></h1>
 <p>Setting up the optimization provlem ans solving. Note that in this setup no (market) prices are needed to solve the problem, as we try to cover the load at minimal costs</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
@@ -477,7 +478,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Create-charts-and-interpret-the-results">
-<h1>Create charts and interpret the results<a class="headerlink" href="#Create-charts-and-interpret-the-results" title="Permalink to this headline"></a></h1>
+<h1>Create charts and interpret the results<a class="headerlink" href="#Create-charts-and-interpret-the-results" title="Permalink to this heading"></a></h1>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
@@ -506,7 +507,7 @@ div.rendered_html tbody tr:hover {
 <p>Right figure: The marginal costs are determined by the most expensive asset needed.</p>
 </section>
 <section id="Marginal-costs-and-duals-in-linear-programs">
-<h1>Marginal costs and duals in linear programs<a class="headerlink" href="#Marginal-costs-and-duals-in-linear-programs" title="Permalink to this headline"></a></h1>
+<h1>Marginal costs and duals in linear programs<a class="headerlink" href="#Marginal-costs-and-duals-in-linear-programs" title="Permalink to this heading"></a></h1>
 <p>The marginal cost for each node is given by the dual of the corresponding nodal restriction. Intuitively, it reflects the change in value of the portfolio as at the node we have an infinitesimal extra amount of the commodity available</p>
 <p>In this simple case, the marginal costs are just the production costs of the most expensive asset needed. However, the concept applies directly to any other and more complex portfolio of assets.</p>
 <p>Once more nodes are used in the portfolio, nodal prices may be different if there are transport bottlenecks</p>

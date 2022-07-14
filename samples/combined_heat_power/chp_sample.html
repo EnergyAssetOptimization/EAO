@@ -14,6 +14,7 @@
         <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
         <script src="../../_static/jquery.js"></script>
         <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -366,27 +367,27 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Combining-heat-and-power">
-<h1>Combining heat and power<a class="headerlink" href="#Combining-heat-and-power" title="Permalink to this headline"></a></h1>
+<h1>Combining heat and power<a class="headerlink" href="#Combining-heat-and-power" title="Permalink to this heading"></a></h1>
 <p>The CHPAsset class represents an asset that can generate both heat and power at the same time and models starting procedures, minimum loads, ramping and a minimum runtime.</p>
 <section id="Technical-Details">
-<h2>Technical Details<a class="headerlink" href="#Technical-Details" title="Permalink to this headline"></a></h2>
+<h2>Technical Details<a class="headerlink" href="#Technical-Details" title="Permalink to this heading"></a></h2>
 <section id="Input-Parameters">
-<h3>Input Parameters<a class="headerlink" href="#Input-Parameters" title="Permalink to this headline"></a></h3>
+<h3>Input Parameters<a class="headerlink" href="#Input-Parameters" title="Permalink to this heading"></a></h3>
 <p>Possible input parameters of the CHPAsset are - Ramp <span class="math notranslate nohighlight">\(r\)</span> - Conversion efficiency <span class="math notranslate nohighlight">\(\alpha\)</span> from heat to power. - Maximum share heat <span class="math notranslate nohighlight">\(\beta\)</span> - Minimum capacity <span class="math notranslate nohighlight">\(l_t\)</span> for every timestep <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span> - Maximum capacity <span class="math notranslate nohighlight">\(u_t\)</span> for every timestep <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span> - Dispatch power <span class="math notranslate nohighlight">\(x_{-1}\)</span> from the previous timestep - Dispatch heat <span class="math notranslate nohighlight">\(w_{-1}\)</span> from the previous timestep - Number <span class="math notranslate nohighlight">\(k\)</span> of timesteps the asset
 has already been running - Minimum runtime <span class="math notranslate nohighlight">\(m\)</span></p>
 </section>
 <section id="Output-variables">
-<h3>Output variables<a class="headerlink" href="#Output-variables" title="Permalink to this headline"></a></h3>
+<h3>Output variables<a class="headerlink" href="#Output-variables" title="Permalink to this heading"></a></h3>
 <p>The following variables are computed for a CHPAsset that runs for <span class="math notranslate nohighlight">\(T\)</span> timesteps: - Dispatch power <span class="math notranslate nohighlight">\(x_t \in \mathbb{R}\)</span>, for every timestep <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span> - Dispatch heat <span class="math notranslate nohighlight">\(w_t \in \mathbb{R}\)</span>, for every timestep <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span> - “On”-variable <span class="math notranslate nohighlight">\(a_t \in \left\{0,1\right\}\)</span>, for every timestep <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span> - “Start”-variable <span class="math notranslate nohighlight">\(s_t \in \left\{0,1\right\}\)</span>, for every timestep
 <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span></p>
 <p>When they are not needed to enforce a minimum runtime, start costs or similar, the “on” and “start” variables are removed.</p>
 </section>
 <section id="Variable-bounds">
-<h3>Variable bounds<a class="headerlink" href="#Variable-bounds" title="Permalink to this headline"></a></h3>
+<h3>Variable bounds<a class="headerlink" href="#Variable-bounds" title="Permalink to this heading"></a></h3>
 <p>The output variables are within the following bounds in every timestep <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span>: - <span class="math notranslate nohighlight">\(0 \leq x_t \leq u_t\)</span> - <span class="math notranslate nohighlight">\(0 \leq w_t \leq \beta u_t\)</span> - <span class="math notranslate nohighlight">\(0 \leq a_t \leq 1\)</span> - <span class="math notranslate nohighlight">\(0 \leq s_t \leq 1\)</span></p>
 </section>
 <section id="Constraints">
-<h3>Constraints<a class="headerlink" href="#Constraints" title="Permalink to this headline"></a></h3>
+<h3>Constraints<a class="headerlink" href="#Constraints" title="Permalink to this heading"></a></h3>
 <p>The following constraints are used in the asset</p>
 <ul>
 <li><div class="line-block">
@@ -404,9 +405,9 @@ has already been running - Minimum runtime <span class="math notranslate nohighl
 </section>
 </section>
 <section id="Example-Portfolio">
-<h2>Example Portfolio<a class="headerlink" href="#Example-Portfolio" title="Permalink to this headline"></a></h2>
+<h2>Example Portfolio<a class="headerlink" href="#Example-Portfolio" title="Permalink to this heading"></a></h2>
 <section id="Imports">
-<h3>Imports<a class="headerlink" href="#Imports" title="Permalink to this headline"></a></h3>
+<h3>Imports<a class="headerlink" href="#Imports" title="Permalink to this heading"></a></h3>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
@@ -429,7 +430,7 @@ has already been running - Minimum runtime <span class="math notranslate nohighl
 </div>
 </section>
 <section id="Defining-a-portfolio">
-<h3>Defining a portfolio<a class="headerlink" href="#Defining-a-portfolio" title="Permalink to this headline"></a></h3>
+<h3>Defining a portfolio<a class="headerlink" href="#Defining-a-portfolio" title="Permalink to this heading"></a></h3>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
@@ -481,7 +482,7 @@ has already been running - Minimum runtime <span class="math notranslate nohighl
 </div>
 </section>
 <section id="Performing-the-Optimization">
-<h3>Performing the Optimization<a class="headerlink" href="#Performing-the-Optimization" title="Permalink to this headline"></a></h3>
+<h3>Performing the Optimization<a class="headerlink" href="#Performing-the-Optimization" title="Permalink to this heading"></a></h3>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
@@ -547,7 +548,7 @@ has already been running - Minimum runtime <span class="math notranslate nohighl
 </div>
 </section>
 <section id="Plotting-the-Results">
-<h3>Plotting the Results<a class="headerlink" href="#Plotting-the-Results" title="Permalink to this headline"></a></h3>
+<h3>Plotting the Results<a class="headerlink" href="#Plotting-the-Results" title="Permalink to this heading"></a></h3>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
