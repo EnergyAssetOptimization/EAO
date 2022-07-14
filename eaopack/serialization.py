@@ -14,7 +14,8 @@ from eaopack.assets import Node, \
                        Contract,  \
                        ScaledAsset,  \
                        ExtendedTransport, \
-                       MultiCommodityContract
+                       MultiCommodityContract,\
+                       CHPAsset
 from eaopack.portfolio import Portfolio, StructuredAsset
 from eaopack.io import extract_output, output_to_file
 
