@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Combining heat and power &mdash; EAO  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Mixing long-term and short-term optimization targets" href="../mixing_long_and_short_term/mixing_long_and_short_term.html" />
+    <link rel="prev" title="Cross commodity portfolios" href="../cross_commodity/cross_commodity_sample.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> EAO
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../eao.html">EAO package</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../samples.html">Samples</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../samples.html#green-ppa-and-structured-downstream-contract">Green PPA and structured downstream contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../samples.html#marginal-costs-in-portfolio-optimization">Marginal costs in portfolio optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../samples.html#multi-commodity-optimization">Multi commodity optimization</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../samples.html#combining-heat-and-power">Combining Heat and Power</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Combining heat and power</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Technical-Details">Technical Details</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Example-Portfolio">Example Portfolio</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../samples.html#efficient-optimization-across-different-time-scales">Efficient optimization across different time scales</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../samples.html#stochastic-linear-programs">Stochastic Linear Programs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../samples.html#robust-optimization">Robust optimization</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">EAO</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../samples.html">Samples</a> &raquo;</li>
+      <li>Combining heat and power</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/samples/combined_heat_power/chp_sample.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt .copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+.jp-RenderedHTMLCommon thead,
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+.jp-RenderedHTMLCommon th,
+div.rendered_html th {
+  font-weight: bold;
+}
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+.jp-RenderedHTMLCommon tbody tr:hover,
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="Combining-heat-and-power">
+<h1>Combining heat and power<a class="headerlink" href="#Combining-heat-and-power" title="Permalink to this headline"></a></h1>
+<p>The CHPAsset class represents an asset that can generate both heat and power at the same time and models starting procedures, minimum loads, ramping and a minimum runtime.</p>
+<section id="Technical-Details">
+<h2>Technical Details<a class="headerlink" href="#Technical-Details" title="Permalink to this headline"></a></h2>
+<section id="Input-Parameters">
+<h3>Input Parameters<a class="headerlink" href="#Input-Parameters" title="Permalink to this headline"></a></h3>
+<p>Possible input parameters of the CHPAsset are - Ramp <span class="math notranslate nohighlight">\(r\)</span> - Conversion efficiency <span class="math notranslate nohighlight">\(\alpha\)</span> from heat to power. - Maximum share heat <span class="math notranslate nohighlight">\(\beta\)</span> - Minimum capacity <span class="math notranslate nohighlight">\(l_t\)</span> for every timestep <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span> - Maximum capacity <span class="math notranslate nohighlight">\(u_t\)</span> for every timestep <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span> - Dispatch power <span class="math notranslate nohighlight">\(x_{-1}\)</span> from the previous timestep - Dispatch heat <span class="math notranslate nohighlight">\(w_{-1}\)</span> from the previous timestep - Number <span class="math notranslate nohighlight">\(k\)</span> of timesteps the asset
+has already been running - Minimum runtime <span class="math notranslate nohighlight">\(m\)</span></p>
+</section>
+<section id="Output-variables">
+<h3>Output variables<a class="headerlink" href="#Output-variables" title="Permalink to this headline"></a></h3>
+<p>The following variables are computed for a CHPAsset that runs for <span class="math notranslate nohighlight">\(T\)</span> timesteps: - Dispatch power <span class="math notranslate nohighlight">\(x_t \in \mathbb{R}\)</span>, for every timestep <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span> - Dispatch heat <span class="math notranslate nohighlight">\(w_t \in \mathbb{R}\)</span>, for every timestep <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span> - “On”-variable <span class="math notranslate nohighlight">\(a_t \in \left\{0,1\right\}\)</span>, for every timestep <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span> - “Start”-variable <span class="math notranslate nohighlight">\(s_t \in \left\{0,1\right\}\)</span>, for every timestep
+<span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span></p>
+<p>When they are not needed to enforce a minimum runtime, start costs or similar, the “on” and “start” variables are removed.</p>
+</section>
+<section id="Variable-bounds">
+<h3>Variable bounds<a class="headerlink" href="#Variable-bounds" title="Permalink to this headline"></a></h3>
+<p>The output variables are within the following bounds in every timestep <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span>: - <span class="math notranslate nohighlight">\(0 \leq x_t \leq u_t\)</span> - <span class="math notranslate nohighlight">\(0 \leq w_t \leq \beta u_t\)</span> - <span class="math notranslate nohighlight">\(0 \leq a_t \leq 1\)</span> - <span class="math notranslate nohighlight">\(0 \leq s_t \leq 1\)</span></p>
+</section>
+<section id="Constraints">
+<h3>Constraints<a class="headerlink" href="#Constraints" title="Permalink to this headline"></a></h3>
+<p>The following constraints are used in the asset</p>
+<ul>
+<li><div class="line-block">
+<div class="line"><strong>Ramp</strong>: Ensure that the increase/decrease of the virtual dispatch <span class="math notranslate nohighlight">\(\tilde{x}_t = x_t + \alpha w_t\)</span> is bounded by <span class="math notranslate nohighlight">\(r\)</span>, i.e.</div>
+<div class="line"><span class="math">\begin{align*}
+                -r \leq \tilde{x}_t-\tilde{x}_{t-1} \leq r,
+\end{align*}</span>      for <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span>.</div>
+</div>
+</li>
+<li><p><strong>Minimum and maximum capacity</strong>: The virtual dispatch <span class="math notranslate nohighlight">\(\tilde{x}_t = x_t + \alpha w_t\)</span> is 0 when <span class="math notranslate nohighlight">\(a_t = 0\)</span>, i.e. the asset is “off”, or between minimum and maximum capacity, i.e. <span class="math">\begin{align*} a_t l_t \leq \tilde{x}_t \leq a_t u_t, \end{align*}</span>      for <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span>.</p></li>
+<li><p><strong>Start constraints</strong>: When the “on” variable changes from “off” to “on”, the start variable has to be 1, i.e. <span class="math">\begin{align*}s_t \geq a_t - a_{t-1},\end{align*}</span>      for <span class="math notranslate nohighlight">\(t \in \left\{1,\dots, T-1\right\}\)</span>.      If <span class="math notranslate nohighlight">\(k = 0\)</span>, i.e. previous state <span class="math notranslate nohighlight">\(a_{-1}\)</span> is “off”, we need the additional condition <span class="math">\begin{align*}s_0 \geq a_0.\end{align*}</span></p></li>
+<li><p><strong>Minimum runtime</strong>: Ensure that the asset follows the minimum runtime <span class="math notranslate nohighlight">\(m\)</span>, i.e. <span class="math">\begin{align*}a_t \geq s_{t-i}\end{align*}</span>      for <span class="math notranslate nohighlight">\(t \in \left\{1,\dots, T-1\right\}\)</span> and <span class="math notranslate nohighlight">\(i \in \left\{1, \dots, m-1\right\}\)</span>.      If <span class="math notranslate nohighlight">\(k&gt;0\)</span> and <span class="math notranslate nohighlight">\(m &gt; k\)</span>, we need the additional condition <span class="math">\begin{align*}a_i \geq 1,\end{align*}</span>      for all <span class="math notranslate nohighlight">\(i \in \left\{0, \dots, m -k-1\right\}\)</span>.</p></li>
+<li><p><strong>Maximum share heat</strong>: Bound the heat dispatch by a percentage of the power dispatch, i.e. <span class="math">\begin{align*}w_t \leq \beta x_t,\end{align*}</span>      for <span class="math notranslate nohighlight">\(t \in \left\{0, \dots, T-1\right\}\)</span>.</p></li>
+</ul>
+</section>
+</section>
+<section id="Example-Portfolio">
+<h2>Example Portfolio<a class="headerlink" href="#Example-Portfolio" title="Permalink to this headline"></a></h2>
+<section id="Imports">
+<h3>Imports<a class="headerlink" href="#Imports" title="Permalink to this headline"></a></h3>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">datetime</span> <span class="k">as</span> <span class="nn">dt</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="n">myDir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">&#39;../..&#39;</span><span class="p">)</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">myDir</span><span class="p">)</span>
+<span class="n">addDir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">&#39;../../../..&#39;</span><span class="p">)</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">addDir</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">eaopack</span> <span class="k">as</span> <span class="nn">eao</span>
+<span class="kn">from</span> <span class="nn">eaopack.portfolio</span> <span class="kn">import</span> <span class="n">Portfolio</span>
+<span class="kn">from</span> <span class="nn">eaopack.basic_classes</span> <span class="kn">import</span> <span class="n">Timegrid</span>
+<span class="kn">from</span> <span class="nn">eaopack.optimization</span> <span class="kn">import</span> <span class="n">Results</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Defining-a-portfolio">
+<h3>Defining a portfolio<a class="headerlink" href="#Defining-a-portfolio" title="Permalink to this headline"></a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">node_power</span> <span class="o">=</span> <span class="n">eao</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s1">&#39;node_power&#39;</span><span class="p">)</span>
+<span class="n">node_heat</span> <span class="o">=</span> <span class="n">eao</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s1">&#39;node_heat&#39;</span><span class="p">)</span>
+<span class="n">node_gas</span> <span class="o">=</span> <span class="n">eao</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s1">&#39;node_gas&#39;</span><span class="p">)</span>
+
+<span class="n">timegrid</span> <span class="o">=</span> <span class="n">eao</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">Timegrid</span><span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2021</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">dt</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2021</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;h&#39;</span><span class="p">,</span> <span class="n">main_time_unit</span><span class="o">=</span><span class="s1">&#39;h&#39;</span><span class="p">)</span>
+<span class="n">simple_contract_power</span> <span class="o">=</span> <span class="n">eao</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">SimpleContract</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;SC_power&#39;</span><span class="p">,</span> <span class="n">price</span><span class="o">=</span><span class="s1">&#39;price_power&#39;</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="n">node_power</span><span class="p">,</span>
+                                             <span class="n">min_cap</span><span class="o">=-</span><span class="mf">30.</span><span class="p">,</span> <span class="n">max_cap</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">simple_contract_heat</span> <span class="o">=</span> <span class="n">eao</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">SimpleContract</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;SC_heat&#39;</span><span class="p">,</span> <span class="n">price</span><span class="o">=</span><span class="s1">&#39;price_heat&#39;</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="n">node_heat</span><span class="p">,</span>
+                                             <span class="n">min_cap</span><span class="o">=-</span><span class="mf">30.</span><span class="p">,</span> <span class="n">max_cap</span><span class="o">=</span><span class="mf">20.</span><span class="p">)</span>
+<span class="n">simple_contract_gas</span> <span class="o">=</span> <span class="n">eao</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">SimpleContract</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;SC_gas&#39;</span><span class="p">,</span> <span class="n">price</span><span class="o">=</span><span class="s1">&#39;price_gas&#39;</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="n">node_gas</span><span class="p">,</span>
+                                             <span class="n">min_cap</span><span class="o">=-</span><span class="mf">30.</span><span class="p">,</span> <span class="n">max_cap</span><span class="o">=</span><span class="mf">20.</span><span class="p">)</span>
+
+
+<span class="n">chpasset</span> <span class="o">=</span> <span class="n">eao</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">CHPAsset</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;CHP&#39;</span><span class="p">,</span>
+                               <span class="n">nodes</span><span class="o">=</span><span class="p">[</span><span class="n">node_power</span><span class="p">,</span> <span class="n">node_heat</span><span class="p">,</span> <span class="n">node_gas</span><span class="p">],</span>
+                               <span class="n">min_cap</span><span class="o">=</span><span class="mf">5.</span><span class="p">,</span>
+                               <span class="n">max_cap</span><span class="o">=</span><span class="mf">30.</span><span class="p">,</span>
+                               <span class="n">extra_costs</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                               <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;h&#39;</span><span class="p">,</span>
+                               <span class="n">conversion_factor_power_heat</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                               <span class="n">max_share_heat</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                               <span class="n">ramp</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+                               <span class="n">start_costs</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span>
+                               <span class="n">running_costs</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
+                               <span class="n">min_runtime</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                               <span class="n">time_already_running</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
+                               <span class="n">last_dispatch</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
+                               <span class="n">start_fuel</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">prices</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;price_power&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mf">0.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">timegrid</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">10</span><span class="p">)</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span>
+          <span class="s1">&#39;price_heat&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mf">0.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">timegrid</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">10</span><span class="p">)</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span>
+          <span class="s1">&#39;price_gas&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">timegrid</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span><span class="p">,</span>
+          <span class="p">}</span>
+
+<span class="n">portfolio</span> <span class="o">=</span> <span class="n">eao</span><span class="o">.</span><span class="n">portfolio</span><span class="o">.</span><span class="n">Portfolio</span><span class="p">([</span><span class="n">chpasset</span><span class="p">,</span> <span class="n">simple_contract_power</span><span class="p">,</span> <span class="n">simple_contract_heat</span><span class="p">,</span> <span class="n">simple_contract_gas</span><span class="p">])</span>
+<span class="n">eao</span><span class="o">.</span><span class="n">network_graphs</span><span class="o">.</span><span class="n">create_graph</span><span class="p">(</span><span class="n">portf</span> <span class="o">=</span> <span class="n">portfolio</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/samples_combined_heat_power_chp_sample_8_0.svg" src="../../_images/samples_combined_heat_power_chp_sample_8_0.svg" /></div>
+</div>
+</section>
+<section id="Performing-the-Optimization">
+<h3>Performing the Optimization<a class="headerlink" href="#Performing-the-Optimization" title="Permalink to this headline"></a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">op</span> <span class="o">=</span> <span class="n">portfolio</span><span class="o">.</span><span class="n">setup_optim_problem</span><span class="p">(</span><span class="n">prices</span><span class="p">,</span> <span class="n">timegrid</span><span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">op</span><span class="o">.</span><span class="n">optimize</span><span class="p">(</span><span class="n">solver</span><span class="o">=</span><span class="s2">&quot;GLPK_MI&quot;</span><span class="p">)</span>
+<span class="c1"># res = op.optimize(solver=&quot;GLPK&quot;, make_soft_problem=True)  # Relax bool variables, i.e. allow &quot;half on&quot;</span>
+<span class="n">out</span> <span class="o">=</span> <span class="n">eao</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">extract_output</span><span class="p">(</span><span class="n">portfolio</span><span class="p">,</span> <span class="n">op</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">prices</span><span class="p">)</span>
+<span class="n">out</span><span class="p">[</span><span class="s1">&#39;summary&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+...MIP problem configured. Beware of potentially long optimization and other issues inherent to MIP
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Values</th>
+    </tr>
+    <tr>
+      <th>Parameter</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>status</th>
+      <td>successful</td>
+    </tr>
+    <tr>
+      <th>value</th>
+      <td>254.108917</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+</section>
+<section id="Plotting-the-Results">
+<h3>Plotting the Results<a class="headerlink" href="#Plotting-the-Results" title="Permalink to this headline"></a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define the grid size to display the figures:</span>
+<span class="n">num_imgs_per_row</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">num_nodes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">portfolio</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span>
+<span class="n">num_img_rows</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">((</span><span class="n">num_nodes</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="n">num_imgs_per_row</span><span class="p">))</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">num_img_rows</span><span class="p">,</span> <span class="n">num_imgs_per_row</span><span class="p">,</span> <span class="n">tight_layout</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">18</span><span class="p">,</span><span class="mi">5</span><span class="o">*</span><span class="n">num_img_rows</span><span class="p">))</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Plot the dispatch for each node:</span>
+<span class="n">current_ax</span><span class="o">=</span><span class="mi">0</span>
+<span class="n">dispatch_per_node</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">portfolio</span><span class="o">.</span><span class="n">nodes</span><span class="p">}</span>
+<span class="k">for</span> <span class="n">mycol</span> <span class="ow">in</span> <span class="n">out</span><span class="p">[</span><span class="s1">&#39;dispatch&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">dispatch_per_node</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">&#39;(&#39;</span> <span class="o">+</span> <span class="n">node</span> <span class="o">+</span> <span class="s1">&#39;)&#39;</span> <span class="ow">in</span> <span class="n">mycol</span><span class="p">:</span>
+            <span class="n">dispatch_per_node</span><span class="p">[</span><span class="n">node</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mycol</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">dispatch_per_node</span><span class="p">:</span>
+    <span class="n">out</span><span class="p">[</span><span class="s1">&#39;dispatch&#39;</span><span class="p">][</span><span class="n">dispatch_per_node</span><span class="p">[</span><span class="n">node</span><span class="p">]]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="n">current_ax</span><span class="p">],</span> <span class="n">style</span><span class="o">=</span><span class="s1">&#39;-x&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="p">[</span><span class="n">current_ax</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Dispatch &quot;</span> <span class="o">+</span> <span class="n">node</span><span class="p">)</span>
+    <span class="n">current_ax</span><span class="o">+=</span><span class="mi">1</span>
+
+<span class="c1"># Plot internal variables:</span>
+<span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">out</span><span class="p">[</span><span class="s1">&#39;internal_variables&#39;</span><span class="p">]:</span>
+    <span class="n">out</span><span class="p">[</span><span class="s1">&#39;internal_variables&#39;</span><span class="p">][</span><span class="n">v</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="n">current_ax</span><span class="p">],</span> <span class="n">style</span><span class="o">=</span><span class="s1">&#39;-x&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">v</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">out</span><span class="p">[</span><span class="s1">&#39;internal_variables&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="n">ax</span><span class="p">[</span><span class="n">current_ax</span><span class="p">]</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">&quot;No bool variables present&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">[</span><span class="n">current_ax</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Bool Variables&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">[</span><span class="n">current_ax</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">current_ax</span><span class="o">+=</span><span class="mi">1</span>
+
+<span class="c1"># Plot prices</span>
+<span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">out</span><span class="p">[</span><span class="s1">&#39;prices&#39;</span><span class="p">]:</span>
+    <span class="n">out</span><span class="p">[</span><span class="s1">&#39;prices&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="n">current_ax</span><span class="p">],</span> <span class="n">style</span><span class="o">=</span><span class="s1">&#39;-x&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">key</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">[</span><span class="n">current_ax</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Prices&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">[</span><span class="n">current_ax</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+<span class="c1"># Remove empty axes:</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">current_ax</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ax</span><span class="p">)):</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">delaxes</span><span class="p">(</span><span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/samples_combined_heat_power_chp_sample_12_0.svg" src="../../_images/samples_combined_heat_power_chp_sample_12_0.svg" /></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../cross_commodity/cross_commodity_sample.html" class="btn btn-neutral float-left" title="Cross commodity portfolios" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../mixing_long_and_short_term/mixing_long_and_short_term.html" class="btn btn-neutral float-right" title="Mixing long-term and short-term optimization targets" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

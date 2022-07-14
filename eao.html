@@ -130,6 +130,29 @@ Defaults to None, only relevant if freq is not none</p></li>
 </dd>
 </dl>
 <dl class="py method">
+<dt class="sig sig-object py" id="eaopack.assets.Asset.convert_to_timegrid_freq">
+<span class="sig-name descname"><span class="pre">convert_to_timegrid_freq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attribute_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><span class="pre">eaopack.basic_classes.Timegrid</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">round</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#eaopack.assets.Asset.convert_to_timegrid_freq" title="Permalink to this definition"></a></dt>
+<dd><p>Convert time_value from the timegrids main_time_unit to the timegrid.freq</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>time_value</strong> (<em>float</em>) – The time value in timegrid.main_time_unit</p></li>
+<li><p><strong>attribute_name</strong> (<em>str</em>) – The name of the attribute to be converted (only relevant for more specific warning)</p></li>
+<li><p><strong>timegrid</strong> (<a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><em>Timegrid</em></a>) – The timegrid from with main_time_unit and freq are used. If timegrid is None,
+the asset’s own timegrid self.timegrid is taken instead. Defaults to None.</p></li>
+<li><p><strong>round</strong> – If true the result is rounded to the next highest integer.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>time_value converted to timegrid.freq</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>converted_time_value</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="eaopack.assets.Asset.dcf">
 <span class="sig-name descname"><span class="pre">dcf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optim_problem</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">eaopack.optimization.OptimProblem</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">results</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#eaopack.optimization.Results" title="eaopack.optimization.Results"><span class="pre">eaopack.optimization.Results</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.array</span></span></span><a class="headerlink" href="#eaopack.assets.Asset.dcf" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate discounted cash flow for the asset given the optimization results</p>
@@ -187,8 +210,97 @@ to str “price” in asset (if prices are required by the asset)</p></li>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="eaopack.assets.CHPAsset">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CHPAsset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'default_name_contract',</span> <span class="pre">nodes:</span> <span class="pre">typing.List[eaopack.basic_classes.Node]</span> <span class="pre">=</span> <span class="pre">[&lt;eaopack.basic_classes.Node</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;eaopack.basic_classes.Node</span> <span class="pre">object&gt;],</span> <span class="pre">start:</span> <span class="pre">typing.Optional[datetime.datetime]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">end:</span> <span class="pre">typing.Optional[datetime.datetime]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">wacc:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0,</span> <span class="pre">price:</span> <span class="pre">typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">extra_costs:</span> <span class="pre">typing.Union[float,</span> <span class="pre">typing.Dict,</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">0.0,</span> <span class="pre">min_cap:</span> <span class="pre">typing.Union[float,</span> <span class="pre">typing.Dict,</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">0.0,</span> <span class="pre">max_cap:</span> <span class="pre">typing.Union[float,</span> <span class="pre">typing.Dict,</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">0.0,</span> <span class="pre">min_take:</span> <span class="pre">typing.Optional[dict]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">max_take:</span> <span class="pre">typing.Optional[dict]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">freq:</span> <span class="pre">typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">profile:</span> <span class="pre">typing.Optional[pandas.core.series.Series]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">periodicity:</span> <span class="pre">typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">periodicity_duration:</span> <span class="pre">typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">conversion_factor_power_heat:</span> <span class="pre">typing.Union[float,</span> <span class="pre">typing.Dict,</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">1.0,</span> <span class="pre">max_share_heat:</span> <span class="pre">typing.Optional[typing.Union[float,</span> <span class="pre">typing.Dict,</span> <span class="pre">str]]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">ramp:</span> <span class="pre">typing.Optional[float]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">start_costs:</span> <span class="pre">typing.Union[float,</span> <span class="pre">typing.Sequence[float],</span> <span class="pre">typing.Dict]</span> <span class="pre">=</span> <span class="pre">0.0,</span> <span class="pre">running_costs:</span> <span class="pre">typing.Union[float,</span> <span class="pre">typing.Dict,</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">0.0,</span> <span class="pre">min_runtime:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0,</span> <span class="pre">time_already_running:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0,</span> <span class="pre">last_dispatch:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0,</span> <span class="pre">start_fuel:</span> <span class="pre">typing.Union[float,</span> <span class="pre">typing.Dict,</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">0.0,</span> <span class="pre">fuel_efficiency:</span> <span class="pre">typing.Union[float,</span> <span class="pre">typing.Dict,</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">1.0,</span> <span class="pre">consumption_if_on:</span> <span class="pre">typing.Union[float,</span> <span class="pre">typing.Dict,</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">0.0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.assets.CHPAsset" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#eaopack.assets.Contract" title="eaopack.assets.Contract"><code class="xref py py-class docutils literal notranslate"><span class="pre">eaopack.assets.Contract</span></code></a></p>
+<dl class="simple">
+<dt>CHPContract: Generate heat and power</dt><dd><p>Restrictions
+- time dependent capacity restrictions
+- MinTake &amp; MaxTake for a list of periods
+- start costs
+- minimum runtime
+- ramps</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – Unique name of the asset                                              (asset parameter)</p></li>
+<li><p><strong>nodes</strong> (<a class="reference internal" href="#eaopack.basic_classes.Node" title="eaopack.basic_classes.Node"><em>Node</em></a>) – One node each for generated power and heat                          (asset parameter)
+optional: node for fuel (e.g. gas)</p></li>
+<li><p><strong>start</strong> (<em>dt.datetime</em>) – start of asset being active. defaults to none (-&gt; timegrid start relevant)</p></li>
+<li><p><strong>end</strong> (<em>dt.datetime</em>) – end of asset being active. defaults to none (-&gt; timegrid start relevant)</p></li>
+<li><p><strong>timegrid</strong> (<a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><em>Timegrid</em></a>) – Timegrid for discretization                                  (asset parameter)</p></li>
+<li><p><strong>wacc</strong> (<em>float</em>) – Weighted average cost of capital to discount cash flows in target   (asset parameter)</p></li>
+<li><p><strong>freq</strong> (<em>str</em><em>, </em><em>optional</em>) – Frequency for optimization - in case different from portfolio (defaults to None, using portfolio’s freq)
+The more granular frequency of portf &amp; asset is used</p></li>
+<li><p><strong>profile</strong> (<em>pd.Series</em><em>, </em><em>optional</em>) – If freq(asset) &gt; freq(portf) assuming this profile for granular dispatch (e.g. scaling hourly profile to week).
+Defaults to None, only relevant if freq is not none</p></li>
+<li><p><strong>min_cap</strong> (<em>float</em>) – Minimum capacity for generating virtual dispatch (power + conversion_factor_power_heat * heat). Has to be greater or equal to 0. Defaults to 0.</p></li>
+<li><p><strong>max_cap</strong> (<em>float</em>) – Maximum capacity for generating virtual dispatch (power + conversion_factor_power_heat * heat). Has to be greater or equal to 0. Defaults to 0.</p></li>
+<li><p><strong>min_take</strong> (<em>float</em>) – Minimum volume within given period. Defaults to None</p></li>
+<li><p><strong>max_take</strong> (<em>float</em>) – <p>Maximum volume within given period. Defaults to None
+float: constant value
+dict:  dict[‘start’] = np.array</p>
+<blockquote>
+<div><p>dict[‘end’]   = np.array
+dict[‘value’] = np.array</p>
+</div></blockquote>
+</p></li>
+<li><p><strong>price</strong> (<em>str</em>) – Name of price vector for buying / selling</p></li>
+<li><p><strong>extra_costs</strong> (<em>float</em><em>, </em><em>dict</em><em>, </em><em>str</em>) – <p>extra costs added to price vector (in or out). Defaults to 0.
+float: constant value
+dict:  dict[‘start’] = array</p>
+<blockquote>
+<div><p>dict[‘end’]   = array
+dict[‘value’] = array</p>
+</div></blockquote>
+<p>str:   refers to column in “prices” data that provides time series to set up OptimProblem (as for “price” below)</p>
+</p></li>
+<li><p><strong>periodicity</strong> (<em>str</em><em>, </em><em>pd freq style</em>) – Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)</p></li>
+<li><p><strong>periodicity_duration</strong> (<em>str</em><em>, </em><em>pd freq style</em>) – Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)</p></li>
+<li><p><strong>conversion_factor_power_heat</strong> (<em>float</em><em>, </em><em>dict</em><em>, </em><em>str</em>) – Conversion efficiency from heat to power. Defaults to 1.</p></li>
+<li><p><strong>max_share_heat</strong> (<em>float</em><em>, </em><em>dict</em><em>, </em><em>str</em>) – Defines upper bound for the heat dispatch as a percentage of the power dispatch. Defaults to 1.</p></li>
+<li><p><strong>ramp</strong> (<em>float</em>) – Maximum increase/decrease of virtual dispatch (power + conversion_factor_power_heat * heat) in one timestep. Defaults to 1.</p></li>
+<li><p><strong>start_costs</strong> (<em>float</em>) – Costs for starting. Defaults to 0.</p></li>
+<li><p><strong>running_costs</strong> (<em>float</em>) – Costs when on. Defaults to 0.</p></li>
+<li><p><strong>min_runtime</strong> (<em>int</em>) – Minimum runtime in timegrids main_time_unit. Defaults to 0.</p></li>
+<li><p><strong>time_already_running</strong> (<em>int</em>) – The number of timesteps the asset is already running in timegrids main_time_unit. Defaults to 0.</p></li>
+<li><p><strong>last_dispatch</strong> (<em>float</em>) – Previous virtual dispatch (power + conversion_factor_power_heat * heat). Defaults to 0.</p></li>
+<li><p><strong>Optional</strong> – Explicit fuel consumption (e.g. gas) for multi-commodity simulation
+start_fuel (float, dict, str): detaults to  0
+fuel_efficiency (float, dict, str): defaults to 1
+consumption_if_on (float, dict, str): defaults to 0</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="eaopack.assets.CHPAsset.setup_optim_problem">
+<span class="sig-name descname"><span class="pre">setup_optim_problem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><span class="pre">eaopack.basic_classes.Timegrid</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">costs_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">eaopack.optimization.OptimProblem</span></a></span></span><a class="headerlink" href="#eaopack.assets.CHPAsset.setup_optim_problem" title="Permalink to this definition"></a></dt>
+<dd><p>Set up optimization problem for asset</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>prices</strong> (<em>dict</em>) – Dictionary of price arrays needed by assets in portfolio</p></li>
+<li><p><strong>timegrid</strong> (<a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><em>Timegrid</em></a><em>, </em><em>optional</em>) – Discretization grid for asset. Defaults to None,
+in which case it must have been set previously</p></li>
+<li><p><strong>costs_only</strong> (<em>bool</em>) – Only create costs vector (speed up e.g. for sampling prices). Defaults to False</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Optimization problem to be used by optimizer</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem">OptimProblem</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="eaopack.assets.Contract">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Contract</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'default_name_contract'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes:</span> <span class="pre">eaopack.basic_classes.Node</span> <span class="pre">=</span> <span class="pre">&lt;eaopack.basic_classes.Node</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start:</span> <span class="pre">typing.Optional[datetime.datetime]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end:</span> <span class="pre">typing.Optional[datetime.datetime]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wacc:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">price:</span> <span class="pre">typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_costs:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_cap:</span> <span class="pre">typing.Union[float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typing.Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str]</span> <span class="pre">=</span> <span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_cap:</span> <span class="pre">typing.Union[float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typing.Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str]</span> <span class="pre">=</span> <span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_take:</span> <span class="pre">typing.Optional[dict]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_take:</span> <span class="pre">typing.Optional[dict]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq:</span> <span class="pre">typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profile:</span> <span class="pre">typing.Optional[pandas.core.series.Series]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">periodicity:</span> <span class="pre">typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">periodicity_duration:</span> <span class="pre">typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.assets.Contract" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Contract</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'default_name_contract'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes:</span> <span class="pre">eaopack.basic_classes.Node</span> <span class="pre">=</span> <span class="pre">&lt;eaopack.basic_classes.Node</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start:</span> <span class="pre">typing.Optional[datetime.datetime]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end:</span> <span class="pre">typing.Optional[datetime.datetime]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wacc:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">price:</span> <span class="pre">typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_costs:</span> <span class="pre">typing.Union[float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typing.Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str]</span> <span class="pre">=</span> <span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_cap:</span> <span class="pre">typing.Union[float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typing.Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str]</span> <span class="pre">=</span> <span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_cap:</span> <span class="pre">typing.Union[float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typing.Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str]</span> <span class="pre">=</span> <span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_take:</span> <span class="pre">typing.Optional[dict]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_take:</span> <span class="pre">typing.Optional[dict]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq:</span> <span class="pre">typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profile:</span> <span class="pre">typing.Optional[pandas.core.series.Series]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">periodicity:</span> <span class="pre">typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">periodicity_duration:</span> <span class="pre">typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.assets.Contract" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#eaopack.assets.SimpleContract" title="eaopack.assets.SimpleContract"><code class="xref py py-class docutils literal notranslate"><span class="pre">eaopack.assets.SimpleContract</span></code></a></p>
 <p>Contract Class, as an extension of the SimpleContract</p>
 <dl class="simple">
@@ -232,7 +344,15 @@ dict[‘value’] = np.array</p>
 </div></blockquote>
 </p></li>
 <li><p><strong>price</strong> (<em>str</em>) – Name of price vector for buying / selling</p></li>
-<li><p><strong>extra_costs</strong> (<em>float</em><em>, </em><em>optional</em>) – extra costs added to price vector (in or out). Defaults to 0.</p></li>
+<li><p><strong>extra_costs</strong> (<em>float</em><em>, </em><em>dict</em><em>, </em><em>str</em>) – <p>extra costs added to price vector (in or out). Defaults to 0.
+float: constant value
+dict:  dict[‘start’] = array</p>
+<blockquote>
+<div><p>dict[‘end’]   = array
+dict[‘value’] = array</p>
+</div></blockquote>
+<p>str:   refers to column in “prices” data that provides time series to set up OptimProblem (as for “price” below)</p>
+</p></li>
 <li><p><strong>periodicity</strong> (<em>str</em><em>, </em><em>pd freq style</em>) – Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)</p></li>
 <li><p><strong>periodicity_duration</strong> (<em>str</em><em>, </em><em>pd freq style</em>) – Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)</p></li>
 </ul>
@@ -339,7 +459,7 @@ in which case it must have been set previously</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="eaopack.assets.MultiCommodityContract">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MultiCommodityContract</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'default_name_multi_commodity',</span> <span class="pre">nodes:</span> <span class="pre">typing.Union[eaopack.basic_classes.Node,</span> <span class="pre">typing.List[eaopack.basic_classes.Node]]</span> <span class="pre">=</span> <span class="pre">[&lt;eaopack.basic_classes.Node</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;eaopack.basic_classes.Node</span> <span class="pre">object&gt;],</span> <span class="pre">start:</span> <span class="pre">typing.Optional[datetime.datetime]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">end:</span> <span class="pre">typing.Optional[datetime.datetime]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">wacc:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0,</span> <span class="pre">price:</span> <span class="pre">typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">extra_costs:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.0,</span> <span class="pre">min_cap:</span> <span class="pre">typing.Union[float,</span> <span class="pre">typing.Dict,</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">0.0,</span> <span class="pre">max_cap:</span> <span class="pre">typing.Union[float,</span> <span class="pre">typing.Dict,</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">0.0,</span> <span class="pre">min_take:</span> <span class="pre">typing.Optional[dict]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">max_take:</span> <span class="pre">typing.Optional[dict]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">factors_commodities:</span> <span class="pre">list</span> <span class="pre">=</span> <span class="pre">[1,</span> <span class="pre">1],</span> <span class="pre">freq:</span> <span class="pre">typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">profile:</span> <span class="pre">typing.Optional[pandas.core.series.Series]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">periodicity:</span> <span class="pre">typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">periodicity_duration:</span> <span class="pre">typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.assets.MultiCommodityContract" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MultiCommodityContract</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'default_name_multi_commodity',</span> <span class="pre">nodes:</span> <span class="pre">typing.Union[eaopack.basic_classes.Node,</span> <span class="pre">typing.List[eaopack.basic_classes.Node]]</span> <span class="pre">=</span> <span class="pre">[&lt;eaopack.basic_classes.Node</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;eaopack.basic_classes.Node</span> <span class="pre">object&gt;],</span> <span class="pre">start:</span> <span class="pre">typing.Optional[datetime.datetime]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">end:</span> <span class="pre">typing.Optional[datetime.datetime]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">wacc:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0,</span> <span class="pre">price:</span> <span class="pre">typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">extra_costs:</span> <span class="pre">typing.Union[float,</span> <span class="pre">typing.Dict,</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">0.0,</span> <span class="pre">min_cap:</span> <span class="pre">typing.Union[float,</span> <span class="pre">typing.Dict,</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">0.0,</span> <span class="pre">max_cap:</span> <span class="pre">typing.Union[float,</span> <span class="pre">typing.Dict,</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">0.0,</span> <span class="pre">min_take:</span> <span class="pre">typing.Optional[dict]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">max_take:</span> <span class="pre">typing.Optional[dict]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">factors_commodities:</span> <span class="pre">list</span> <span class="pre">=</span> <span class="pre">[1,</span> <span class="pre">1],</span> <span class="pre">freq:</span> <span class="pre">typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">profile:</span> <span class="pre">typing.Optional[pandas.core.series.Series]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">periodicity:</span> <span class="pre">typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">periodicity_duration:</span> <span class="pre">typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.assets.MultiCommodityContract" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#eaopack.assets.Contract" title="eaopack.assets.Contract"><code class="xref py py-class docutils literal notranslate"><span class="pre">eaopack.assets.Contract</span></code></a></p>
 <p>Multi commodity contract class - implements a Contract that generates two or more commoditites at a time.
 The main idea is to implement a CHP generating unit that would generate power and heat at the same time.
@@ -386,7 +506,15 @@ dict[‘value’] = np.array</p>
 </div></blockquote>
 </p></li>
 <li><p><strong>price</strong> (<em>str</em>) – Name of price vector for buying / selling</p></li>
-<li><p><strong>extra_costs</strong> (<em>float</em><em>, </em><em>optional</em>) – extra costs added to price vector (in or out). Defaults to 0.</p></li>
+<li><p><strong>extra_costs</strong> (<em>float</em><em>, </em><em>dict</em><em>, </em><em>str</em>) – <p>extra costs added to price vector (in or out). Defaults to 0.
+float: constant value
+dict:  dict[‘start’] = array</p>
+<blockquote>
+<div><p>dict[‘end’]   = array
+dict[‘value’] = array</p>
+</div></blockquote>
+<p>str:   refers to column in “prices” data that provides time series to set up OptimProblem (as for “price” below)</p>
+</p></li>
 <li><p><strong>periodicity</strong> (<em>str</em><em>, </em><em>pd freq style</em>) – Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)</p></li>
 <li><p><strong>periodicity_duration</strong> (<em>str</em><em>, </em><em>pd freq style</em>) – Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)</p></li>
 <li><p><strong>contract</strong> (<em>New in comparison to</em>) – </p></li>
@@ -475,7 +603,7 @@ in which case it must have been set previously</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="eaopack.assets.SimpleContract">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SimpleContract</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'default_name_simple_contract'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes:</span> <span class="pre">eaopack.basic_classes.Node</span> <span class="pre">=</span> <span class="pre">&lt;eaopack.basic_classes.Node</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start:</span> <span class="pre">typing.Optional[datetime.datetime]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end:</span> <span class="pre">typing.Optional[datetime.datetime]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wacc:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">price:</span> <span class="pre">typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_costs:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_cap:</span> <span class="pre">typing.Union[float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typing.Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str]</span> <span class="pre">=</span> <span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_cap:</span> <span class="pre">typing.Union[float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typing.Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str]</span> <span class="pre">=</span> <span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq:</span> <span class="pre">typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profile:</span> <span class="pre">typing.Optional[pandas.core.series.Series]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">periodicity:</span> <span class="pre">typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">periodicity_duration:</span> <span class="pre">typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.assets.SimpleContract" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SimpleContract</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'default_name_simple_contract'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes:</span> <span class="pre">eaopack.basic_classes.Node</span> <span class="pre">=</span> <span class="pre">&lt;eaopack.basic_classes.Node</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start:</span> <span class="pre">typing.Optional[datetime.datetime]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end:</span> <span class="pre">typing.Optional[datetime.datetime]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wacc:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">price:</span> <span class="pre">typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_costs:</span> <span class="pre">typing.Union[float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typing.Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str]</span> <span class="pre">=</span> <span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_cap:</span> <span class="pre">typing.Union[float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typing.Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str]</span> <span class="pre">=</span> <span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_cap:</span> <span class="pre">typing.Union[float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typing.Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str]</span> <span class="pre">=</span> <span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq:</span> <span class="pre">typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profile:</span> <span class="pre">typing.Optional[pandas.core.series.Series]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">periodicity:</span> <span class="pre">typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">periodicity_duration:</span> <span class="pre">typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.assets.SimpleContract" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#eaopack.assets.Asset" title="eaopack.assets.Asset"><code class="xref py py-class docutils literal notranslate"><span class="pre">eaopack.assets.Asset</span></code></a></p>
 <p>Contract Class</p>
 <dl class="simple">
@@ -506,12 +634,45 @@ dict[‘value’] = array</p>
 <p>str:   refers to column in “prices” data that provides time series to set up OptimProblem (as for “price” below)</p>
 </p></li>
 <li><p><strong>price</strong> (<em>str</em>) – Name of price vector for buying / selling. Defaults to None</p></li>
-<li><p><strong>extra_costs</strong> (<em>float</em><em>, </em><em>optional</em>) – extra costs added to price vector (in or out). Defaults to 0.</p></li>
+<li><p><strong>extra_costs</strong> (<em>float</em><em>, </em><em>dict</em><em>, </em><em>str</em>) – <p>extra costs added to price vector (in or out). Defaults to 0.
+float: constant value
+dict:  dict[‘start’] = array</p>
+<blockquote>
+<div><p>dict[‘end’]   = array
+dict[‘value’] = array</p>
+</div></blockquote>
+<p>str:   refers to column in “prices” data that provides time series to set up OptimProblem (as for “price” below)</p>
+</p></li>
 <li><p><strong>periodicity</strong> (<em>str</em><em>, </em><em>pd freq style</em>) – Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)</p></li>
 <li><p><strong>periodicity_duration</strong> (<em>str</em><em>, </em><em>pd freq style</em>) – Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="eaopack.assets.SimpleContract.make_vector">
+<span class="sig-name descname"><span class="pre">make_vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default_value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.assets.SimpleContract.make_vector" title="Permalink to this definition"></a></dt>
+<dd><p>Make a vector out of value
+:param value: The value to be converted to a vector</p>
+<blockquote>
+<div><p>float: constant value
+dict:  dict[‘start’] = array</p>
+<blockquote>
+<div><p>dict[‘end’]   = array
+dict[‘value’] = array</p>
+</div></blockquote>
+<p>str:   refers to column in “prices” data that provides time series to set up OptimProblem (as for “price” below)</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>prices</strong> (<em>dict</em>) – Dictionary of price arrays needed by assets in portfolio</p></li>
+<li><p><strong>default_value</strong> (<em>float</em>) – The value that is used if any of the entries of the resulting vector are not specified</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns:</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="eaopack.assets.SimpleContract.setup_optim_problem">
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">setup_optim_problem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><span class="pre">eaopack.basic_classes.Timegrid</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">costs_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">eaopack.optimization.OptimProblem</span></a></span></span><a class="headerlink" href="#eaopack.assets.SimpleContract.setup_optim_problem" title="Permalink to this definition"></a></dt>
@@ -659,6 +820,21 @@ in which case it must have been set previously</p></li>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="eaopack.assets.convert_time_unit">
+<span class="sig-name descname"><span class="pre">convert_time_unit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">old_freq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_freq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#eaopack.assets.convert_time_unit" title="Permalink to this definition"></a></dt>
+<dd><p>Convert time value from old_freq to new_freq
+:param value: the time value to convert
+:type value: float
+:param old_freq: pandas frequency string, e.g. ‘d’, ‘h’, ‘min’, ‘15min’, ‘1d1h’
+:param new_freq: pandas frequency string, e.g. ‘d’, ‘h’, ‘min’, ‘15min’, ‘1d1h’</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the time value converted from old_freq to new_freq</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="eaopack.assets.define_restr">
 <span class="sig-name descname"><span class="pre">define_restr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">my_take</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">my_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">my_n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">map</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.assets.define_restr" title="Permalink to this definition"></a></dt>
 <dd><p>encapsulates the generation of restriction from given min/max take or similar</p>
@@ -667,6 +843,69 @@ in which case it must have been set previously</p></li>
 </section>
 <section id="module-eaopack.portfolio">
 <span id="portfolio"></span><h2>Portfolio<a class="headerlink" href="#module-eaopack.portfolio" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="eaopack.portfolio.LinkedAsset">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LinkedAsset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">portfolio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">asset1_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.assets.Asset" title="eaopack.assets.Asset"><span class="pre">eaopack.assets.Asset</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.basic_classes.Node" title="eaopack.basic_classes.Node"><span class="pre">eaopack.basic_classes.Node</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">asset2_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.assets.Asset" title="eaopack.assets.Asset"><span class="pre">eaopack.assets.Asset</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.basic_classes.Node" title="eaopack.basic_classes.Node"><span class="pre">eaopack.basic_classes.Node</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">asset2_time_already_running</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'time_already_running'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_back</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_forward</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default_name_linkedAsset'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.portfolio.LinkedAsset" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#eaopack.portfolio.StructuredAsset" title="eaopack.portfolio.StructuredAsset"><code class="xref py py-class docutils literal notranslate"><span class="pre">eaopack.portfolio.StructuredAsset</span></code></a></p>
+<p>Linked asset that wraps a portfolio in one asset and poses additional constraints on variables.
+This can be used to ensure that one asset turns on only after another asset has been running for at
+least a set amount of time.</p>
+<p>Linked asset that wraps a portfolio in one asset and poses the following additional constraints on variable
+v1 of asset1 and (bool) variable v2 of asset2:</p>
+<p>v1_t &lt;= u1_t * v2_{t+i}, for all i = -time_back,…,time_forward   and   timesteps t = 0,…,timegrid.T</p>
+<p>Here, v1_t and v2_t stand for variable v1 of asset1 at timestep t and variable v2 of asset2 at timestep t, respectively.
+u1_t stands for the upper bound for variable v1_t as specified in asset1.</p>
+<p>This can be used to ensure that a dispatch or “on” variable v1 is 0 (or “off”) depending on the value of an “on” variable v2.
+For example, it can be ensured that asset1 only turns “on” or has positive dispatch once asset2 has
+been running for a minimum amount of time.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>portf</strong> (<a class="reference internal" href="#eaopack.portfolio.Portfolio" title="eaopack.portfolio.Portfolio"><em>Portfolio</em></a>) – Portfolio to be wrapped</p></li>
+<li><p><strong>nodes</strong> (<em>nodes as in std. asset</em>) – where to connect the asset to the outside.
+Must correspond to (a) node(s) of the internal structure</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – name of the linked asset</p></li>
+<li><p><strong>asset1_variable</strong> (<em>Tuple</em><em>[</em><em>Union</em><em>[</em><a class="reference internal" href="#eaopack.assets.Asset" title="eaopack.assets.Asset"><em>Asset</em></a><em>, </em><em>str</em><em>]</em><em>, </em><em>str</em><em>, </em><em>Union</em><em>[</em><a class="reference internal" href="#eaopack.basic_classes.Node" title="eaopack.basic_classes.Node"><em>Node</em></a><em>, </em><em>str</em><em>]</em><em>]</em>) – Tuple specifying the variable v1 consisting of
+- asset1 (Asset, str): asset or asset_name of asset in portfolio
+- v1 (str): name of a variable in asset1
+- node1 (Node, str): node or node_name of node in portfolio</p></li>
+<li><p><strong>asset2_variable</strong> (<em>Tuple</em><em>[</em><em>Union</em><em>[</em><a class="reference internal" href="#eaopack.assets.Asset" title="eaopack.assets.Asset"><em>Asset</em></a><em>, </em><em>str</em><em>]</em><em>, </em><em>str</em><em>, </em><em>Union</em><em>[</em><a class="reference internal" href="#eaopack.basic_classes.Node" title="eaopack.basic_classes.Node"><em>Node</em></a><em>, </em><em>str</em><em>]</em><em>]</em>) – Tuple specifying the variable v2 consisting of
+- asset2 (Asset, str): asset or asset_name of asset in portfolio
+- v2 (str): name of a bool variable in asset2
+- node2 (Node, str): node or node_name of node in portfolio</p></li>
+<li><p><strong>asset2_time_already_running</strong> (<em>Union</em><em>[</em><em>str</em><em>, </em><em>float</em><em>]</em>) – Indicating the runtime asset2 has already been running for
+float: the time in the timegrids main_time_unit that asset2 has been ‘on’ for
+str: the name of an attribute of asset2 that indicates the time asset2 has been running
+This defaults to “time_already_running”</p></li>
+<li><p><strong>time_back</strong> (<em>float</em>) – The minimum amount of time asset2 has to be running before v1 of asset1 can be &gt; 0</p></li>
+<li><p><strong>time_forward</strong> (<em>float</em>) – The minimum amount of time v1 of asset1 has to be 0 before asset2  is turned off</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="eaopack.portfolio.LinkedAsset.setup_optim_problem">
+<span class="sig-name descname"><span class="pre">setup_optim_problem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><span class="pre">eaopack.basic_classes.Timegrid</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">costs_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">eaopack.optimization.OptimProblem</span></a></span></span><a class="headerlink" href="#eaopack.portfolio.LinkedAsset.setup_optim_problem" title="Permalink to this definition"></a></dt>
+<dd><p>set up optimization problem for the asset</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>prices</strong> (<em>dict</em>) – dictionary of price np.arrays. dict must contain a key that corresponds
+to str “price” in asset (if prices are required by the asset)</p></li>
+<li><p><strong>timegrid</strong> (<a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><em>Timegrid</em></a>) – Grid to be used for optim problem. Defaults to none</p></li>
+<li><p><strong>costs_only</strong> (<em>bool</em>) – Only create costs vector (speed up e.g. for sampling prices). Defaults to False</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Optimization problem that may be used by optimizer</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem">OptimProblem</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="eaopack.portfolio.Portfolio">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Portfolio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">assets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.assets.Asset" title="eaopack.assets.Asset"><span class="pre">eaopack.assets.Asset</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.portfolio.Portfolio" title="Permalink to this definition"></a></dt>
@@ -698,6 +937,40 @@ together with ‘Transport’ assets define the network of the portfolio.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p>list of costs vectors for use in OptimProblem (e.g. for robust optimization)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eaopack.portfolio.Portfolio.get_asset">
+<span class="sig-name descname"><span class="pre">get_asset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">asset_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#eaopack.assets.Asset" title="eaopack.assets.Asset"><span class="pre">eaopack.assets.Asset</span></a></span></span><a class="headerlink" href="#eaopack.portfolio.Portfolio.get_asset" title="Permalink to this definition"></a></dt>
+<dd><p>Return the asset with name asset_name or None if no asset with this name exists in the portfolio.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>asset_name</strong> (<em>str</em>) – The name of the asset</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The asset with name asset_name</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>asset (<a class="reference internal" href="#eaopack.assets.Asset" title="eaopack.assets.Asset">Asset</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eaopack.portfolio.Portfolio.get_node">
+<span class="sig-name descname"><span class="pre">get_node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#eaopack.basic_classes.Node" title="eaopack.basic_classes.Node"><span class="pre">eaopack.basic_classes.Node</span></a></span></span><a class="headerlink" href="#eaopack.portfolio.Portfolio.get_node" title="Permalink to this definition"></a></dt>
+<dd><p>Return the node with name node_name or None if no nodes with this name exists in the portfolio.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>node_name</strong> (<em>str</em>) – The name of the node</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The node with name node_name</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>node (<a class="reference internal" href="#eaopack.basic_classes.Node" title="eaopack.basic_classes.Node">Node</a>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -811,7 +1084,7 @@ here specific types may be defined:</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="eaopack.optimization.OptimProblem.optimize">
-<span class="sig-name descname"><span class="pre">optimize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'value'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interface</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'cvxpy'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iterations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5000</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#eaopack.optimization.Results" title="eaopack.optimization.Results"><span class="pre">eaopack.optimization.Results</span></a></span></span><a class="headerlink" href="#eaopack.optimization.OptimProblem.optimize" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">optimize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'value'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interface</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'cvxpy'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">make_soft_problem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iterations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5000</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#eaopack.optimization.Results" title="eaopack.optimization.Results"><span class="pre">eaopack.optimization.Results</span></a></span></span><a class="headerlink" href="#eaopack.optimization.OptimProblem.optimize" title="Permalink to this definition"></a></dt>
 <dd><p>optimize the optimization problem</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -822,6 +1095,7 @@ Alternative: ‘robust’, maximizing the minimum DCF across given price samples
 - Robust optimization: list of costs arrays (maximizing minimal DCF)</p></li>
 <li><p><strong>interface</strong> (<em>str</em><em>, </em><em>optional</em>) – Chosen interface architecture. Defaults to ‘cvxpy’.</p></li>
 <li><p><strong>solver</strong> (<em>str</em><em>, </em><em>optional</em>) – Solver for interface. Defaults to None</p></li>
+<li><p><strong>make_soft_problem</strong> (<em>bool</em><em>, </em><em>optional</em>) – If true, relax the boolean variables and allow float values instead. Defaults to False</p></li>
 <li><p><strong>rel_tol</strong> (<em>INACTIVE</em>) – relative tolerance for solver</p></li>
 <li><p><strong>iterations</strong> (<em>INACTIVE</em>) – max number of iterations for solver</p></li>
 <li><p><strong>decimals_res</strong> (<em>INACTIVE</em>) – rounding results to … decimals. Defaults to 5</p></li>
@@ -999,6 +1273,7 @@ only unit valid choices with factor 1 are used. Conversion to be added in later 
 </dl>
 <dl class="simple">
 <dt>Returns: dictionary with results</dt><dd><p>disp:    dataframe with dispatch per asset
+internal_variables: dataframe with internal variables per asset
 dcfs:    dataframe with discounted cash flows per asset
 prices:  dataframe with nodal prices and given prices
 special: dataframe with specific asset parameters (such as size in scaled assets)</p>
