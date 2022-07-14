@@ -439,6 +439,8 @@ class CHPAssetTest(unittest.TestCase):
         """ Unit test. Setting up a CHPAsset with positive prices and a simple contract with a minimum demand that is
             smaller than the min capacity. Check that it runs at minimum capacity.
         """
+        np.random.seed(42)
+
         node_power = eao.assets.Node('node_power')
         node_heat = eao.assets.Node('node_heat')
         Start = dt.date(2021, 1, 1)
@@ -459,10 +461,10 @@ class CHPAssetTest(unittest.TestCase):
         sc_power = eao.assets.SimpleContract(name='SC_power', price='rand_price', nodes=node_power,
                                             min_cap=-20., max_cap=max_cap_sc)
 
-        a = eao.assets.CHPAsset(name='CHP', price='rand_price', nodes=(node_power, node_heat),
+        a = eao.assets.CHPAsset(name='CHP', nodes=(node_power, node_heat),
                                 min_cap=min_cap, max_cap=max_cap)
 
-        prices = {'rand_price': np.ones(timegrid.T)}
+        prices = {'rand_price': -np.ones(timegrid.T)}
         p = eao.portfolio.Portfolio([a, sc_power])
 
         op = p.setup_optim_problem(prices, timegrid=timegrid)
@@ -502,14 +504,15 @@ class CHPAssetTest(unittest.TestCase):
         """ Unit test. Setting up a CHPAsset with random prices
             and check that it starts any time the prices change from positive to negative.
         """
+        np.random.seed(42)
         node_power = eao.assets.Node('node_power')
         node_heat = eao.assets.Node('node_heat')
         Start = dt.date(2021, 1, 1)
         End = dt.date(2021, 1, 10)
         timegrid = eao.assets.Timegrid(Start, End, freq='h')
 
-        a = eao.assets.CHPAsset(name='CHP', price='rand_price', nodes=(node_power, node_heat), min_cap=1., max_cap=1, start_costs=0.001, running_costs=0)
-        prices ={'rand_price': np.random.rand(timegrid.T)-0.5}
+        a = eao.assets.CHPAsset(name='CHP', price='rand_price', nodes=(node_power, node_heat), min_cap=0.001, max_cap=1, start_costs=0.0001, running_costs=0)
+        prices ={'rand_price': np.random.randint(low=-1, high=2, size=timegrid.T)}
         op = a.setup_optim_problem(prices, timegrid=timegrid)
         res = op.optimize()
         start_variables = res.x[3*timegrid.T:]
@@ -673,6 +676,11 @@ class CHPAssetTest(unittest.TestCase):
 
         a = eao.assets.CHPAsset(name='CHP', price='rand_price', nodes=(node_power, node_heat), min_cap=0., max_cap=20,
                                 min_take=min_take, max_take=max_take, conversion_factor_power_heat=conversion_factor_power_heat)
+
+        # test serialization
+        s = eao.serialization.to_json(a)
+        aa = eao.serialization.load_from_json(s)
+
         prices = {'rand_price': -np.ones(timegrid.T)}
         op = a.setup_optim_problem(prices, timegrid=timegrid)
         res = op.optimize()
