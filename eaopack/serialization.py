@@ -4,19 +4,8 @@ import datetime as dt
 import json
 import pytz
 
-from eaopack.assets import Node, \
-                       Timegrid,  \
-                       Asset,  \
-                       Unit,  \
-                       SimpleContract,  \
-                       Transport,  \
-                       Storage,  \
-                       Contract,  \
-                       ScaledAsset,  \
-                       ExtendedTransport, \
-                       MultiCommodityContract,\
-                       CHPAsset
-from eaopack.portfolio import Portfolio, StructuredAsset
+from eaopack.assets import *     # need to import to be able to deserialize
+from eaopack.portfolio import *  # need to import to be able to deserialize
 from eaopack.io import extract_output, output_to_file
 
 
