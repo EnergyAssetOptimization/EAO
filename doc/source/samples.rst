@@ -23,6 +23,13 @@ Multi commodity optimization
 
    samples/cross_commodity/cross_commodity_sample
 
+Combining Heat and Power
+----------------------------
+
+.. toctree::
+
+   samples/combined_heat_power/chp_sample
+
 Efficient optimization across different time scales
 ---------------------------------------------------
 

@@ -18,6 +18,7 @@ def extract_output(portf: Portfolio, op: OptimProblem, res:Results, prices: dict
 
     Returns: dictionary with results
         disp:    dataframe with dispatch per asset
+        internal_variables: dataframe with internal variables per asset
         dcfs:    dataframe with discounted cash flows per asset
         prices:  dataframe with nodal prices and given prices
         special: dataframe with specific asset parameters (such as size in scaled assets)
@@ -28,6 +29,7 @@ def extract_output(portf: Portfolio, op: OptimProblem, res:Results, prices: dict
         output['summary']['status']  = res
         output['DCF']       = None
         output['dispatch']  = None
+        output['internal_variables']  = None
         output['prices']    = None        
         output['special']   = None
     else:
@@ -41,6 +43,7 @@ def extract_output(portf: Portfolio, op: OptimProblem, res:Results, prices: dict
         times   = portf.timegrid.timepoints # using time as main index
         dcfs    = pd.DataFrame(index = times) # dcf
         disp    = pd.DataFrame(index = times) # dispatch
+        internal_variables = pd.DataFrame(index = times)
         duals   = pd.DataFrame(index = times) # duals of problem -  correspond to nodal prices
         special = pd.DataFrame(columns=['asset', 'variable', 'value', 'costs']) # one line per asset / parameter
         # extract dcf for all assets and set together
@@ -64,9 +67,22 @@ def extract_output(portf: Portfolio, op: OptimProblem, res:Results, prices: dict
                 disp[myCol] = 0.
                 for i,r in my_mapping.iterrows():
                     disp.loc[times[r.time_step], myCol] += res.x[i]*r.disp_factor
+        # extract internal variables per asset
+        for a in portf.assets:
+            variable_names = op.mapping[(op.mapping['asset'] == a.name)& (op.mapping['type'] == 'i')]['var_name'].unique()
+            for v in variable_names:
+                I =   (op.mapping['asset'] == a.name) \
+                    & (op.mapping['type'] == 'i')      \
+                    & (op.mapping['var_name'] == v)
+                my_mapping = op.mapping.loc[I,:]
+                myCol = (a.name +' ('+  v + ')')
+                internal_variables[myCol] = None
+                for i,r in my_mapping.iterrows():
+                    pass
+                    internal_variables.loc[times[r.time_step], myCol] = res.x[i]
         # extract duals from nodal restrictions
         # looping through nodes and their recorded nodal restrictions and extract dual
-        if not res.duals is None:
+        if not res.duals is None and not res.duals['N'] is None:
             for i_node, n in enumerate(portf.nodes):
                 name_nodal_price = 'nodal price: '+n
                 duals[name_nodal_price] = np.nan # initialize column
@@ -108,6 +124,7 @@ def extract_output(portf: Portfolio, op: OptimProblem, res:Results, prices: dict
             disp.loc[times[I_t],:] = disp.loc[times[I_t],:]/n_samples
         output['DCF']       = dcfs
         output['dispatch']  = disp
+        output['internal_variables'] = internal_variables
         output['prices']    = duals
         output['special']   = special
 
