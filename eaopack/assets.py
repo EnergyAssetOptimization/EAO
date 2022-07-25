@@ -1169,6 +1169,8 @@ class CHPAsset(Contract):
             running_costs (float): Costs when on. Defaults to 0.
             min_runtime (int): Minimum runtime in timegrids main_time_unit. Defaults to 0.
             time_already_running (int): The number of timesteps the asset is already running in timegrids main_time_unit. Defaults to 0.
+            min_downtime (int): Minimum downtime in timegrids main_time_unit. Defaults to 0.
+            time_already_off (int): The number of timesteps the asset has already been off in timegrids main_time_unit. Defaults to 0.
             last_dispatch (float): Previous virtual dispatch (power + conversion_factor_power_heat * heat). Defaults to 0.
 
             Optional: Explicit fuel consumption (e.g. gas) for multi-commodity simulation
