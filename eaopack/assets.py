@@ -1208,7 +1208,7 @@ class CHPAsset(Contract):
             self.consumption_if_on    = consumption_if_on
             self.start_fuel           = start_fuel
 
-        assert self.time_already_off == 0 or self.time_already_running == 0, "Either time_already_off or time_already running has to be 0. Asset: " + self.name
+        assert (self.time_already_off == 0) ^ (self.time_already_running == 0), "Either time_already_off or time_already_running has to be 0, but not both. Asset: " + self.name
 
         if len(nodes) not in (2,3):
             raise ValueError('Length of nodes has to be 2 or 3; power, heat and optionally fuel. Asset: ' + self.name)
