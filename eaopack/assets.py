@@ -1208,7 +1208,8 @@ class CHPAsset(Contract):
             self.consumption_if_on    = consumption_if_on
             self.start_fuel           = start_fuel
 
-        assert (self.time_already_off == 0) ^ (self.time_already_running == 0), "Either time_already_off or time_already_running has to be 0, but not both. Asset: " + self.name
+        if self.min_downtime > 1:
+            assert (self.time_already_off == 0) ^ (self.time_already_running == 0), "Either time_already_off or time_already_running has to be 0, but not both. Asset: " + self.name
 
         if len(nodes) not in (2,3):
             raise ValueError('Length of nodes has to be 2 or 3; power, heat and optionally fuel. Asset: ' + self.name)
@@ -1386,19 +1387,6 @@ class CHPAsset(Contract):
         else:
             op.b = np.hstack((op.b, op.u))
 
-        # Minimum Downtime:
-        for t in range(self.timegrid.restricted.T):
-            for i in range(1, min_downtime):
-                if i > t:
-                    continue
-                a = sp.lil_matrix((1, op.A.shape[1]))
-                a[0, 2 * n + t] = 1
-                a[0, 2 * n + t - i - 1] = 1
-                a[0, 2 * n + t - i] = -1
-                op.A = sp.vstack((op.A, a))
-                op.cType += 'U'
-                op.b = np.hstack((op.b, 1))
-
         # Start constraints:
         if include_start_variables:
             myA = sp.lil_matrix((self.timegrid.restricted.T-1, op.A.shape[1]))
@@ -1419,16 +1407,31 @@ class CHPAsset(Contract):
                 op.b = np.hstack((op.b, 0))
 
             # Minimum runtime:
+            if min_runtime > 1:
+                for t in range(self.timegrid.restricted.T):
+                    for i in range(1, min_runtime):
+                        if i > t:
+                            continue
+                        a = sp.lil_matrix((1, op.A.shape[1]))
+                        a[0, 2 * n + t] = 1
+                        a[0, 2 * n + self.timegrid.restricted.T + t - i] = -1
+                        op.A = sp.vstack((op.A, a))
+                        op.cType += 'L'
+                        op.b = np.hstack((op.b, 0))
+
+        # Minimum Downtime:
+        if min_downtime > 1:
             for t in range(self.timegrid.restricted.T):
-                for i in range(1, min_runtime):
+                for i in range(1, min_downtime):
                     if i > t:
                         continue
                     a = sp.lil_matrix((1, op.A.shape[1]))
                     a[0, 2 * n + t] = 1
-                    a[0, 2 * n + self.timegrid.restricted.T + t - i] = -1
+                    a[0, 2 * n + t - i - 1] = 1
+                    a[0, 2 * n + t - i] = -1
                     op.A = sp.vstack((op.A, a))
-                    op.cType += 'L'
-                    op.b = np.hstack((op.b, 0))
+                    op.cType += 'U'
+                    op.b = np.hstack((op.b, 1))
 
         # Boundaries for the heat variable:
         if max_share_heat is not None:
