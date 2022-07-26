@@ -1119,6 +1119,8 @@ class CHPAsset(Contract):
                  running_costs: Union[float, Dict, str] = 0.,
                  min_runtime: float = 0,
                  time_already_running: float = 0,
+                 min_downtime: float = 0,
+                 time_already_off: float = 0,
                  last_dispatch: float = 0,
                  start_fuel: Union[float, Dict, str] = 0.,
                  fuel_efficiency: Union[float, Dict, str] = 1.,
@@ -1167,6 +1169,8 @@ class CHPAsset(Contract):
             running_costs (float): Costs when on. Defaults to 0.
             min_runtime (int): Minimum runtime in timegrids main_time_unit. Defaults to 0.
             time_already_running (int): The number of timesteps the asset is already running in timegrids main_time_unit. Defaults to 0.
+            min_downtime (int): Minimum downtime in timegrids main_time_unit. Defaults to 0.
+            time_already_off (int): The number of timesteps the asset has already been off in timegrids main_time_unit. Defaults to 0.
             last_dispatch (float): Previous virtual dispatch (power + conversion_factor_power_heat * heat). Defaults to 0.
 
             Optional: Explicit fuel consumption (e.g. gas) for multi-commodity simulation
@@ -1196,11 +1200,16 @@ class CHPAsset(Contract):
         self.running_costs        = running_costs
         self.min_runtime          = min_runtime
         self.time_already_running = time_already_running
+        self.min_downtime = min_downtime
+        self.time_already_off = time_already_off
         self.last_dispatch = last_dispatch
         if len(nodes) >= 3:
             self.fuel_efficiency      = fuel_efficiency
             self.consumption_if_on    = consumption_if_on
             self.start_fuel           = start_fuel
+
+        if self.min_downtime > 1:
+            assert (self.time_already_off == 0) ^ (self.time_already_running == 0), "Either time_already_off or time_already_running has to be 0, but not both. Asset: " + self.name
 
         if len(nodes) not in (2,3):
             raise ValueError('Length of nodes has to be 2 or 3; power, heat and optionally fuel. Asset: ' + self.name)
@@ -1224,6 +1233,8 @@ class CHPAsset(Contract):
         # convert min_runtime and time_already_running from timegrids main_time_unit to timegrid.freq
         min_runtime = self.convert_to_timegrid_freq(self.min_runtime, "min_runtime", timegrid)
         time_already_running = self.convert_to_timegrid_freq(self.time_already_running, "time_already_running", timegrid)
+        min_downtime = self.convert_to_timegrid_freq(self.min_downtime, "min_downtime", timegrid)
+        time_already_off = self.convert_to_timegrid_freq(self.time_already_off, "time_already_off", timegrid)
 
         op = super().setup_optim_problem(prices=prices, timegrid=timegrid, costs_only=costs_only)
 
@@ -1396,16 +1407,31 @@ class CHPAsset(Contract):
                 op.b = np.hstack((op.b, 0))
 
             # Minimum runtime:
+            if min_runtime > 1:
+                for t in range(self.timegrid.restricted.T):
+                    for i in range(1, min_runtime):
+                        if i > t:
+                            continue
+                        a = sp.lil_matrix((1, op.A.shape[1]))
+                        a[0, 2 * n + t] = 1
+                        a[0, 2 * n + self.timegrid.restricted.T + t - i] = -1
+                        op.A = sp.vstack((op.A, a))
+                        op.cType += 'L'
+                        op.b = np.hstack((op.b, 0))
+
+        # Minimum Downtime:
+        if min_downtime > 1:
             for t in range(self.timegrid.restricted.T):
-                for i in range(1, min_runtime):
+                for i in range(1, min_downtime):
                     if i > t:
                         continue
                     a = sp.lil_matrix((1, op.A.shape[1]))
                     a[0, 2 * n + t] = 1
-                    a[0, 2 * n + self.timegrid.restricted.T + t - i] = -1
+                    a[0, 2 * n + t - i - 1] = 1
+                    a[0, 2 * n + t - i] = -1
                     op.A = sp.vstack((op.A, a))
-                    op.cType += 'L'
-                    op.b = np.hstack((op.b, 0))
+                    op.cType += 'U'
+                    op.b = np.hstack((op.b, 1))
 
         # Boundaries for the heat variable:
         if max_share_heat is not None:
@@ -1428,6 +1454,10 @@ class CHPAsset(Contract):
         # Enforce minimum runtime if asset already on
         if time_already_running > 0 and min_runtime - time_already_running>0:
             op.l[2*n:2*n+ min_runtime - time_already_running] = 1
+
+        # Enforce minimum downtime if asset already on
+        if time_already_off > 0 and min_downtime - time_already_off > 0:
+            op.u[2 * n:2 * n + min_downtime - time_already_off] = 0
 
         # Reset mapping index:
         op.mapping.reset_index(inplace=True, drop=True)  # need to reset index (which enumerates variables)
