@@ -1427,11 +1427,15 @@ class CHPAsset(Contract):
                         continue
                     a = sp.lil_matrix((1, op.A.shape[1]))
                     a[0, 2 * n + t] = 1
-                    a[0, 2 * n + t - i - 1] = 1
                     a[0, 2 * n + t - i] = -1
+                    if t > i:
+                        a[0, 2 * n + t - i - 1] = 1
                     op.A = sp.vstack((op.A, a))
                     op.cType += 'U'
-                    op.b = np.hstack((op.b, 1))
+                    if not t > i and time_already_off == 0:
+                        op.b = np.hstack((op.b, 0))
+                    else:
+                        op.b = np.hstack((op.b, 1))
 
         # Boundaries for the heat variable:
         if max_share_heat is not None:
