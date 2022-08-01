@@ -1370,17 +1370,16 @@ class CHPAsset(Contract):
         A_upper_bounds = sp.lil_matrix((n, op.A.shape[1]))
         for i in range(max(0, time_already_running - self.start_ramp_time), n):
             var = op.mapping.iloc[i]
-            on_variable = np.where((op.mapping["asset"] == var["asset"])
-                                   & (op.mapping["var_name"] == "bool_on")
-                                   & (op.mapping["time_step"] == var["time_step"]))
 
             A_lower_bounds[i, i] = 1
             A_lower_bounds[i, n + i] = conversion_factor_power_heat[i]
-            A_lower_bounds[i, on_variable] = - op.l[i]  # has no effect if no on-variables found
+            if include_on_variables:
+                A_lower_bounds[i, on_idx + var["time_step"]] = - op.l[i]
 
             A_upper_bounds[i, i] = 1
             A_upper_bounds[i, n + i] = conversion_factor_power_heat[i]
-            A_upper_bounds[i, on_variable] = - op.u[i]  # has no effect if no on-variables found
+            if include_on_variables:
+                A_upper_bounds[i, on_idx + var["time_step"]] = - op.u[i]
 
             for j in range(self.start_ramp_time):
                 if i - j < 0:
