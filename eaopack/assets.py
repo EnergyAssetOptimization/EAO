@@ -1122,10 +1122,10 @@ class CHPAsset(Contract):
                  min_downtime: float = 0,
                  time_already_off: float = 0,
                  last_dispatch: float = 0,
-                 start_ramp_upper_bounds: Sequence = None,
                  start_ramp_lower_bounds: Sequence = None,
-                 shutdown_ramp_upper_bounds: Sequence = None,
+                 start_ramp_upper_bounds: Sequence = None,
                  shutdown_ramp_lower_bounds: Sequence = None,
+                 shutdown_ramp_upper_bounds: Sequence = None,
                  start_fuel: Union[float, Dict, str] = 0.,
                  fuel_efficiency: Union[float, Dict, str] = 1.,
                  consumption_if_on: Union[float, Dict, str] = 0.
@@ -1176,6 +1176,20 @@ class CHPAsset(Contract):
             min_downtime (int): Minimum downtime in timegrids main_time_unit. Defaults to 0.
             time_already_off (int): The number of timesteps the asset has already been off in timegrids main_time_unit. Defaults to 0.
             last_dispatch (float): Previous virtual dispatch (power + conversion_factor_power_heat * heat). Defaults to 0.
+            start_ramp_lower_bounds (Sequence): The i-th element of this sequence specifies a lower bound of the
+                                                virtual dispatch (power + conversion_factor_power_heat * heat) at i timesteps
+                                                after starting. Defaults to None.
+            start_ramp_upper_bounds (Sequence): The i-th element of this sequence specifies an upper bound of the
+                                                virtual dispatch (power + conversion_factor_power_heat * heat) at i timesteps
+                                                after starting. If it is None, it is set equal to start_ramp_lower_bounds.
+                                                Defaults to None.
+            shutdown_ramp_lower_bounds (Sequence): The i-th element of this sequence specifies a lower bound of the
+                                                   virtual dispatch (power + conversion_factor_power_heat * heat) at i timesteps
+                                                   before turning off. Defaults to None.
+            shutdown_ramp_upper_bounds (Sequence): The i-th element of this sequence specifies an upper bound of the
+                                                   virtual dispatch (power + conversion_factor_power_heat * heat) at i timesteps
+                                                   before turning off. If it is None, it is set equal to shutdown_ramp_upper_bounds.
+                                                   Defaults to None.
 
             Optional: Explicit fuel consumption (e.g. gas) for multi-commodity simulation
                  start_fuel (float, dict, str): detaults to  0
