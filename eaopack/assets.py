@@ -1433,14 +1433,18 @@ class CHPAsset(Contract):
                 a[0, n + t] = conversion_factor_power_heat[t]
                 a[0, t - 1] = -1
                 a[0, n + t - 1] = -conversion_factor_power_heat[t]
-                a[0, on_idx + t - 1] = self.ramp
+                if include_on_variables:
+                    a[0, on_idx + t - 1] = self.ramp
                 for i in range(self.shutdown_ramp_time):
                     if t + i >= self.timegrid.restricted.T:
                         break
                     a[0, shutdown_idx + t + i] = op.u[t - 1] - self.ramp
                 op.A = sp.vstack([op.A, a])
                 op.cType += 'L'
-                op.b = np.hstack([op.b, 0])
+                if include_on_variables:
+                    op.b = np.hstack([op.b, 0])
+                else:
+                    op.b = np.hstack([op.b, -self.ramp])
 
                 # Upper Bound
                 a = sp.lil_matrix((1, op.A.shape[1]))
@@ -1448,12 +1452,15 @@ class CHPAsset(Contract):
                 a[0, n + t] = conversion_factor_power_heat[t]
                 a[0, t - 1] = -1
                 a[0, n + t - 1] = -conversion_factor_power_heat[t]
-                a[0, on_idx + t] = -self.ramp
-                b_value = 0
+                if include_on_variables:
+                    a[0, on_idx + t] = -self.ramp
+                    b_value = 0
+                else:
+                    b_value = self.ramp
                 for i in range(self.start_ramp_time):
                     if t - i < 0:
                         if time_already_running > 0 and time_already_running - t + i == 0:
-                            b_value = op.u[t] - self.ramp
+                            b_value += op.u[t] - self.ramp
                             break
                         continue
                     a[0, start_idx + t - i] = self.ramp - op.u[t]
@@ -1477,10 +1484,13 @@ class CHPAsset(Contract):
             a = sp.lil_matrix((1, op.A.shape[1]))
             a[0, 0] = 1
             a[0, n] = conversion_factor_power_heat[0]
-            a[0, on_idx] = -self.ramp  # TODO what if there are no on-indices?
+            if include_on_variables:
+                a[0, on_idx] = -self.ramp
             op.A = sp.vstack([op.A, a])
             op.cType += 'U'
-            if time_already_running > 0 and time_already_running > self.start_ramp_time:
+            if not include_on_variables:
+                op.b = np.hstack([op.b, self.last_dispatch + self.ramp])
+            elif time_already_running > 0 and time_already_running > self.start_ramp_time:
                 op.b = np.hstack([op.b, self.last_dispatch + op.u[0] - self.ramp])
             else:
                 op.b = np.hstack([op.b, self.last_dispatch])
