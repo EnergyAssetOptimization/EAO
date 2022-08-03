@@ -1560,10 +1560,7 @@ class CHPAsset(Contract):
                 myA = sp.lil_matrix((self.timegrid.restricted.T - 1, op.A.shape[1]))
                 for t in range(self.timegrid.restricted.T - 1):
                     myA[t, start_idx + t] = 1
-                    for i in range(self.start_ramp_time + self.shutdown_ramp_time):
-                        if t + i >= self.timegrid.restricted.T:
-                            break
-                        myA[t, shutdown_idx + t + i] = 1
+                    myA[t, shutdown_idx + t] = 1
                 op.A = sp.vstack((op.A, myA))
                 op.cType += 'U' * (self.timegrid.restricted.T - 1)
                 op.b = np.hstack((op.b, np.ones(self.timegrid.restricted.T - 1)))
