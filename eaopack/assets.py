@@ -1380,7 +1380,7 @@ class CHPAsset(Contract):
             op.A = sp.hstack((op.A, sp.lil_matrix((op.A.shape[0], len(map_bool)))))
 
         # Minimum and maximum capacity:
-        start = max(0, self.start_ramp_time - time_already_running)
+        start = max(0, self.start_ramp_time - time_already_running) if time_already_running > 0 else 0
         A_lower_bounds = sp.lil_matrix((n, op.A.shape[1]))
         A_upper_bounds = sp.lil_matrix((n, op.A.shape[1]))
         for i in range(start, n):
