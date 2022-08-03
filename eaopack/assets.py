@@ -1380,9 +1380,10 @@ class CHPAsset(Contract):
             op.A = sp.hstack((op.A, sp.lil_matrix((op.A.shape[0], len(map_bool)))))
 
         # Minimum and maximum capacity:
+        start = max(0, self.start_ramp_time - time_already_running)
         A_lower_bounds = sp.lil_matrix((n, op.A.shape[1]))
         A_upper_bounds = sp.lil_matrix((n, op.A.shape[1]))
-        for i in range(max(0, time_already_running - self.start_ramp_time), n):
+        for i in range(start, n):
             var = op.mapping.iloc[i]
 
             A_lower_bounds[i, i] = 1
@@ -1407,16 +1408,16 @@ class CHPAsset(Contract):
                 A_lower_bounds[i, shutdown_idx + i + j + 1] = op.l[i] - self.shutdown_ramp_lower_bounds[j]
                 A_upper_bounds[i, shutdown_idx + i + j + 1] = op.u[i] - self.shutdown_ramp_upper_bounds[j]
 
-        op.A = sp.vstack((op.A, A_lower_bounds))
-        op.cType += 'L' * n
-        op.b = np.hstack((op.b, np.zeros(n)))
+        op.A = sp.vstack((op.A, A_lower_bounds[start:]))
+        op.cType += 'L' * (n - start)
+        op.b = np.hstack((op.b, np.zeros(n - start)))
 
-        op.A = sp.vstack((op.A, A_upper_bounds))
-        op.cType += 'U' * n
+        op.A = sp.vstack((op.A, A_upper_bounds[start:]))
+        op.cType += 'U' * (n - start)
         if include_on_variables:
-            op.b = np.hstack((op.b, np.zeros(n)))
+            op.b = np.hstack((op.b, np.zeros(n - start)))
         else:
-            op.b = np.hstack((op.b, op.u))
+            op.b = np.hstack((op.b, op.u[start:]))
 
         # Enforce start_ramp if asset is in the starting process at time 0
         if time_already_running > 0 and time_already_off < self.start_ramp_time:
