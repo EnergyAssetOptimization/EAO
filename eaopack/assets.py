@@ -1311,42 +1311,96 @@ class CHPAsset(Contract):
         op.c = c
 
         # Check that min_cap and max_cap are >= 0
-        assert np.all(op.l >= 0.), 'min_cap has to be greater or equal to 0. Asset: ' + self.name
-        assert np.all(op.u >= 0.), 'max_cap has to be greater or equal to 0. Asset: ' + self.name
+        min_cap = op.l.copy()
+        max_cap = op.u.copy()
+        assert np.all(min_cap >= 0.), 'min_cap has to be greater or equal to 0. Asset: ' + self.name
+        assert np.all(max_cap >= 0.), 'max_cap has to be greater or equal to 0. Asset: ' + self.name
 
         # Check that if include_on_variables is True, the minimum capacity is not 0. Otherwise the "on" variables cannot be computed correctly.
-        if np.any(op.l == 0) and include_on_variables:
+        if np.any(min_cap == 0) and include_on_variables:
             print("Warning for asset " + self.name + ": The minimum capacity is 0 at some point and 'on'-variables are included" 
                   ". This can lead to incorrect 'on' and 'start' variables. "
                   "To prevent this either set min_cap>0 or set min_runtime=0 and start_costs=0 and start_fuel=0"
                   " and consumption_if_on=0.")
 
         # Prepare matrix A:
-        n = len(op.l)
+        self.n = len(min_cap)
         if op.A is None:
-            op.A = sp.lil_matrix((0, n))
+            op.A = sp.lil_matrix((0, self.n))
             op.cType = ''
             op.b = np.zeros(0)
 
+        # Define the dispatch variables:
+        op = self._add_dispatch_variables(op, conversion_factor_power_heat, max_cap, max_share_heat)
+
+        # Add on-, start-, and shutdown-variables:
+        op = self._add_bool_variables(op, include_on_variables, include_start_variables, include_shutdown_variables)
+
+        # Minimum and maximum capacity:
+        op = self._add_constraints_for_min_and_max_cap(op, min_cap, max_cap, time_already_running, conversion_factor_power_heat, include_on_variables)
+
+        # Ramp constraints:
+        op = self._add_constraints_for_ramp(op, conversion_factor_power_heat, time_already_running, include_on_variables, max_cap)
+
+        # Start and shutdown constraints:
+        op = self._add_constrains_for_start_and_shutdown(op, time_already_running, include_start_variables, include_shutdown_variables)
+
+        # Minimum runtime:
+        op = self._add_constraints_for_min_runtime(op, min_runtime, include_start_variables, time_already_running)
+
+        # Minimum Downtime:
+        op = self._add_constraints_for_min_downtime(op, min_downtime, time_already_off)
+
+        # Boundaries for the heat variable:
+        op = self._add_constraints_for_heat(op, max_share_heat)
+
+        # Reset mapping index:
+        op.mapping.reset_index(inplace=True, drop=True)  # need to reset index (which enumerates variables)
+
+        # Model fuel consumption:
+        if len(self.nodes) >= 3:
+            op = self._add_fuel_consumption(op, fuel_efficiency, consumption_if_on, start_fuel, conversion_factor_power_heat, include_on_variables, include_start_variables)
+
+        return op
+
+    def _add_dispatch_variables(self, op, conversion_factor_power_heat, max_cap, max_share_heat):
+        """ Divide each dispatch variable in op into a power dispatch that flows into the power node self.nodes[1]
+            and a heat dispatch that flows into self.nodes[2] """
         # Make sure that op.mapping contains only dispatch variables (i.e. with type=='d')
         var_types = op.mapping['type'].unique()
-        assert np.all(var_types=='d'), "Only variables of type 'd' (i.e. dispatch variables) are allowed in op.mapping at this point. " \
-                                       "However, there are variables with types " + str(var_types[var_types != 'd']) + " in the mapping." \
-                                       "This is likely due to a change in a superclass."
+        assert np.all(
+            var_types == 'd'), "Only variables of type 'd' (i.e. dispatch variables) are allowed in op.mapping at this point. " \
+                               "However, there are variables with types " + str(
+            var_types[var_types != 'd']) + " in the mapping." \
+                                           "This is likely due to a change in a superclass."
+
+        self.heat_idx = len(op.mapping)
 
         # Divide each dispatch variable in power and heat:
         new_map = pd.DataFrame()
         for i, mynode in enumerate(self.nodes):
-            if i>=2: continue # do only for power and heat
+            if i >= 2: continue  # do only for power and heat
             initial_map = op.mapping[op.mapping['type'] == 'd'].copy()
             initial_map['node'] = mynode.name
             new_map = pd.concat([new_map, initial_map.copy()])
         op.mapping = new_map
         op.A = sp.hstack([op.A, sp.coo_matrix(conversion_factor_power_heat * op.A.toarray())])
 
+        # Set lower and upper bounds
+        op.l = np.zeros(op.A.shape[1])
+        if max_share_heat is not None:
+            u_heat = max_share_heat * max_cap
+        else:
+            u_heat = max_cap / conversion_factor_power_heat
+        op.u = np.hstack((max_cap, u_heat))
+
+        return op
+
+    def _add_bool_variables(self, op, include_on_variables, include_start_variables, include_shutdown_variables):
+        """ Add the bool variables for 'on', 'start' and 'shutdown' to the OptimProblem op if needed """
         # Add on variables
         if include_on_variables:
-            on_idx = len(op.mapping)
+            self.on_idx = len(op.mapping)
             op.mapping['bool'] = False
             map_bool = pd.DataFrame()
             map_bool['time_step'] = self.timegrid.restricted.I
@@ -1360,71 +1414,92 @@ class CHPAsset(Contract):
             # extend A for on variables (not relevant in exist. restrictions)
             op.A = sp.hstack((op.A, sp.lil_matrix((op.A.shape[0], len(map_bool)))))
 
-        # Add start variables
-        if include_start_variables:
-            start_idx = len(op.mapping)
-            map_bool['var_name'] = 'bool_start'
-            op.mapping = pd.concat([op.mapping, map_bool])
+            # set lower and upper bounds:
+            op.l = np.hstack((op.l, np.zeros(self.timegrid.restricted.T)))
+            op.u = np.hstack((op.u, np.ones(self.timegrid.restricted.T)))
 
-            # extend A for start variables (not relevant in exist. restrictions)
-            op.A = sp.hstack((op.A, sp.lil_matrix((op.A.shape[0], len(map_bool)))))
+            # Add start variables
+            if include_start_variables:
+                self.start_idx = len(op.mapping)
+                map_bool['var_name'] = 'bool_start'
+                op.mapping = pd.concat([op.mapping, map_bool])
 
-        # Add shutdown variables
-        if include_shutdown_variables:
-            shutdown_idx = len(op.mapping)
-            map_bool['var_name'] = 'bool_shutdown'
-            op.mapping = pd.concat([op.mapping, map_bool])
+                # extend A for start variables (not relevant in exist. restrictions)
+                op.A = sp.hstack((op.A, sp.lil_matrix((op.A.shape[0], len(map_bool)))))
 
-            # extend A for shutdown variables (not relevant in exist. restrictions)
-            op.A = sp.hstack((op.A, sp.lil_matrix((op.A.shape[0], len(map_bool)))))
+                # set lower and upper bounds:
+                op.l = np.hstack((op.l, np.zeros(self.timegrid.restricted.T)))
+                op.u = np.hstack((op.u, np.ones(self.timegrid.restricted.T)))
 
+            # Add shutdown variables
+            if include_shutdown_variables:
+                self.shutdown_idx = len(op.mapping)
+                map_bool['var_name'] = 'bool_shutdown'
+                op.mapping = pd.concat([op.mapping, map_bool])
+
+                # extend A for shutdown variables (not relevant in exist. restrictions)
+                op.A = sp.hstack((op.A, sp.lil_matrix((op.A.shape[0], len(map_bool)))))
+
+                # set lower and upper bounds:
+                op.l = np.hstack((op.l, np.zeros(self.timegrid.restricted.T)))
+                op.u = np.hstack((op.u, np.ones(self.timegrid.restricted.T)))
+
+        return op
+
+    def _add_constraints_for_min_and_max_cap(self, op, min_cap, max_cap, time_already_running, conversion_factor_power_heat, include_on_variables):
+        """ Add the constraints for the minimum and maximum capacity to op.
+
+            These ensure that the virtual dispatch
+            (power + conversion_factor_power_heat * heat) is 0 when the asset is "off",
+            it is bounded by the start or shutdown specifications during the start and shutdown ramp,
+            and otherwise it is between minimum and maximum capacity"""
         # Minimum and maximum capacity:
         start = max(0, self.start_ramp_time - time_already_running) if time_already_running > 0 else 0
-        A_lower_bounds = sp.lil_matrix((n, op.A.shape[1]))
-        A_upper_bounds = sp.lil_matrix((n, op.A.shape[1]))
-        for i in range(start, n):
+        A_lower_bounds = sp.lil_matrix((self.n, op.A.shape[1]))
+        A_upper_bounds = sp.lil_matrix((self.n, op.A.shape[1]))
+        for i in range(start, self.n):
             var = op.mapping.iloc[i]
 
             A_lower_bounds[i, i] = 1
-            A_lower_bounds[i, n + i] = conversion_factor_power_heat[i]
+            A_lower_bounds[i, self.heat_idx + i] = conversion_factor_power_heat[i]
             if include_on_variables:
-                A_lower_bounds[i, on_idx + var["time_step"]] = - op.l[i]
+                A_lower_bounds[i, self.on_idx + var["time_step"]] = - min_cap[i]
 
             A_upper_bounds[i, i] = 1
-            A_upper_bounds[i, n + i] = conversion_factor_power_heat[i]
+            A_upper_bounds[i, self.heat_idx + i] = conversion_factor_power_heat[i]
             if include_on_variables:
-                A_upper_bounds[i, on_idx + var["time_step"]] = - op.u[i]
+                A_upper_bounds[i, self.on_idx + var["time_step"]] = - max_cap[i]
 
             for j in range(self.start_ramp_time):
                 if i - j < 0:
                     continue
-                A_lower_bounds[i, start_idx + i - j] = op.l[i] - self.start_ramp_lower_bounds[j]
-                A_upper_bounds[i, start_idx + i - j] = op.u[i] - self.start_ramp_upper_bounds[j]
+                A_lower_bounds[i, self.start_idx + i - j] = min_cap[i] - self.start_ramp_lower_bounds[j]
+                A_upper_bounds[i, self.start_idx + i - j] = max_cap[i] - self.start_ramp_upper_bounds[j]
 
             for j in range(self.shutdown_ramp_time):
                 if i + j + 1 >= self.timegrid.restricted.T:
                     break
-                A_lower_bounds[i, shutdown_idx + i + j + 1] = op.l[i] - self.shutdown_ramp_lower_bounds[j]
-                A_upper_bounds[i, shutdown_idx + i + j + 1] = op.u[i] - self.shutdown_ramp_upper_bounds[j]
+                A_lower_bounds[i, self.shutdown_idx + i + j + 1] = min_cap[i] - self.shutdown_ramp_lower_bounds[j]
+                A_upper_bounds[i, self.shutdown_idx + i + j + 1] = max_cap[i] - self.shutdown_ramp_upper_bounds[j]
 
         op.A = sp.vstack((op.A, A_lower_bounds[start:]))
-        op.cType += 'L' * (n - start)
-        op.b = np.hstack((op.b, np.zeros(n - start)))
+        op.cType += 'L' * (self.n - start)
+        op.b = np.hstack((op.b, np.zeros(self.n - start)))
 
         op.A = sp.vstack((op.A, A_upper_bounds[start:]))
-        op.cType += 'U' * (n - start)
+        op.cType += 'U' * (self.n - start)
         if include_on_variables:
-            op.b = np.hstack((op.b, np.zeros(n - start)))
+            op.b = np.hstack((op.b, np.zeros(self.n - start)))
         else:
-            op.b = np.hstack((op.b, op.u[start:]))
+            op.b = np.hstack((op.b, max_cap[start:]))
 
         # Enforce start_ramp if asset is in the starting process at time 0
-        if time_already_running > 0 and time_already_off < self.start_ramp_time:
+        if time_already_running > 0 and time_already_running < self.start_ramp_time:
             for i in range(self.start_ramp_time - time_already_running):
                 # Upper Bound:
                 a = sp.lil_matrix((1, op.A.shape[1]))
                 a[0, i] = 1
-                a[0, n + i] = conversion_factor_power_heat[i]
+                a[0, self.heat_idx + i] = conversion_factor_power_heat[i]
                 op.A = sp.vstack((op.A, a))
                 op.cType += 'U'
                 op.b = np.hstack((op.b, self.start_ramp_upper_bounds[time_already_running + i]))
@@ -1432,26 +1507,33 @@ class CHPAsset(Contract):
                 # Lower Bound:
                 a = sp.lil_matrix((1, op.A.shape[1]))
                 a[0, i] = 1
-                a[0, n + i] = conversion_factor_power_heat[i]
+                a[0, self.heat_idx + i] = conversion_factor_power_heat[i]
                 op.A = sp.vstack((op.A, a))
                 op.cType += 'L'
                 op.b = np.hstack((op.b, self.start_ramp_lower_bounds[time_already_running + i]))
 
+        return op
+
+    def _add_constraints_for_ramp(self, op: OptimProblem, conversion_factor_power_heat, time_already_running, include_on_variables, max_cap):
+        """ Add ramp constraints to the OptimProblem op.
+
+            These ensure that the increase/decrease of the virtual dispatch (power + conversion_factor_power_heat * heat)
+            is bounded by self.ramp, except during timesteps that belong to the start or shutdown ramp"""
         # Ramp constraints:
         if self.ramp is not None:
             for t in range(1, self.timegrid.restricted.T):
                 # Lower Bound
                 a = sp.lil_matrix((1, op.A.shape[1]))
                 a[0, t] = 1
-                a[0, n + t] = conversion_factor_power_heat[t]
+                a[0, self.heat_idx + t] = conversion_factor_power_heat[t]
                 a[0, t - 1] = -1
-                a[0, n + t - 1] = -conversion_factor_power_heat[t]
+                a[0, self.heat_idx + t - 1] = -conversion_factor_power_heat[t]
                 if include_on_variables:
-                    a[0, on_idx + t - 1] = self.ramp
+                    a[0, self.on_idx + t - 1] = self.ramp
                 for i in range(self.shutdown_ramp_time):
                     if t + i >= self.timegrid.restricted.T:
                         break
-                    a[0, shutdown_idx + t + i] = op.u[t - 1] - self.ramp
+                    a[0, self.shutdown_idx + t + i] = max_cap[t - 1] - self.ramp
                 op.A = sp.vstack([op.A, a])
                 op.cType += 'L'
                 if include_on_variables:
@@ -1462,21 +1544,21 @@ class CHPAsset(Contract):
                 # Upper Bound
                 a = sp.lil_matrix((1, op.A.shape[1]))
                 a[0, t] = 1
-                a[0, n + t] = conversion_factor_power_heat[t]
+                a[0, self.heat_idx + t] = conversion_factor_power_heat[t]
                 a[0, t - 1] = -1
-                a[0, n + t - 1] = -conversion_factor_power_heat[t]
+                a[0, self.heat_idx + t - 1] = -conversion_factor_power_heat[t]
                 if include_on_variables:
-                    a[0, on_idx + t] = -self.ramp
+                    a[0, self.on_idx + t] = -self.ramp
                     b_value = 0
                 else:
                     b_value = self.ramp
                 for i in range(self.start_ramp_time):
                     if t - i < 0:
                         if time_already_running > 0 and time_already_running - t + i == 0:
-                            b_value += op.u[t] - self.ramp
+                            b_value += max_cap[t] - self.ramp
                             break
                         continue
-                    a[0, start_idx + t - i] = self.ramp - op.u[t]
+                    a[0, self.start_idx + t - i] = self.ramp - max_cap[t]
                 op.A = sp.vstack([op.A, a])
                 op.cType += 'U'
                 op.b = np.hstack([op.b, b_value])
@@ -1484,9 +1566,9 @@ class CHPAsset(Contract):
             # Initial ramp constraint
             a = sp.lil_matrix((1, op.A.shape[1]))
             a[0, 0] = 1
-            a[0, n] = conversion_factor_power_heat[0]
+            a[0, self.heat_idx] = conversion_factor_power_heat[0]
             for i in range(self.shutdown_ramp_time):
-                a[0, shutdown_idx + i] = self.last_dispatch - self.ramp
+                a[0, self.shutdown_idx + i] = self.last_dispatch - self.ramp
             op.A = sp.vstack([op.A, a])
             op.cType += 'L'
             if time_already_running == 0:
@@ -1496,35 +1578,37 @@ class CHPAsset(Contract):
 
             a = sp.lil_matrix((1, op.A.shape[1]))
             a[0, 0] = 1
-            a[0, n] = conversion_factor_power_heat[0]
+            a[0, self.heat_idx] = conversion_factor_power_heat[0]
             if include_on_variables:
-                a[0, on_idx] = -self.ramp
+                a[0, self.on_idx] = -self.ramp
             op.A = sp.vstack([op.A, a])
             op.cType += 'U'
             if not include_on_variables:
                 op.b = np.hstack([op.b, self.last_dispatch + self.ramp])
             elif time_already_running > 0 and time_already_running > self.start_ramp_time:
-                op.b = np.hstack([op.b, self.last_dispatch + op.u[0] - self.ramp])
+                op.b = np.hstack([op.b, self.last_dispatch + max_cap[0] - self.ramp])
             else:
                 op.b = np.hstack([op.b, self.last_dispatch])
+        return op
 
-        # Start constraints:
+    def _add_constrains_for_start_and_shutdown(self, op: OptimProblem, time_already_running, include_start_variables, include_shutdown_variables):
+        """ Add constraints that ensure that the 'start' and 'shutdown' variables are correct """
         if include_start_variables:
             if not include_shutdown_variables:
                 # Define just start constraints
-                myA = sp.lil_matrix((self.timegrid.restricted.T-1, op.A.shape[1]))
-                for i in range(self.timegrid.restricted.T-1):
-                    myA[i, on_idx + i + 1] = 1
-                    myA[i, on_idx + i] = - 1
-                    myA[i, start_idx + i + 1] = -1
+                myA = sp.lil_matrix((self.timegrid.restricted.T - 1, op.A.shape[1]))
+                for i in range(self.timegrid.restricted.T - 1):
+                    myA[i, self.on_idx + i + 1] = 1
+                    myA[i, self.on_idx + i] = - 1
+                    myA[i, self.start_idx + i + 1] = -1
                 op.A = sp.vstack((op.A, myA))
                 op.cType += 'U' * (self.timegrid.restricted.T - 1)
-                op.b = np.hstack((op.b, np.zeros(self.timegrid.restricted.T-1)))
+                op.b = np.hstack((op.b, np.zeros(self.timegrid.restricted.T - 1)))
 
-                if time_already_running==0:
+                if time_already_running == 0:
                     a = sp.lil_matrix((1, op.A.shape[1]))
-                    a[0, on_idx] = 1
-                    a[0, start_idx] = -1
+                    a[0, self.on_idx] = 1
+                    a[0, self.start_idx] = -1
                     op.A = sp.vstack((op.A, a))
                     op.cType += 'S'
                     op.b = np.hstack((op.b, 0))
@@ -1532,25 +1616,25 @@ class CHPAsset(Contract):
                 # Simultaneous definition of start- and shutdown constraints
                 myA = sp.lil_matrix((self.timegrid.restricted.T - 1, op.A.shape[1]))
                 for t in range(self.timegrid.restricted.T - 1):
-                    myA[t, on_idx + t + 1] = 1
-                    myA[t, on_idx + t] = - 1
-                    myA[t, start_idx + t + 1] = -1
-                    myA[t, shutdown_idx + t + 1] = 1
+                    myA[t, self.on_idx + t + 1] = 1
+                    myA[t, self.on_idx + t] = - 1
+                    myA[t, self.start_idx + t + 1] = -1
+                    myA[t, self.shutdown_idx + t + 1] = 1
                 op.A = sp.vstack((op.A, myA))
                 op.cType += 'S' * (self.timegrid.restricted.T - 1)
-                op.b = np.hstack((op.b, np.zeros(self.timegrid.restricted.T-1)))
+                op.b = np.hstack((op.b, np.zeros(self.timegrid.restricted.T - 1)))
 
                 if time_already_running == 0:
                     a = sp.lil_matrix((1, op.A.shape[1]))
-                    a[0, on_idx] = 1
-                    a[0, start_idx] = -1
+                    a[0, self.on_idx] = 1
+                    a[0, self.start_idx] = -1
                     op.A = sp.vstack((op.A, a))
                     op.cType += 'S'
                     op.b = np.hstack((op.b, 0))
                 else:
                     a = sp.lil_matrix((1, op.A.shape[1]))
-                    a[0, on_idx] = 1
-                    a[0, shutdown_idx] = 1
+                    a[0, self.on_idx] = 1
+                    a[0, self.shutdown_idx] = 1
                     op.A = sp.vstack((op.A, a))
                     op.cType += 'S'
                     op.b = np.hstack((op.b, 1))
@@ -1558,114 +1642,113 @@ class CHPAsset(Contract):
                 # Ensure that shutdown and start process do not overlap
                 myA = sp.lil_matrix((self.timegrid.restricted.T - 1, op.A.shape[1]))
                 for t in range(self.timegrid.restricted.T - 1):
-                    myA[t, start_idx + t] = 1
-                    myA[t, shutdown_idx + t] = 1
+                    myA[t, self.start_idx + t] = 1
+                    myA[t, self.shutdown_idx + t] = 1
                 op.A = sp.vstack((op.A, myA))
                 op.cType += 'U' * (self.timegrid.restricted.T - 1)
                 op.b = np.hstack((op.b, np.ones(self.timegrid.restricted.T - 1)))
 
-            # Minimum runtime:
-            if min_runtime > 1:
-                for t in range(self.timegrid.restricted.T):
-                    for i in range(1, min_runtime):
-                        if i > t:
-                            continue
-                        a = sp.lil_matrix((1, op.A.shape[1]))
-                        a[0, on_idx + t] = 1
-                        a[0, start_idx + t - i] = -1
-                        op.A = sp.vstack((op.A, a))
-                        op.cType += 'L'
-                        op.b = np.hstack((op.b, 0))
+                # Ensure that shutdown and start at timestep 0 are correct:
+                if time_already_running == 0:
+                    op.u[self.shutdown_idx] = 0
+                else:
+                    op.u[self.start_idx] = 0
 
-        # Minimum Downtime:
+        return op
+
+    def _add_constraints_for_min_runtime(self, op: OptimProblem, min_runtime, include_start_variables, time_already_running):
+        """ Add constraints to the OptimProblem op that ensure that every time the asset is turned on it remains on
+            for at least the minimum runtime. """
+        if include_start_variables and min_runtime > 1:
+            for t in range(self.timegrid.restricted.T):
+                for i in range(1, min_runtime):
+                    if i > t:
+                        continue
+                    a = sp.lil_matrix((1, op.A.shape[1]))
+                    a[0, self.on_idx + t] = 1
+                    a[0, self.start_idx + t - i] = -1
+                    op.A = sp.vstack((op.A, a))
+                    op.cType += 'L'
+                    op.b = np.hstack((op.b, 0))
+
+            # Enforce minimum runtime if asset already on
+            if time_already_running > 0 and min_runtime - time_already_running > 0:
+                op.l[self.on_idx:self.on_idx + min_runtime - time_already_running] = 1
+        return op
+
+    def _add_constraints_for_min_downtime(self, op: OptimProblem, min_downtime, time_already_off):
+        """ Add constraints to the OptimProblem op that ensure that every time the asset is turned off it remains off
+            for at least the minimum downtime. """
         if min_downtime > 1:
             for t in range(self.timegrid.restricted.T):
                 for i in range(1, min_downtime):
                     if i > t:
                         continue
                     a = sp.lil_matrix((1, op.A.shape[1]))
-                    a[0, on_idx + t] = 1
-                    a[0, on_idx + t - i] = -1
+                    a[0, self.on_idx + t] = 1
+                    a[0, self.on_idx + t - i] = -1
                     if t > i:
-                        a[0, on_idx + t - i - 1] = 1
+                        a[0, self.on_idx + t - i - 1] = 1
                     op.A = sp.vstack((op.A, a))
                     op.cType += 'U'
                     if not t > i and time_already_off == 0:
                         op.b = np.hstack((op.b, 0))
                     else:
                         op.b = np.hstack((op.b, 1))
-
-        # Boundaries for the heat variable:
-        if max_share_heat is not None:
-            myA = sp.lil_matrix((n, op.A.shape[1]))
-            for i in range(n):
-                myA[i, n + i] = 1
-                myA[i, i] = - max_share_heat[i]
-            op.A = sp.vstack((op.A, myA))
-            op.cType += 'U' * n
-            op.b = np.hstack((op.b, np.zeros(n)))
-
-        # Set lower and upper bounds for all variables
-        op.l = np.zeros(op.A.shape[1])
-        if max_share_heat is not None:
-            u_heat = max_share_heat * op.u
-        else:
-            u_heat = op.u / conversion_factor_power_heat
-        op.u = np.hstack((op.u, u_heat, np.ones(op.A.shape[1] - op.u.shape[0] * 2)))
-
-        # Enforce minimum runtime if asset already on
-        if time_already_running > 0 and min_runtime - time_already_running>0:
-            op.l[on_idx:on_idx + min_runtime - time_already_running] = 1
-
-        # Enforce minimum downtime if asset already off
-        if time_already_off > 0 and min_downtime - time_already_off > 0:
-            op.u[on_idx:on_idx + min_downtime - time_already_off] = 0
-
-        # Enforce shutdown 0 is false when asset off at time -1:
-        if include_shutdown_variables:
-            if time_already_running == 0:
-                op.u[shutdown_idx] = 0
-            else:
-                op.u[start_idx] = 0
-
-        # Reset mapping index:
-        op.mapping.reset_index(inplace=True, drop=True)  # need to reset index (which enumerates variables)
-
-        # in case there is an explicit node for fuel, extend mapping
-        # idea: fuel consumption is  power disp + conversion_factor_power_heat * heat disp
-        # mapping extention equivalent to simpler asset type "MultiCommodityContract"
-        if len(self.nodes) >= 3:
-            # disp_factor determines the factor with which fuel is consumed
-            if 'disp_factor' not in op.mapping: op.mapping['disp_factor'] = np.nan
-            new_map     = op.mapping.copy()
-            for i in [0,1]: # nodes power and heat
-                initial_map = op.mapping[(op.mapping['var_name']=='disp') & (op.mapping['node']== self.node_names[i])].copy()
-                initial_map['node']        = self.node_names[2] # fuel node
-                if i == 0:
-                    initial_map['disp_factor'] = -1./fuel_efficiency
-                elif i == 1:
-                    initial_map['disp_factor'] = -conversion_factor_power_heat / fuel_efficiency
-                new_map = pd.concat([new_map, initial_map.copy()])
-            # consumption  if on
-            if include_on_variables:
-                initial_map = op.mapping[op.mapping['var_name']=='bool_on'].copy()
-                initial_map['node'] = self.node_names[2] # fuel node
-                #initial_map['var_name'] = 'fuel_if_on'
-                initial_map['type'] = 'd'
-                initial_map['disp_factor'] = -consumption_if_on
-                new_map = pd.concat([new_map, initial_map.copy()])
-            # consumption on start
-            if include_start_variables:
-                initial_map = op.mapping[op.mapping['var_name']=='bool_start'].copy()
-                initial_map['node'] = self.node_names[2] # fuel node
-                #initial_map['var_name'] = 'fuel_start'
-                initial_map['type'] = 'd'
-                initial_map['disp_factor'] = -start_fuel
-                new_map = pd.concat([new_map, initial_map.copy()])
-
-            op.mapping = new_map
+            # Enforce minimum downtime if asset already off
+            if time_already_off > 0 and min_downtime - time_already_off > 0:
+                op.u[self.on_idx:self.on_idx + min_downtime - time_already_off] = 0
         return op
 
+    def _add_constraints_for_heat(self, op: OptimProblem, max_share_heat):
+        """ Add constraints to the OptimProblem op to bound the heat variable by max_share_heat * power. """
+        # Boundaries for the heat variable:
+        if max_share_heat is not None:
+            myA = sp.lil_matrix((self.n, op.A.shape[1]))
+            for i in range(self.n):
+                myA[i, self.heat_idx + i] = 1
+                myA[i, i] = - max_share_heat[i]
+            op.A = sp.vstack((op.A, myA))
+            op.cType += 'U' * self.n
+            op.b = np.hstack((op.b, np.zeros(self.n)))
+        return op
+
+    def _add_fuel_consumption(self, op: OptimProblem, fuel_efficiency, consumption_if_on, start_fuel, conversion_factor_power_heat, include_on_variables, include_start_variables):
+        """ In case there is an explicit node for fuel, extend the mapping.
+
+            Idea: fuel consumption is  power disp + conversion_factor_power_heat * heat disp.
+            To realise this, the mapping in the same way as in the simpler asset type 'MultiCommodityContract'."""
+        # disp_factor determines the factor with which fuel is consumed
+        if 'disp_factor' not in op.mapping: op.mapping['disp_factor'] = np.nan
+        new_map = op.mapping.copy()
+        for i in [0, 1]:  # nodes power and heat
+            initial_map = op.mapping[
+                (op.mapping['var_name'] == 'disp') & (op.mapping['node'] == self.node_names[i])].copy()
+            initial_map['node'] = self.node_names[2]  # fuel node
+            if i == 0:
+                initial_map['disp_factor'] = -1. / fuel_efficiency
+            elif i == 1:
+                initial_map['disp_factor'] = -conversion_factor_power_heat / fuel_efficiency
+            new_map = pd.concat([new_map, initial_map.copy()])
+        # consumption  if on
+        if include_on_variables:
+            initial_map = op.mapping[op.mapping['var_name'] == 'bool_on'].copy()
+            initial_map['node'] = self.node_names[2]  # fuel node
+            # initial_map['var_name'] = 'fuel_if_on'
+            initial_map['type'] = 'd'
+            initial_map['disp_factor'] = -consumption_if_on
+            new_map = pd.concat([new_map, initial_map.copy()])
+        # consumption on start
+        if include_start_variables:
+            initial_map = op.mapping[op.mapping['var_name'] == 'bool_start'].copy()
+            initial_map['node'] = self.node_names[2]  # fuel node
+            # initial_map['var_name'] = 'fuel_start'
+            initial_map['type'] = 'd'
+            initial_map['disp_factor'] = -start_fuel
+            new_map = pd.concat([new_map, initial_map.copy()])
+
+        op.mapping = new_map
+        return op
 
 class MultiCommodityContract(Contract):
     """ Multi commodity contract class - implements a Contract that generates two or more commoditites at a time.
