@@ -1278,14 +1278,16 @@ class CHPAsset(Contract):
         Returns:
             OptimProblem: Optimization problem to be used by optimizer
         """
-        if self.freq is not None and self.freq != timegrid.freq:
-            raise ValueError('Freq of asset' + self.name + ' is ' + str(self.freq) + ' which is unequal to freq ' + timegrid.freq + ' of timegrid. Asset: ' + self.name)
+        op = super().setup_optim_problem(prices=prices, timegrid=timegrid, costs_only=costs_only)
+
+        if self.freq is not None and self.freq != self.timegrid.freq:
+            raise ValueError('Freq of asset' + self.name + ' is ' + str(self.freq) + ' which is unequal to freq ' + self.timegrid.freq + ' of timegrid. Asset: ' + self.name)
 
         # convert min_runtime and time_already_running from timegrids main_time_unit to timegrid.freq
-        min_runtime = self.convert_to_timegrid_freq(self.min_runtime, "min_runtime", timegrid)
-        time_already_running = self.convert_to_timegrid_freq(self.time_already_running, "time_already_running", timegrid)
-        min_downtime = self.convert_to_timegrid_freq(self.min_downtime, "min_downtime", timegrid)
-        time_already_off = self.convert_to_timegrid_freq(self.time_already_off, "time_already_off", timegrid)
+        min_runtime = self.convert_to_timegrid_freq(self.min_runtime, "min_runtime")
+        time_already_running = self.convert_to_timegrid_freq(self.time_already_running, "time_already_running")
+        min_downtime = self.convert_to_timegrid_freq(self.min_downtime, "min_downtime")
+        time_already_off = self.convert_to_timegrid_freq(self.time_already_off, "time_already_off")
 
         # Convert start ramp and shutdown ramp from timegrids main_time_unit to
         # timegrid.freq IF self.interpolate_ramp_frequency is True, otherwise leave as is
@@ -1297,17 +1299,15 @@ class CHPAsset(Contract):
         shutdown_ramp_upper_bounds = self.shutdown_ramp_upper_bounds
         if self.interpolate_ramp_frequency:
             if self.start_ramp_time:
-                start_ramp_lower_bounds = self._convert_ramp(self.start_ramp_lower_bounds, timegrid)
-                start_ramp_upper_bounds = self._convert_ramp(self.start_ramp_upper_bounds, timegrid)
+                start_ramp_lower_bounds = self._convert_ramp(self.start_ramp_lower_bounds)
+                start_ramp_upper_bounds = self._convert_ramp(self.start_ramp_upper_bounds)
                 start_ramp_time = len(start_ramp_lower_bounds)
             if self.shutdown_ramp_time:
-                shutdown_ramp_lower_bounds = self._convert_ramp(self.shutdown_ramp_lower_bounds, timegrid)
-                shutdown_ramp_upper_bounds = self._convert_ramp(self.shutdown_ramp_upper_bounds, timegrid)
+                shutdown_ramp_lower_bounds = self._convert_ramp(self.shutdown_ramp_lower_bounds)
+                shutdown_ramp_upper_bounds = self._convert_ramp(self.shutdown_ramp_upper_bounds)
                 shutdown_ramp_time = len(shutdown_ramp_lower_bounds)
 
         min_runtime += start_ramp_time + shutdown_ramp_time
-
-        op = super().setup_optim_problem(prices=prices, timegrid=timegrid, costs_only=costs_only)
 
         # Make vectors of input params:
         start_costs = self.make_vector(self.start_costs, prices, default_value=0.)
@@ -1401,7 +1401,7 @@ class CHPAsset(Contract):
 
         return op
 
-    def _convert_ramp(self, ramp, timegrid):
+    def _convert_ramp(self, ramp, timegrid=None):
         ramp_duration = len(ramp)
         old_timepoints_in_new_freq = [self.convert_to_timegrid_freq(i, "ramp", timegrid, round=False) for i in
                                       range(ramp_duration)]
