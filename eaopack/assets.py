@@ -1294,12 +1294,11 @@ class CHPAsset(Contract):
         c = np.hstack([c, conversion_factor_power_heat * c])  # costs for power and heat dispatch
 
         include_shutdown_variables = self.shutdown_ramp_time > 0 or self.start_ramp_time > 0
-        if len(self.nodes)==2:
-            include_start_variables = min_runtime > 1 or np.any(start_costs != 0) or self.start_ramp_time > 0 or self.shutdown_ramp_time > 0
-            include_on_variables = include_start_variables or min_downtime > 1 or include_shutdown_variables or np.any(self.min_cap != 0.)
-        else:
-            include_start_variables = min_runtime > 1 or np.any(start_costs != 0) or np.any(start_fuel != 0.) or self.start_ramp_time > 0 or self.shutdown_ramp_time > 0
-            include_on_variables = include_start_variables or min_downtime > 1 or include_shutdown_variables or np.any(self.min_cap != 0.) or np.any(consumption_if_on != 0.)
+        include_start_variables = min_runtime > 1 or np.any(start_costs != 0) or self.start_ramp_time > 0 or self.shutdown_ramp_time > 0
+        include_on_variables = include_start_variables or min_downtime > 1 or include_shutdown_variables or np.any(self.min_cap != 0.)
+        if len(self.nodes) >= 3:
+            include_start_variables = include_start_variables or np.any(start_fuel != 0.)
+            include_on_variables = include_on_variables or include_start_variables or np.any(consumption_if_on != 0.)
 
         if include_on_variables:
             c = np.hstack([c, running_costs])  # add costs for on variables
