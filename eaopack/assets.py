@@ -1274,10 +1274,6 @@ class CHPAsset(Contract):
 
         op = super().setup_optim_problem(prices=prices, timegrid=timegrid, costs_only=costs_only)
 
-        # Check that min_cap and max_cap are >= 0
-        assert np.all(op.l >= 0.), 'min_cap has to be greater or equal to 0. Asset: ' + self.name
-        assert np.all(op.u >= 0.), 'max_cap has to be greater or equal to 0. Asset: ' + self.name
-
         # Make vectors of input params:
         start_costs = self.make_vector(self.start_costs, prices, default_value=0.)
         running_costs = self.make_vector(self.running_costs, prices, default_value=0.)
@@ -1314,6 +1310,10 @@ class CHPAsset(Contract):
         if costs_only:
             return c
         op.c = c
+
+        # Check that min_cap and max_cap are >= 0
+        assert np.all(op.l >= 0.), 'min_cap has to be greater or equal to 0. Asset: ' + self.name
+        assert np.all(op.u >= 0.), 'max_cap has to be greater or equal to 0. Asset: ' + self.name
 
         # Check that if include_on_variables is True, the minimum capacity is not 0. Otherwise the "on" variables cannot be computed correctly.
         if np.any(op.l == 0) and include_on_variables:
