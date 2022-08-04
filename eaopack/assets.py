@@ -1126,6 +1126,7 @@ class CHPAsset(Contract):
                  start_ramp_upper_bounds: Sequence = None,
                  shutdown_ramp_lower_bounds: Sequence = None,
                  shutdown_ramp_upper_bounds: Sequence = None,
+                 interpolate_ramp_frequency: bool = False,
                  start_fuel: Union[float, Dict, str] = 0.,
                  fuel_efficiency: Union[float, Dict, str] = 1.,
                  consumption_if_on: Union[float, Dict, str] = 0.
@@ -1178,18 +1179,35 @@ class CHPAsset(Contract):
             last_dispatch (float): Previous virtual dispatch (power + conversion_factor_power_heat * heat). Defaults to 0.
             start_ramp_lower_bounds (Sequence): The i-th element of this sequence specifies a lower bound of the
                                                 virtual dispatch (power + conversion_factor_power_heat * heat) at i timesteps
-                                                after starting. Defaults to None.
+                                                after starting. If interpolate_ramp_frequency is False, it is assumed
+                                                that the ramp is given in the timegrids freq, otherwise it is assumed
+                                                that the ramp is given in the timegrids main_time_unit and will be
+                                                interpolated accordingly. Defaults to None.
             start_ramp_upper_bounds (Sequence): The i-th element of this sequence specifies an upper bound of the
                                                 virtual dispatch (power + conversion_factor_power_heat * heat) at i timesteps
                                                 after starting. If it is None, it is set equal to start_ramp_lower_bounds.
+                                                If interpolate_ramp_frequency is False, it is assumed
+                                                that the ramp is given in the timegrids freq, otherwise it is assumed
+                                                that the ramp is given in the timegrids main_time_unit and will be
+                                                interpolated accordingly.
                                                 Defaults to None.
             shutdown_ramp_lower_bounds (Sequence): The i-th element of this sequence specifies a lower bound of the
                                                    virtual dispatch (power + conversion_factor_power_heat * heat) at i timesteps
-                                                   before turning off. Defaults to None.
+                                                   before turning off. If interpolate_ramp_frequency is False, it is assumed
+                                                   that the ramp is given in the timegrids freq, otherwise it is assumed
+                                                   that the ramp is given in the timegrids main_time_unit and will be
+                                                   interpolated accordingly. Defaults to None.
             shutdown_ramp_upper_bounds (Sequence): The i-th element of this sequence specifies an upper bound of the
                                                    virtual dispatch (power + conversion_factor_power_heat * heat) at i timesteps
                                                    before turning off. If it is None, it is set equal to shutdown_ramp_upper_bounds.
-                                                   Defaults to None.
+                                                   If interpolate_ramp_frequency is False, it is assumed
+                                                   that the ramp is given in the timegrids freq, otherwise it is assumed
+                                                   that the ramp is given in the timegrids main_time_unit and will be
+                                                   interpolated accordingly. Defaults to None.
+            interpolate_ramp_frequency (bool): If this is true, it is assumed that the start and shutdown ramp specification
+                                               are given in the timegrids freq, otherwise it is assumed that they are given
+                                               in the timegrids main_time_unit and the ramps will be interpolated with
+                                               a piecewise linear function.
 
             Optional: Explicit fuel consumption (e.g. gas) for multi-commodity simulation
                  start_fuel (float, dict, str): detaults to  0
@@ -1234,6 +1252,7 @@ class CHPAsset(Contract):
             self.shutdown_ramp_upper_bounds = self.shutdown_ramp_lower_bounds
         assert self.shutdown_ramp_lower_bounds is None or len(self.shutdown_ramp_lower_bounds) == len(self.shutdown_ramp_upper_bounds), "start_ramp_lower_bounds and start_ramp_upper_bounds cannot have different lengths. Asset: " + self.name
         self.shutdown_ramp_time = len(self.shutdown_ramp_lower_bounds) if self.shutdown_ramp_lower_bounds is not None else 0
+        self.interpolate_ramp_frequency = interpolate_ramp_frequency
 
         if len(nodes) >= 3:
             self.fuel_efficiency      = fuel_efficiency
@@ -1268,9 +1287,25 @@ class CHPAsset(Contract):
         min_downtime = self.convert_to_timegrid_freq(self.min_downtime, "min_downtime", timegrid)
         time_already_off = self.convert_to_timegrid_freq(self.time_already_off, "time_already_off", timegrid)
 
-        # TODO: convert self.start_ramp_lower_bound etc.
+        # Convert start ramp and shutdown ramp from timegrids main_time_unit to
+        # timegrid.freq IF self.interpolate_ramp_frequency is True, otherwise leave as is
+        start_ramp_time = self.start_ramp_time
+        start_ramp_lower_bounds = self.start_ramp_lower_bounds
+        start_ramp_upper_bounds = self.start_ramp_upper_bounds
+        shutdown_ramp_time = self.shutdown_ramp_time
+        shutdown_ramp_lower_bounds = self.shutdown_ramp_lower_bounds
+        shutdown_ramp_upper_bounds = self.shutdown_ramp_upper_bounds
+        if self.interpolate_ramp_frequency:
+            if self.start_ramp_time:
+                start_ramp_lower_bounds = self._convert_ramp(self.start_ramp_lower_bounds, timegrid)
+                start_ramp_upper_bounds = self._convert_ramp(self.start_ramp_upper_bounds, timegrid)
+                start_ramp_time = len(start_ramp_lower_bounds)
+            if self.shutdown_ramp_time:
+                shutdown_ramp_lower_bounds = self._convert_ramp(self.shutdown_ramp_lower_bounds, timegrid)
+                shutdown_ramp_upper_bounds = self._convert_ramp(self.shutdown_ramp_upper_bounds, timegrid)
+                shutdown_ramp_time = len(shutdown_ramp_lower_bounds)
 
-        min_runtime += self.start_ramp_time + self.shutdown_ramp_time
+        min_runtime += start_ramp_time + shutdown_ramp_time
 
         op = super().setup_optim_problem(prices=prices, timegrid=timegrid, costs_only=costs_only)
 
@@ -1293,8 +1328,8 @@ class CHPAsset(Contract):
             c = op.c
         c = np.hstack([c, conversion_factor_power_heat * c])  # costs for power and heat dispatch
 
-        include_shutdown_variables = self.shutdown_ramp_time > 0 or self.start_ramp_time > 0
-        include_start_variables = min_runtime > 1 or np.any(start_costs != 0) or self.start_ramp_time > 0 or self.shutdown_ramp_time > 0
+        include_shutdown_variables = shutdown_ramp_time > 0 or start_ramp_time > 0
+        include_start_variables = min_runtime > 1 or np.any(start_costs != 0) or start_ramp_time > 0 or shutdown_ramp_time > 0
         include_on_variables = include_start_variables or min_downtime > 1 or include_shutdown_variables or np.any(self.min_cap != 0.)
         if len(self.nodes) >= 3:
             include_start_variables = include_start_variables or np.any(start_fuel != 0.)
@@ -1337,10 +1372,13 @@ class CHPAsset(Contract):
         op = self._add_bool_variables(op, include_on_variables, include_start_variables, include_shutdown_variables)
 
         # Minimum and maximum capacity:
-        op = self._add_constraints_for_min_and_max_cap(op, min_cap, max_cap, time_already_running, conversion_factor_power_heat, include_on_variables)
+        op = self._add_constraints_for_min_and_max_cap(op, min_cap, max_cap, time_already_running,
+                                                       conversion_factor_power_heat, include_on_variables, start_ramp_time,
+                                                       start_ramp_lower_bounds, start_ramp_upper_bounds, shutdown_ramp_time,
+                                                       shutdown_ramp_lower_bounds, shutdown_ramp_upper_bounds)
 
         # Ramp constraints:
-        op = self._add_constraints_for_ramp(op, conversion_factor_power_heat, time_already_running, include_on_variables, max_cap)
+        op = self._add_constraints_for_ramp(op, conversion_factor_power_heat, time_already_running, include_on_variables, max_cap, start_ramp_time, shutdown_ramp_time)
 
         # Start and shutdown constraints:
         op = self._add_constrains_for_start_and_shutdown(op, time_already_running, include_start_variables, include_shutdown_variables)
@@ -1362,6 +1400,14 @@ class CHPAsset(Contract):
             op = self._add_fuel_consumption(op, fuel_efficiency, consumption_if_on, start_fuel, conversion_factor_power_heat, include_on_variables, include_start_variables)
 
         return op
+
+    def _convert_ramp(self, ramp, timegrid):
+        ramp_duration = len(ramp)
+        old_timepoints_in_new_freq = [self.convert_to_timegrid_freq(i, "ramp", timegrid, round=False) for i in
+                                      range(ramp_duration)]
+        new_timepoints = np.arange(self.convert_to_timegrid_freq(ramp_duration, "ramp_duration", timegrid))
+        ramp_new_freq = np.interp(new_timepoints, old_timepoints_in_new_freq, ramp)
+        return ramp_new_freq
 
     def _add_dispatch_variables(self, op, conversion_factor_power_heat, max_cap, max_share_heat):
         """ Divide each dispatch variable in op into a power dispatch that flows into the power node self.nodes[1]
@@ -1446,7 +1492,10 @@ class CHPAsset(Contract):
 
         return op
 
-    def _add_constraints_for_min_and_max_cap(self, op, min_cap, max_cap, time_already_running, conversion_factor_power_heat, include_on_variables):
+    def _add_constraints_for_min_and_max_cap(self, op, min_cap, max_cap, time_already_running,
+                                             conversion_factor_power_heat, include_on_variables, start_ramp_time,
+                                             start_ramp_lower_bounds, start_ramp_upper_bounds, shutdown_ramp_time,
+                                             shutdown_ramp_lower_bounds, shutdown_ramp_upper_bounds):
         """ Add the constraints for the minimum and maximum capacity to op.
 
             These ensure that the virtual dispatch
@@ -1454,7 +1503,7 @@ class CHPAsset(Contract):
             it is bounded by the start or shutdown specifications during the start and shutdown ramp,
             and otherwise it is between minimum and maximum capacity"""
         # Minimum and maximum capacity:
-        start = max(0, self.start_ramp_time - time_already_running) if time_already_running > 0 else 0
+        start = max(0, start_ramp_time - time_already_running) if time_already_running > 0 else 0
         A_lower_bounds = sp.lil_matrix((self.n, op.A.shape[1]))
         A_upper_bounds = sp.lil_matrix((self.n, op.A.shape[1]))
         for i in range(start, self.n):
@@ -1470,17 +1519,17 @@ class CHPAsset(Contract):
             if include_on_variables:
                 A_upper_bounds[i, self.on_idx + var["time_step"]] = - max_cap[i]
 
-            for j in range(self.start_ramp_time):
+            for j in range(start_ramp_time):
                 if i - j < 0:
                     continue
-                A_lower_bounds[i, self.start_idx + i - j] = min_cap[i] - self.start_ramp_lower_bounds[j]
-                A_upper_bounds[i, self.start_idx + i - j] = max_cap[i] - self.start_ramp_upper_bounds[j]
+                A_lower_bounds[i, self.start_idx + i - j] = min_cap[i] - start_ramp_lower_bounds[j]
+                A_upper_bounds[i, self.start_idx + i - j] = max_cap[i] - start_ramp_upper_bounds[j]
 
-            for j in range(self.shutdown_ramp_time):
+            for j in range(shutdown_ramp_time):
                 if i + j + 1 >= self.timegrid.restricted.T:
                     break
-                A_lower_bounds[i, self.shutdown_idx + i + j + 1] = min_cap[i] - self.shutdown_ramp_lower_bounds[j]
-                A_upper_bounds[i, self.shutdown_idx + i + j + 1] = max_cap[i] - self.shutdown_ramp_upper_bounds[j]
+                A_lower_bounds[i, self.shutdown_idx + i + j + 1] = min_cap[i] - shutdown_ramp_lower_bounds[j]
+                A_upper_bounds[i, self.shutdown_idx + i + j + 1] = max_cap[i] - shutdown_ramp_upper_bounds[j]
 
         op.A = sp.vstack((op.A, A_lower_bounds[start:]))
         op.cType += 'L' * (self.n - start)
@@ -1494,15 +1543,15 @@ class CHPAsset(Contract):
             op.b = np.hstack((op.b, max_cap[start:]))
 
         # Enforce start_ramp if asset is in the starting process at time 0
-        if time_already_running > 0 and time_already_running < self.start_ramp_time:
-            for i in range(self.start_ramp_time - time_already_running):
+        if time_already_running > 0 and time_already_running < start_ramp_time:
+            for i in range(start_ramp_time - time_already_running):
                 # Upper Bound:
                 a = sp.lil_matrix((1, op.A.shape[1]))
                 a[0, i] = 1
                 a[0, self.heat_idx + i] = conversion_factor_power_heat[i]
                 op.A = sp.vstack((op.A, a))
                 op.cType += 'U'
-                op.b = np.hstack((op.b, self.start_ramp_upper_bounds[time_already_running + i]))
+                op.b = np.hstack((op.b, start_ramp_upper_bounds[time_already_running + i]))
 
                 # Lower Bound:
                 a = sp.lil_matrix((1, op.A.shape[1]))
@@ -1510,11 +1559,11 @@ class CHPAsset(Contract):
                 a[0, self.heat_idx + i] = conversion_factor_power_heat[i]
                 op.A = sp.vstack((op.A, a))
                 op.cType += 'L'
-                op.b = np.hstack((op.b, self.start_ramp_lower_bounds[time_already_running + i]))
+                op.b = np.hstack((op.b, start_ramp_lower_bounds[time_already_running + i]))
 
         return op
 
-    def _add_constraints_for_ramp(self, op: OptimProblem, conversion_factor_power_heat, time_already_running, include_on_variables, max_cap):
+    def _add_constraints_for_ramp(self, op: OptimProblem, conversion_factor_power_heat, time_already_running, include_on_variables, max_cap, start_ramp_time, shutdown_ramp_time):
         """ Add ramp constraints to the OptimProblem op.
 
             These ensure that the increase/decrease of the virtual dispatch (power + conversion_factor_power_heat * heat)
@@ -1530,7 +1579,7 @@ class CHPAsset(Contract):
                 a[0, self.heat_idx + t - 1] = -conversion_factor_power_heat[t]
                 if include_on_variables:
                     a[0, self.on_idx + t - 1] = self.ramp
-                for i in range(self.shutdown_ramp_time):
+                for i in range(shutdown_ramp_time):
                     if t + i >= self.timegrid.restricted.T:
                         break
                     a[0, self.shutdown_idx + t + i] = max_cap[t - 1] - self.ramp
@@ -1552,7 +1601,7 @@ class CHPAsset(Contract):
                     b_value = 0
                 else:
                     b_value = self.ramp
-                for i in range(self.start_ramp_time):
+                for i in range(start_ramp_time):
                     if t - i < 0:
                         if time_already_running > 0 and time_already_running - t + i == 0:
                             b_value += max_cap[t] - self.ramp
@@ -1567,7 +1616,7 @@ class CHPAsset(Contract):
             a = sp.lil_matrix((1, op.A.shape[1]))
             a[0, 0] = 1
             a[0, self.heat_idx] = conversion_factor_power_heat[0]
-            for i in range(self.shutdown_ramp_time):
+            for i in range(shutdown_ramp_time):
                 a[0, self.shutdown_idx + i] = self.last_dispatch - self.ramp
             op.A = sp.vstack([op.A, a])
             op.cType += 'L'
@@ -1585,7 +1634,7 @@ class CHPAsset(Contract):
             op.cType += 'U'
             if not include_on_variables:
                 op.b = np.hstack([op.b, self.last_dispatch + self.ramp])
-            elif time_already_running > 0 and time_already_running > self.start_ramp_time:
+            elif time_already_running > 0 and time_already_running > start_ramp_time:
                 op.b = np.hstack([op.b, self.last_dispatch + max_cap[0] - self.ramp])
             else:
                 op.b = np.hstack([op.b, self.last_dispatch])
