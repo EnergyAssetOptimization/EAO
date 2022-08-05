@@ -1126,7 +1126,7 @@ class CHPAsset(Contract):
                  start_ramp_upper_bounds: Sequence = None,
                  shutdown_ramp_lower_bounds: Sequence = None,
                  shutdown_ramp_upper_bounds: Sequence = None,
-                 interpolate_ramp_frequency: bool = False,
+                 interpolate_ramp_frequency: bool = True,
                  start_fuel: Union[float, Dict, str] = 0.,
                  fuel_efficiency: Union[float, Dict, str] = 1.,
                  consumption_if_on: Union[float, Dict, str] = 0.
@@ -1204,10 +1204,10 @@ class CHPAsset(Contract):
                                                    that the ramp is given in the timegrids freq, otherwise it is assumed
                                                    that the ramp is given in the timegrids main_time_unit and will be
                                                    interpolated accordingly. Defaults to None.
-            interpolate_ramp_frequency (bool): If this is true, it is assumed that the start and shutdown ramp specification
+            interpolate_ramp_frequency (bool): If this is False, it is assumed that the start and shutdown ramp specification
                                                are given in the timegrids freq, otherwise it is assumed that they are given
                                                in the timegrids main_time_unit and the ramps will be interpolated with
-                                               a piecewise linear function.
+                                               a piecewise linear function. Defaults to True.
 
             Optional: Explicit fuel consumption (e.g. gas) for multi-commodity simulation
                  start_fuel (float, dict, str): detaults to  0
