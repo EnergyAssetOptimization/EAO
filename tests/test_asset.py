@@ -586,7 +586,36 @@ class CHPAssetTest(unittest.TestCase):
         start_variables = res.x[3*timegrid.T:]
         self.assertAlmostEqual(on_variables.sum(), 15., 4) 
         # 10 times full load, 10 time min load, NO start!
-        self.assertAlmostEqual(res.value, 10*10*100. - 5*1 + 15*(-5), 4) 
+        self.assertAlmostEqual(res.value, 10*10*100. - 5*1 + 15*(-5), 4)
+
+    def test_mindowntime(self):
+        """ Unit test. Setting up a CHPAsset and check min down time restriction
+        """
+        node_power = eao.assets.Node('node_power')
+        node_heat = eao.assets.Node('node_heat')
+        Start = dt.date(2021, 1, 1)
+        End = dt.date(2021, 1, 2)
+        timegrid = eao.assets.Timegrid(Start, End, freq='h')
+
+        a = eao.assets.CHPAsset(name='CHP',
+                                price='price',
+                                nodes=(node_power, node_heat),
+                                min_cap=1.,
+                                max_cap=10.,
+                                min_downtime=5,
+                                time_already_off=1)
+        prices = {'price': -1. * np.ones(timegrid.T)}
+        prices['price'][10] = 100
+
+        op = a.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        on_variables = res.x[2 * timegrid.T:3 * timegrid.T]
+        self.assertAlmostEqual(on_variables.sum(), timegrid.T-9, 4)
+        # Asset is off for the first 4 timesteps, and off again for min_downtime=5 timesteps around hour 10 when price
+        # is 100, otherwise on because price is negative
+        # T-9 times full load at price -1
+        self.assertAlmostEqual(res.value, (timegrid.T-9)*10, 4)
+
 
     def test_gas_consumption(self):
         """ Unit test. Setting up a CHPAsset with explicit gas (fuel) consumption
