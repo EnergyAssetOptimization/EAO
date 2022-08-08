@@ -1246,12 +1246,14 @@ class CHPAsset(Contract):
             self.start_ramp_upper_bounds = self.start_ramp_lower_bounds
         assert self.start_ramp_lower_bounds is None or len(self.start_ramp_lower_bounds) == len(self.start_ramp_upper_bounds), "start_ramp_lower_bounds and start_ramp_upper_bounds cannot have different lengths. Asset: " + self.name
         self.start_ramp_time = len(self.start_ramp_lower_bounds) if self.start_ramp_lower_bounds is not None else 0
+        assert np.all([self.start_ramp_lower_bounds[i] <= self.start_ramp_upper_bounds[i] for i in range(self.start_ramp_time)]), "shutdown_ramp_lower_bounds is higher than shutdown_ramp_upper bounds at some point. Asset: " + self.name
         self.shutdown_ramp_lower_bounds = shutdown_ramp_lower_bounds
         self.shutdown_ramp_upper_bounds = shutdown_ramp_upper_bounds
         if self.shutdown_ramp_upper_bounds is None:
             self.shutdown_ramp_upper_bounds = self.shutdown_ramp_lower_bounds
         assert self.shutdown_ramp_lower_bounds is None or len(self.shutdown_ramp_lower_bounds) == len(self.shutdown_ramp_upper_bounds), "start_ramp_lower_bounds and start_ramp_upper_bounds cannot have different lengths. Asset: " + self.name
         self.shutdown_ramp_time = len(self.shutdown_ramp_lower_bounds) if self.shutdown_ramp_lower_bounds is not None else 0
+        assert np.all([self.shutdown_ramp_lower_bounds[i] <= self.shutdown_ramp_upper_bounds[i] for i in range(self.shutdown_ramp_time)]), "shutdown_ramp_lower_bounds is higher than shutdown_ramp_upper bounds at some point. Asset: " + self.name
         self.interpolate_ramp_frequency = interpolate_ramp_frequency
 
         if len(nodes) >= 3:
