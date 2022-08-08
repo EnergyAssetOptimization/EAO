@@ -737,6 +737,162 @@ class CHPAssetTest(unittest.TestCase):
         new_value = eao.assets.convert_time_unit(old_value, old_freq='min', new_freq='h')
         self.assertAlmostEqual(new_value - old_value / 60, 0, 5)
 
+    def test_start_and_shutdown_ramp1(self):
+        """ Unit test. Setting up a CHPAsset and checking start and shutdown ramps where the upper and lower bounds are equal
+        """
+        node_power = eao.assets.Node('node_power')
+        node_heat = eao.assets.Node('node_heat')
+        Start = dt.date(2021, 1, 1)
+        End = dt.date(2021, 1, 2)
+        timegrid = eao.assets.Timegrid(Start, End, freq='h')
+
+        a = eao.assets.CHPAsset(name='CHP',
+                                price='price',
+                                nodes=(node_power, node_heat),
+                                min_cap=5.,
+                                max_cap=10.,
+                                time_already_off=1,
+                                start_ramp_lower_bounds=[1, 2, 3, 4],
+                                shutdown_ramp_lower_bounds=[1, 4, 6, 7],
+                                time_already_running=2)
+        prices = {'price': -1. * np.ones(timegrid.T)}
+        prices['price'][15:] = 100
+
+        op = a.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        # Asset starts out with the last 2 steps of the startramp, then runs at maximum capacity for 9 steps and then
+        # follows the shutdown ramp
+        self.assertAlmostEqual(res.value, 3 + 4 + 9 * 10 + 7 + 6 + 4 + 1, 4)
+
+    def test_start_and_shutdown_ramp2(self):
+        """ Unit test. Setting up a CHPAsset and checking start and shutdown ramps where the upper and lower bounds are different
+        """
+        node_power = eao.assets.Node('node_power')
+        node_heat = eao.assets.Node('node_heat')
+        Start = dt.date(2021, 1, 1)
+        End = dt.date(2021, 1, 2)
+        timegrid = eao.assets.Timegrid(Start, End, freq='h')
+
+        start_ramp_lower_bounds = [1, 2, 3, 4]
+        start_ramp_upper_bounds = [2, 3, 5, 5]
+        shutdown_ramp_lower_bounds = [1, 4, 4.5, 5, 5]
+        shutdown_ramp_upper_bounds = [2, 4, 5, 8, 10]
+        min_cap=5
+        max_cap=10
+        min_runtime = 10
+
+        # Case use all lower bounds:
+        a = eao.assets.CHPAsset(name='CHP',
+                                price='price',
+                                nodes=(node_power, node_heat),
+                                min_cap=min_cap,
+                                max_cap=max_cap,
+                                time_already_off=1,
+                                start_ramp_lower_bounds=start_ramp_lower_bounds,
+                                start_ramp_upper_bounds=start_ramp_upper_bounds,
+                                shutdown_ramp_lower_bounds=shutdown_ramp_lower_bounds,
+                                shutdown_ramp_upper_bounds=shutdown_ramp_upper_bounds,
+                                time_already_running=1,
+                                min_runtime=min_runtime)
+        prices = {'price': 1. * np.ones(timegrid.T)}
+
+        op = a.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        power_variables = res.x[0 * timegrid.T:1 * timegrid.T]
+        heat_variables = res.x[1 * timegrid.T:2 * timegrid.T]
+        on_variables = res.x[2 * timegrid.T:3 * timegrid.T]
+        start_variables = res.x[3 * timegrid.T:4 * timegrid.T]
+        shutdown_variables = res.x[4 * timegrid.T:]
+        # Asset starts out with the last 3 steps of the startramp, then runs at maximum capacity for min_runtime steps and then
+        # follows the shutdown ramp
+        disp_res = power_variables + a.conversion_factor_power_heat * heat_variables
+        disp_true = start_ramp_lower_bounds[1:] + min_runtime * [min_cap] + list(reversed(shutdown_ramp_lower_bounds)) + [0.] * 6
+        self.assertAlmostEqual(abs(disp_res - disp_true).sum(), 0, 4)
+        start_variables_true = np.zeros(timegrid.T)
+        self.assertAlmostEqual(abs(start_variables_true - start_variables).sum(), 0, 4)
+        shutdown_variables_true = np.zeros(timegrid.T)
+        shutdown_variables_true[len(start_ramp_lower_bounds) - 1 + min_runtime + len(shutdown_ramp_lower_bounds)] = 1
+        self.assertAlmostEqual(abs(shutdown_variables_true - shutdown_variables).sum(), 0, 4)
+
+        # Case use all upper bounds
+        a = eao.assets.CHPAsset(name='CHP',
+                                price='price',
+                                nodes=(node_power, node_heat),
+                                min_cap=min_cap,
+                                max_cap=max_cap,
+                                start_ramp_lower_bounds=start_ramp_lower_bounds,
+                                start_ramp_upper_bounds=start_ramp_upper_bounds,
+                                shutdown_ramp_lower_bounds=shutdown_ramp_lower_bounds,
+                                shutdown_ramp_upper_bounds=shutdown_ramp_upper_bounds)
+        prices = {'price': 10 * np.ones(timegrid.T)}
+        prices['price'][5: 5 + len(start_ramp_lower_bounds)+ len(shutdown_ramp_lower_bounds)]=-1
+
+        op = a.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        power_variables = res.x[0 * timegrid.T:1 * timegrid.T]
+        heat_variables = res.x[1 * timegrid.T:2 * timegrid.T]
+        on_variables = res.x[2 * timegrid.T:3 * timegrid.T]
+        start_variables = res.x[3 * timegrid.T:4 * timegrid.T]
+        shutdown_variables = res.x[4 * timegrid.T:]
+        # Asset follows start ramp, then immediately shutdown ramp at highest possible load while the price is
+        # negative, otherwise asset is off
+        disp_res = power_variables + a.conversion_factor_power_heat * heat_variables
+        disp_true =[0.] * 5 + start_ramp_upper_bounds + list(reversed(shutdown_ramp_upper_bounds)) + [0.] * (timegrid.T-len(start_ramp_lower_bounds)-len(shutdown_ramp_lower_bounds)-5)
+        self.assertAlmostEqual(abs(disp_res - disp_true).sum(), 0, 4)
+        start_variables_true = np.zeros(timegrid.T)
+        start_variables_true[5] = 1
+        self.assertAlmostEqual(abs(start_variables_true - start_variables).sum(), 0, 4)
+        shutdown_variables_true = np.zeros(timegrid.T)
+        shutdown_variables_true[5 + len(start_ramp_lower_bounds)+ len(shutdown_ramp_lower_bounds)] = 1
+        self.assertAlmostEqual(abs(shutdown_variables_true - shutdown_variables).sum(), 0, 4)
+
+    def test_start_and_shutdown_ramp3(self):
+        """ Unit test. Setting up a CHPAsset and checking interpolation of start and shutdown ramps when timegrid.freq
+            and timegrid.main_time_unit are different
+        """
+        node_power = eao.assets.Node('node_power')
+        node_heat = eao.assets.Node('node_heat')
+        Start = dt.date(2021, 1, 1)
+        End = dt.date(2021, 1, 2)
+        timegrid = eao.assets.Timegrid(Start, End, freq='15min', main_time_unit='h')
+
+        start_ramp = [1, 2, 3, 4]
+        shutdown_ramp = [1, 3, 5, 5, 5]
+        min_cap=5
+        max_cap=10
+
+        a = eao.assets.CHPAsset(name='CHP',
+                                price='price',
+                                nodes=(node_power, node_heat),
+                                min_cap=min_cap,
+                                max_cap=max_cap,
+                                start_ramp_lower_bounds=start_ramp,
+                                shutdown_ramp_lower_bounds=shutdown_ramp)
+        prices = {'price': 10 * np.ones(timegrid.T)}
+        prices['price'][5: 5 + len(start_ramp)*4+ len(shutdown_ramp)*4]=-1
+
+        op = a.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        power_variables = res.x[0 * timegrid.T:1 * timegrid.T]
+        heat_variables = res.x[1 * timegrid.T:2 * timegrid.T]
+        on_variables = res.x[2 * timegrid.T:3 * timegrid.T]
+        start_variables = res.x[3 * timegrid.T:4 * timegrid.T]
+        shutdown_variables = res.x[4 * timegrid.T:]
+        # Asset follows interpolated start ramp, then immediately interpolated shutdown ramp at highest possible load while the price is
+        # negative, otherwise asset is off
+        start_ramp_interpolated = [(start_ramp[i]+(start_ramp[i+1]-start_ramp[i])/4 * j)/4 for i in range(len(start_ramp)-1) for j in range(4)] + 4*[start_ramp[-1]/4]
+        shutdown_ramp_interpolated = [(shutdown_ramp[i]+(shutdown_ramp[i+1]-shutdown_ramp[i])/4 * j)/4 for i in range(len(shutdown_ramp)-1) for j in range(4)] + 4*[shutdown_ramp[-1]/4]
+
+        disp_res = power_variables + a.conversion_factor_power_heat * heat_variables
+        disp_true = [0] * 5 + start_ramp_interpolated + list(reversed(shutdown_ramp_interpolated)) + [0] * (timegrid.T-len(start_ramp_interpolated)-len(shutdown_ramp_interpolated)-5)
+        self.assertAlmostEqual(abs(disp_res - disp_true).sum(), 0, 4)
+        start_variables_true = np.zeros(timegrid.T)
+        start_variables_true[5] = 1
+        self.assertAlmostEqual(abs(start_variables_true - start_variables).sum(), 0, 4)
+        shutdown_variables_true = np.zeros(timegrid.T)
+        shutdown_variables_true[5 + len(start_ramp)*4 + len(shutdown_ramp)*4] = 1
+        self.assertAlmostEqual(abs(shutdown_variables_true - shutdown_variables).sum(), 0, 4)
+
 
 class MultiCommodity(unittest.TestCase):
 
