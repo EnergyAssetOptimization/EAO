@@ -1306,6 +1306,12 @@ class CHPAsset(Contract):
                 shutdown_ramp_lower_bounds = self._convert_ramp(self.shutdown_ramp_lower_bounds)
                 shutdown_ramp_upper_bounds = self._convert_ramp(self.shutdown_ramp_upper_bounds)
                 shutdown_ramp_time = len(shutdown_ramp_lower_bounds)
+        if start_ramp_time:
+            start_ramp_lower_bounds *= self.timegrid.restricted.dt[:start_ramp_time]
+            start_ramp_upper_bounds *= self.timegrid.restricted.dt[:start_ramp_time]
+        if shutdown_ramp_time:
+            shutdown_ramp_lower_bounds *= self.timegrid.restricted.dt[:shutdown_ramp_time]
+            shutdown_ramp_upper_bounds *= self.timegrid.restricted.dt[:shutdown_ramp_time]
 
         min_runtime += start_ramp_time + shutdown_ramp_time
 
