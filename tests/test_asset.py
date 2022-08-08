@@ -737,6 +737,73 @@ class CHPAssetTest(unittest.TestCase):
         new_value = eao.assets.convert_time_unit(old_value, old_freq='min', new_freq='h')
         self.assertAlmostEqual(new_value - old_value / 60, 0, 5)
 
+    def test_freq_conversion2(self):
+        """ Unit test. Setting up two CHP Assets with different freq and checking that both give the same results
+        """
+        np.random.seed(42)
+
+        node_power = eao.assets.Node('node_power')
+        node_heat = eao.assets.Node('node_heat')
+        node_fuel = eao.assets.Node('node_fuel')
+
+        Start = dt.date(2021, 1, 1)
+        End = dt.date(2021, 1, 2)
+        prices = {}
+
+        timegrid1 = eao.assets.Timegrid(Start, End, freq='h', main_time_unit='h')
+        a1 = eao.assets.CHPAsset(name='CHP',
+                                 price='price1',
+                                 nodes=(node_power, node_heat, node_fuel),
+                                 extra_costs=1,
+                                 min_cap=5,
+                                 max_cap=20,
+                                 conversion_factor_power_heat=0.5,
+                                 max_share_heat=0.8,
+                                 # ramp=6,
+                                 start_costs=0.4,
+                                 running_costs=0.3,
+                                 min_runtime=4,
+                                 time_already_running=0,
+                                 min_downtime=2,
+                                 time_already_off=1,
+                                 last_dispatch=0,
+                                 start_fuel=0.7,
+                                 fuel_efficiency=0.8,
+                                 consumption_if_on=0.2
+                                 )
+        price1 = 20 * np.random.rand(timegrid1.T) - 10
+        prices['price1'] = price1
+        op1 = a1.setup_optim_problem(prices, timegrid=timegrid1)
+        res1 = op1.optimize()
+
+        timegrid2 = eao.assets.Timegrid(Start, End, freq='15min', main_time_unit='h')
+        a2 = eao.assets.CHPAsset(name='CHP',
+                                 price='price2',
+                                 nodes=(node_power, node_heat, node_fuel),
+                                 extra_costs=1,
+                                 min_cap=5,
+                                 max_cap=20,
+                                 conversion_factor_power_heat=0.5,
+                                 max_share_heat=0.8,
+                                 # ramp=6,
+                                 start_costs=0.4,
+                                 running_costs=0.3,
+                                 min_runtime=4,
+                                 time_already_running=0,
+                                 min_downtime=2,
+                                 time_already_off=1,
+                                 last_dispatch=0,
+                                 start_fuel=0.7,
+                                 fuel_efficiency=0.8,
+                                 consumption_if_on=0.2
+                                 )
+        price2 = np.vstack([price1] * 4).T.reshape(-1)
+        prices['price2'] = price2
+        op2 = a2.setup_optim_problem(prices, timegrid=timegrid2)
+        res2 = op2.optimize()
+
+        self.assertAlmostEqual(res1.value, res2.value, 4)
+
     def test_start_and_shutdown_ramp1(self):
         """ Unit test. Setting up a CHPAsset and checking start and shutdown ramps where the upper and lower bounds are equal
         """
