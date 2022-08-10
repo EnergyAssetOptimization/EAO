@@ -23,7 +23,7 @@ Multi commodity optimization
 
    samples/cross_commodity/cross_commodity_sample
 
-Combining Heat and Power
+Combined Heat and Power
 ----------------------------
 
 .. toctree::
