@@ -705,6 +705,11 @@ class CHPAssetTest(unittest.TestCase):
 
         a = eao.assets.CHPAsset(name='CHP', price='rand_price', nodes=(node_power, node_heat), min_cap=0., max_cap=20,
                                 min_take=min_take, max_take=max_take, conversion_factor_power_heat=conversion_factor_power_heat)
+
+        # test serialization
+        s = eao.serialization.to_json(a)
+        aa = eao.serialization.load_from_json(s)
+
         prices = {'rand_price': -np.ones(timegrid.T)}
         op = a.setup_optim_problem(prices, timegrid=timegrid)
         res = op.optimize()
