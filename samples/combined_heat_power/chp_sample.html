@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Combining heat and power &mdash; EAO  documentation</title>
+  <title>Combined Heat and Power &mdash; EAO  documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -48,8 +48,8 @@
 <li class="toctree-l2"><a class="reference internal" href="../../samples.html#green-ppa-and-structured-downstream-contract">Green PPA and structured downstream contract</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../samples.html#marginal-costs-in-portfolio-optimization">Marginal costs in portfolio optimization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../samples.html#multi-commodity-optimization">Multi commodity optimization</a></li>
-<li class="toctree-l2 current"><a class="reference internal" href="../../samples.html#combining-heat-and-power">Combining Heat and Power</a><ul class="current">
-<li class="toctree-l3 current"><a class="current reference internal" href="#">Combining heat and power</a><ul>
+<li class="toctree-l2 current"><a class="reference internal" href="../../samples.html#combined-heat-and-power">Combined Heat and Power</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Combined Heat and Power</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#Technical-Details">Technical Details</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Example-Portfolio">Example Portfolio</a></li>
 </ul>
@@ -78,7 +78,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
           <li><a href="../../samples.html">Samples</a> &raquo;</li>
-      <li>Combining heat and power</li>
+      <li>Combined Heat and Power</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../../_sources/samples/combined_heat_power/chp_sample.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -366,41 +366,91 @@ div.rendered_html tbody tr:hover {
     text-align: unset;
 }
 </style>
-<section id="Combining-heat-and-power">
-<h1>Combining heat and power<a class="headerlink" href="#Combining-heat-and-power" title="Permalink to this heading"></a></h1>
+<section id="Combined-Heat-and-Power">
+<h1>Combined Heat and Power<a class="headerlink" href="#Combined-Heat-and-Power" title="Permalink to this heading"></a></h1>
 <p>The CHPAsset class represents an asset that can generate both heat and power at the same time and models starting procedures, minimum loads, ramping and a minimum runtime.</p>
 <section id="Technical-Details">
 <h2>Technical Details<a class="headerlink" href="#Technical-Details" title="Permalink to this heading"></a></h2>
 <section id="Input-Parameters">
 <h3>Input Parameters<a class="headerlink" href="#Input-Parameters" title="Permalink to this heading"></a></h3>
-<p>Possible input parameters of the CHPAsset are - Ramp <span class="math notranslate nohighlight">\(r\)</span> - Conversion efficiency <span class="math notranslate nohighlight">\(\alpha\)</span> from heat to power. - Maximum share heat <span class="math notranslate nohighlight">\(\beta\)</span> - Minimum capacity <span class="math notranslate nohighlight">\(l_t\)</span> for every timestep <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span> - Maximum capacity <span class="math notranslate nohighlight">\(u_t\)</span> for every timestep <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span> - Dispatch power <span class="math notranslate nohighlight">\(x_{-1}\)</span> from the previous timestep - Dispatch heat <span class="math notranslate nohighlight">\(w_{-1}\)</span> from the previous timestep - Number <span class="math notranslate nohighlight">\(k\)</span> of timesteps the asset
-has already been running - Minimum runtime <span class="math notranslate nohighlight">\(m\)</span></p>
+<p>Possible input parameters of the CHPAsset are</p>
+<ul class="simple">
+<li><p>Ramp <span class="math notranslate nohighlight">\(r\)</span></p></li>
+<li><p>Conversion efficiency <span class="math notranslate nohighlight">\(\alpha\)</span> from heat to power.</p></li>
+<li><p>Maximum share heat <span class="math notranslate nohighlight">\(\beta\)</span></p></li>
+<li><p>Minimum capacity <span class="math notranslate nohighlight">\(l_t\)</span> for every timestep <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span></p></li>
+<li><p>Maximum capacity <span class="math notranslate nohighlight">\(u_t\)</span> for every timestep <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span></p></li>
+<li><p>Dispatch power <span class="math notranslate nohighlight">\(x_{-1}\)</span> from the previous timestep</p></li>
+<li><p>Dispatch heat <span class="math notranslate nohighlight">\(w_{-1}\)</span> from the previous timestep</p></li>
+<li><p>Number <span class="math notranslate nohighlight">\(k_{on}\)</span> of timesteps the asset has already been running</p></li>
+<li><p>Number <span class="math notranslate nohighlight">\(k_{off}\)</span> of timesteps the asset has already been of</p></li>
+<li><p>Minimum runtime <span class="math notranslate nohighlight">\(m_{run}\)</span></p></li>
+<li><p>Minimum downtime <span class="math notranslate nohighlight">\(m_{down}\)</span></p></li>
+<li><p>Start ramp specification:</p>
+<ul>
+<li><p>Minimum capacity <span class="math notranslate nohighlight">\(l^{start}_i\)</span> for timestep <span class="math notranslate nohighlight">\(i \in \left\{0,\dots, k_{start}\right\}\)</span> after starting</p></li>
+<li><p>Maximum capacity <span class="math notranslate nohighlight">\(u^{start}_i\)</span> for timestep <span class="math notranslate nohighlight">\(i \in \left\{0,\dots, k_{start}\right\}\)</span> after starting</p></li>
+</ul>
+</li>
+<li><p>Shutdown ramp specification:</p>
+<ul>
+<li><p>Minimum capacity <span class="math notranslate nohighlight">\(l^{shutdown}_i\)</span> for timestep <span class="math notranslate nohighlight">\(i \in \left\{0,\dots, k_{shutdown}\right\}\)</span> before shutting off</p></li>
+<li><p>Maximum capacity <span class="math notranslate nohighlight">\(u^{shutdown}_i\)</span> for timestep <span class="math notranslate nohighlight">\(i \in \left\{0,\dots, k_{shutdown}\right\}\)</span> before shutting off</p></li>
+</ul>
+</li>
+</ul>
 </section>
 <section id="Output-variables">
 <h3>Output variables<a class="headerlink" href="#Output-variables" title="Permalink to this heading"></a></h3>
-<p>The following variables are computed for a CHPAsset that runs for <span class="math notranslate nohighlight">\(T\)</span> timesteps: - Dispatch power <span class="math notranslate nohighlight">\(x_t \in \mathbb{R}\)</span>, for every timestep <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span> - Dispatch heat <span class="math notranslate nohighlight">\(w_t \in \mathbb{R}\)</span>, for every timestep <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span> - “On”-variable <span class="math notranslate nohighlight">\(a_t \in \left\{0,1\right\}\)</span>, for every timestep <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span> - “Start”-variable <span class="math notranslate nohighlight">\(s_t \in \left\{0,1\right\}\)</span>, for every timestep
-<span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span></p>
+<p>The following variables are computed for a CHPAsset that runs for <span class="math notranslate nohighlight">\(T\)</span> timesteps:</p>
+<ul class="simple">
+<li><p>Dispatch power <span class="math notranslate nohighlight">\(x_t \in \mathbb{R}\)</span>, for every timestep <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span></p></li>
+<li><p>Dispatch heat <span class="math notranslate nohighlight">\(w_t \in \mathbb{R}\)</span>, for every timestep <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span></p></li>
+<li><p>“On”-variable <span class="math notranslate nohighlight">\(a_t \in \left\{0,1\right\}\)</span>, for every timestep <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span></p></li>
+<li><p>“Start”-variable <span class="math notranslate nohighlight">\(s_t \in \left\{0,1\right\}\)</span>, for every timestep <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span></p></li>
+<li><p>“Shutdown”-variable <span class="math notranslate nohighlight">\(d_t \in \left\{0,1\right\}\)</span>, for every timestep <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span></p></li>
+</ul>
 <p>When they are not needed to enforce a minimum runtime, start costs or similar, the “on” and “start” variables are removed.</p>
 </section>
 <section id="Variable-bounds">
 <h3>Variable bounds<a class="headerlink" href="#Variable-bounds" title="Permalink to this heading"></a></h3>
-<p>The output variables are within the following bounds in every timestep <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span>: - <span class="math notranslate nohighlight">\(0 \leq x_t \leq u_t\)</span> - <span class="math notranslate nohighlight">\(0 \leq w_t \leq \beta u_t\)</span> - <span class="math notranslate nohighlight">\(0 \leq a_t \leq 1\)</span> - <span class="math notranslate nohighlight">\(0 \leq s_t \leq 1\)</span></p>
+<p>The output variables are within the following bounds in every timestep <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span>:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(0 \leq x_t \leq u_t\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(0 \leq w_t \leq \beta u_t\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(0 \leq a_t \leq 1\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(0 \leq s_t \leq 1\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(0 \leq d_t \leq 1\)</span></p></li>
+</ul>
 </section>
 <section id="Constraints">
 <h3>Constraints<a class="headerlink" href="#Constraints" title="Permalink to this heading"></a></h3>
 <p>The following constraints are used in the asset</p>
 <ul>
+<li><p><strong>Minimum and maximum capacity</strong>: The virtual dispatch <span class="math notranslate nohighlight">\(\tilde{x}_t = x_t + \alpha w_t\)</span> is 0 when <span class="math notranslate nohighlight">\(a_t = 0\)</span>, i.e. the asset is “off”, it is bounded by the start or shutdown specifications during the start and shutdown, and otherwise it is between minimum and maximum capacity, i.e. <span class="math">\begin{align*}
+\tilde{x}_t &\geq& l_t \left[ a_t - \sum_{i=0}^{k_{shutdown}-1}d_{t+i+1} - \sum_{i=0}^{k_{start}-1}s_{t-i} \right] + \sum_{i=0}^{k_{start}-1}l^{start}_i s_{t-i} + \sum_{i=0}^{k_{shutdown}-1}l^{shutdown}_i d_{t+i+1} \\
+\tilde{x}_t &\leq& u_t \left[ a_t - \sum_{i=0}^{k_{shutdown}-1}d_{t+i+1} - \sum_{i=0}^{k_{start}-1}s_{t-i} \right] + \sum_{i=0}^{k_{start}-1}u^{start}_i s_{t-i} + \sum_{i=0}^{k_{shutdown}-1}u^{shutdown}_i d_{t+i+1}
+\end{align*}</span> for <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span>. It should be noted that the term <span class="math notranslate nohighlight">\(\sum_{i=0}^{k_{start}-1}s_{t-i}\)</span> is 1 if timestep <span class="math notranslate nohighlight">\(t\)</span> is part of the start ramp and 0 otherwise. Analogously, <span class="math notranslate nohighlight">\(\sum_{i=0}^{k_{shutdown}-1}d_{t+i+1}\)</span> is 1 if timestep <span class="math notranslate nohighlight">\(t\)</span> is part of the shutdown ramp and 0 otherwise. If <span class="math notranslate nohighlight">\(k_{on} &gt; 0\)</span> and <span class="math notranslate nohighlight">\(k_{on}&lt;k_{start}\)</span>, i.e. the asset is in the starting process at timestep <span class="math notranslate nohighlight">\(0\)</span>, the first <span class="math notranslate nohighlight">\(k_{start}-k_{on}\)</span> timesteps
+are instead bounded by <span class="math">\begin{align*} l^{start}_{k_{on}+i} \leq \tilde{x}_i \leq u^{start}_{k_{on}+i} \end{align*}</span> for every <span class="math notranslate nohighlight">\(i \in \left\{0, \dots, k_{start}-k_{on}-1\right\}\)</span>.</p></li>
 <li><div class="line-block">
-<div class="line"><strong>Ramp</strong>: Ensure that the increase/decrease of the virtual dispatch <span class="math notranslate nohighlight">\(\tilde{x}_t = x_t + \alpha w_t\)</span> is bounded by <span class="math notranslate nohighlight">\(r\)</span>, i.e.</div>
+<div class="line"><strong>Ramp</strong>: Ensure that the increase/decrease of the virtual dispatch <span class="math notranslate nohighlight">\(\tilde{x}_t = x_t + \alpha w_t\)</span> is bounded by <span class="math notranslate nohighlight">\(r\)</span>, unless during timesteps that belong to the start or shutdown ramp, i.e.</div>
 <div class="line"><span class="math">\begin{align*}
-                -r \leq \tilde{x}_t-\tilde{x}_{t-1} \leq r,
-\end{align*}</span>      for <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span>.</div>
+\tilde{x}_t-\tilde{x}_{t-1} &\geq& -r \left[ a_{t-1} - \sum_{i=0}^{k_{shutdown}-1}d_{t+i} \right] - u_{t-1}\sum_{i=0}^{k_{shutdown}-1}d_{t+i} \\
+\tilde{x}_t-\tilde{x}_{t-1} &\leq& r \left[ a_{t} - \sum_{i=0}^{k_{start}-1}s_{t-i} \right] + u_{t}\sum_{i=0}^{k_{start}-1}s_{t-i} ,
+\end{align*}</span> for <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span>.</div>
 </div>
 </li>
-<li><p><strong>Minimum and maximum capacity</strong>: The virtual dispatch <span class="math notranslate nohighlight">\(\tilde{x}_t = x_t + \alpha w_t\)</span> is 0 when <span class="math notranslate nohighlight">\(a_t = 0\)</span>, i.e. the asset is “off”, or between minimum and maximum capacity, i.e. <span class="math">\begin{align*} a_t l_t \leq \tilde{x}_t \leq a_t u_t, \end{align*}</span>      for <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span>.</p></li>
-<li><p><strong>Start constraints</strong>: When the “on” variable changes from “off” to “on”, the start variable has to be 1, i.e. <span class="math">\begin{align*}s_t \geq a_t - a_{t-1},\end{align*}</span>      for <span class="math notranslate nohighlight">\(t \in \left\{1,\dots, T-1\right\}\)</span>.      If <span class="math notranslate nohighlight">\(k = 0\)</span>, i.e. previous state <span class="math notranslate nohighlight">\(a_{-1}\)</span> is “off”, we need the additional condition <span class="math">\begin{align*}s_0 \geq a_0.\end{align*}</span></p></li>
-<li><p><strong>Minimum runtime</strong>: Ensure that the asset follows the minimum runtime <span class="math notranslate nohighlight">\(m\)</span>, i.e. <span class="math">\begin{align*}a_t \geq s_{t-i}\end{align*}</span>      for <span class="math notranslate nohighlight">\(t \in \left\{1,\dots, T-1\right\}\)</span> and <span class="math notranslate nohighlight">\(i \in \left\{1, \dots, m-1\right\}\)</span>.      If <span class="math notranslate nohighlight">\(k&gt;0\)</span> and <span class="math notranslate nohighlight">\(m &gt; k\)</span>, we need the additional condition <span class="math">\begin{align*}a_i \geq 1,\end{align*}</span>      for all <span class="math notranslate nohighlight">\(i \in \left\{0, \dots, m -k-1\right\}\)</span>.</p></li>
-<li><p><strong>Maximum share heat</strong>: Bound the heat dispatch by a percentage of the power dispatch, i.e. <span class="math">\begin{align*}w_t \leq \beta x_t,\end{align*}</span>      for <span class="math notranslate nohighlight">\(t \in \left\{0, \dots, T-1\right\}\)</span>.</p></li>
+<li><p><strong>Start constraints</strong>: (Only applicable when there is no start- or shutdown ramp specification, otherwise the start variables are defined simultaneously with the shutdown variables, see “start and shutdown constraints”) When the “on” variable changes from “off” to “on”, the start variable has to be 1, i.e. <span class="math">\begin{align*}s_t \geq a_t - a_{t-1},\end{align*}</span> for <span class="math notranslate nohighlight">\(t \in \left\{1,\dots, T-1\right\}\)</span>. If <span class="math notranslate nohighlight">\(k_{on} = 0\)</span>, i.e. previous state <span class="math notranslate nohighlight">\(a_{-1}\)</span> is “off”, we need
+the additional condition <span class="math">\begin{align*}s_0 \geq a_0.\end{align*}</span></p></li>
+<li><p><strong>Start and shutdown constraints</strong>: (Only applicable when start or shutdown ramp are defined) Ensure that the start and shutdown variables are set correctly, i.e <span class="math">\begin{align*}
+s_t - d_t &=& a_t - a_{t-1} \\
+s_t + d_t &\leq& 1
+\end{align*}</span> for <span class="math notranslate nohighlight">\(t \in \left\{0,\dots, T-1\right\}\)</span>.</p></li>
+<li><p><strong>Minimum runtime</strong>: Ensure that the asset follows the minimum runtime <span class="math notranslate nohighlight">\(m_{run}\)</span> and is on during the start and shutdown ramp, i.e. <span class="math">\begin{align*}a_t \geq s_{t-i}\end{align*}</span> for <span class="math notranslate nohighlight">\(t \in \left\{1,\dots, T-1\right\}\)</span> and <span class="math notranslate nohighlight">\(i \in \left\{1, \dots, m_{run}+k_{start}+k_{shutdown}-1\right\}\)</span>. If <span class="math notranslate nohighlight">\(k_{on}&gt;0\)</span> and <span class="math notranslate nohighlight">\(m_{run}+k_{start}+k_{shutdown} &gt; k_{on}\)</span>, we need the additional condition <span class="math">\begin{align*}a_i \geq 1,\end{align*}</span> for all
+<span class="math notranslate nohighlight">\(i \in \left\{0, \dots, m_{run}+k_{start}+k_{shutdown} -k_{on}-1\right\}\)</span>.</p></li>
+<li><p><strong>Minimum downtime</strong>: If the asset turns off, it has to stay off for the minimum downtime <span class="math notranslate nohighlight">\(m_{down}\)</span>, i.e. <span class="math">\begin{align*}a_t \leq 1 - a_{t-i-1} + a_{t-i}\end{align*}</span> for <span class="math notranslate nohighlight">\(t \in \left\{1,\dots, T-1\right\}\)</span> and <span class="math notranslate nohighlight">\(i \in \left\{1, \dots, m_{down}-1\right\}\)</span>. If <span class="math notranslate nohighlight">\(k_{off}&gt;0\)</span> and <span class="math notranslate nohighlight">\(m_{down} &gt; k_{off}\)</span>, we need the additional condition <span class="math">\begin{align*}a_i \leq 0,\end{align*}</span> for all
+<span class="math notranslate nohighlight">\(i \in \left\{0, \dots, m_{down} -k_{off}-1\right\}\)</span>.</p></li>
+<li><p><strong>Maximum share heat</strong>: Bound the heat dispatch by a percentage of the power dispatch, i.e. <span class="math">\begin{align*}w_t \leq \beta x_t,\end{align*}</span> for <span class="math notranslate nohighlight">\(t \in \left\{0, \dots, T-1\right\}\)</span>.</p></li>
 </ul>
 </section>
 </section>
@@ -416,6 +466,8 @@ has already been running - Minimum runtime <span class="math notranslate nohighl
 <span class="kn">import</span> <span class="nn">datetime</span> <span class="k">as</span> <span class="nn">dt</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
 <span class="n">myDir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">&#39;../..&#39;</span><span class="p">)</span>
 <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">myDir</span><span class="p">)</span>
 <span class="n">addDir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">&#39;../../../..&#39;</span><span class="p">)</span>
@@ -456,11 +508,15 @@ has already been running - Minimum runtime <span class="math notranslate nohighl
                                <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;h&#39;</span><span class="p">,</span>
                                <span class="n">conversion_factor_power_heat</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
                                <span class="n">max_share_heat</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
-                               <span class="n">ramp</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
-                               <span class="n">start_costs</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span>
+                               <span class="n">ramp</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                               <span class="n">start_ramp_lower_bounds</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">],</span>
+                               <span class="n">shutdown_ramp_lower_bounds</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">],</span>
+                               <span class="n">start_costs</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
                                <span class="n">running_costs</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
-                               <span class="n">min_runtime</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                               <span class="n">min_runtime</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
                                <span class="n">time_already_running</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
+                               <span class="n">min_downtime</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
+                               <span class="n">time_already_off</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span>
                                <span class="n">last_dispatch</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
                                <span class="n">start_fuel</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
@@ -540,7 +596,7 @@ has already been running - Minimum runtime <span class="math notranslate nohighl
     </tr>
     <tr>
       <th>value</th>
-      <td>254.108917</td>
+      <td>206.848838</td>
     </tr>
   </tbody>
 </table>
