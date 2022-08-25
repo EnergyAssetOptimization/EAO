@@ -926,12 +926,13 @@ class CHPAssetTest(unittest.TestCase):
         node_heat = eao.assets.Node('node_heat')
         Start = dt.date(2021, 1, 1)
         End = dt.date(2021, 1, 2)
-        timegrid = eao.assets.Timegrid(Start, End, freq='15min', main_time_unit='h')
+        timegrid = eao.assets.Timegrid(Start, End, freq='h', main_time_unit='h')
 
         start_ramp = [1, 2, 3, 4]
         shutdown_ramp = [1, 3, 5, 5, 5]
-        min_cap=5
-        max_cap=10
+        min_cap = 5
+        max_cap = 10
+        ramp_freq = '15min'
 
         a = eao.assets.CHPAsset(name='CHP',
                                 price='price',
@@ -939,9 +940,11 @@ class CHPAssetTest(unittest.TestCase):
                                 min_cap=min_cap,
                                 max_cap=max_cap,
                                 start_ramp_lower_bounds=start_ramp,
-                                shutdown_ramp_lower_bounds=shutdown_ramp)
+                                shutdown_ramp_lower_bounds=shutdown_ramp,
+                                ramp_freq=ramp_freq
+                                )
         prices = {'price': 10 * np.ones(timegrid.T)}
-        prices['price'][5: 5 + len(start_ramp)*4+ len(shutdown_ramp)*4]=-1
+        prices['price'][5: 5 + int(np.ceil(len(start_ramp)/4)+ np.ceil(len(shutdown_ramp)/4))]=-1
 
         op = a.setup_optim_problem(prices, timegrid=timegrid)
         res = op.optimize()
@@ -952,17 +955,22 @@ class CHPAssetTest(unittest.TestCase):
         shutdown_variables = res.x[4 * timegrid.T:]
         # Asset follows interpolated start ramp, then immediately interpolated shutdown ramp at highest possible load while the price is
         # negative, otherwise asset is off
-        start_ramp_interpolated = [(start_ramp[i]+(start_ramp[i+1]-start_ramp[i])/4 * j)/4 for i in range(len(start_ramp)-1) for j in range(4)] + 4*[start_ramp[-1]/4]
-        shutdown_ramp_interpolated = [(shutdown_ramp[i]+(shutdown_ramp[i+1]-shutdown_ramp[i])/4 * j)/4 for i in range(len(shutdown_ramp)-1) for j in range(4)] + 4*[shutdown_ramp[-1]/4]
-
+        start_ramp_interpolated = start_ramp[3::4]
+        if len(start_ramp) % 4 != 0:
+            start_ramp_interpolated += [start_ramp[-1]]
+        start_ramp_interpolated = [element * 4 for element in start_ramp_interpolated]
+        shutdown_ramp_interpolated = shutdown_ramp[3::4]
+        if len(shutdown_ramp) % 4 != 0:
+            shutdown_ramp_interpolated += [shutdown_ramp[-1]]
+        shutdown_ramp_interpolated = [element * 4 for element in shutdown_ramp_interpolated]
         disp_res = power_variables + a.conversion_factor_power_heat * heat_variables
-        disp_true = [0] * 5 + start_ramp_interpolated + list(reversed(shutdown_ramp_interpolated)) + [0] * (timegrid.T-len(start_ramp_interpolated)-len(shutdown_ramp_interpolated)-5)
+        disp_true = [0] * 5 + list(start_ramp_interpolated) + list(reversed(shutdown_ramp_interpolated)) + [0] * (timegrid.T-len(start_ramp_interpolated)-len(shutdown_ramp_interpolated)-5)
         self.assertAlmostEqual(abs(disp_res - disp_true).sum(), 0, 4)
         start_variables_true = np.zeros(timegrid.T)
         start_variables_true[5] = 1
         self.assertAlmostEqual(abs(start_variables_true - start_variables).sum(), 0, 4)
         shutdown_variables_true = np.zeros(timegrid.T)
-        shutdown_variables_true[5 + len(start_ramp)*4 + len(shutdown_ramp)*4] = 1
+        shutdown_variables_true[5 + len(start_ramp_interpolated) + len(shutdown_ramp_interpolated)] = 1
         self.assertAlmostEqual(abs(shutdown_variables_true - shutdown_variables).sum(), 0, 4)
 
 
