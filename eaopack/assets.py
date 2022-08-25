@@ -148,12 +148,13 @@ class Asset:
         mapping['time_step'] = mapping['time_step'].astype('int64')
         return mapping
 
-    def convert_to_timegrid_freq(self, time_value: float, attribute_name: str, timegrid:Timegrid = None, round: bool = True) -> Union[float, int]:
-        """ Convert time_value from the timegrids main_time_unit to the timegrid.freq
+    def convert_to_timegrid_freq(self, time_value: float, attribute_name: str, old_freq: str = None, timegrid:Timegrid = None, round: bool = True) -> Union[float, int]:
+        """ Convert time_value from the old_freq to the timegrid.freq
 
         Args:
             time_value (float): The time value in timegrid.main_time_unit
             attribute_name (str): The name of the attribute to be converted (only relevant for more specific warning)
+            old_freq (str): The old freg. If this is None the timegrids main_time_unit is used. Defaults to None.
             timegrid (Timegrid): The timegrid from with main_time_unit and freq are used. If timegrid is None,
                                  the asset's own timegrid self.timegrid is taken instead. Defaults to None.
             round: If true the result is rounded to the next highest integer.
@@ -165,7 +166,9 @@ class Asset:
             timegrid = self.timegrid
             if timegrid is None:
                 raise ValueError("Timegrid is not specified.")
-        time_value_converted = convert_time_unit(time_value, old_freq=timegrid.main_time_unit, new_freq=timegrid.freq)
+        if old_freq is None:
+            old_freq = timegrid.main_time_unit
+        time_value_converted = convert_time_unit(time_value, old_freq=old_freq, new_freq=timegrid.freq)
         if round:
             if not time_value_converted.is_integer():
                 print("Warning for asset ", self.name, ": ", attribute_name, " is ", time_value,
@@ -1126,7 +1129,7 @@ class CHPAsset(Contract):
                  start_ramp_upper_bounds: Sequence = None,
                  shutdown_ramp_lower_bounds: Sequence = None,
                  shutdown_ramp_upper_bounds: Sequence = None,
-                 interpolate_ramp_frequency: bool = True,
+                 ramp_freq: str = None,
                  start_fuel: Union[float, Dict, str] = 0.,
                  fuel_efficiency: Union[float, Dict, str] = 1.,
                  consumption_if_on: Union[float, Dict, str] = 0.
@@ -1179,35 +1182,21 @@ class CHPAsset(Contract):
             last_dispatch (float): Previous virtual dispatch (power + conversion_factor_power_heat * heat). Defaults to 0.
             start_ramp_lower_bounds (Sequence): The i-th element of this sequence specifies a lower bound of the
                                                 virtual dispatch (power + conversion_factor_power_heat * heat) at i timesteps
-                                                after starting. If interpolate_ramp_frequency is False, it is assumed
-                                                that the ramp is given in the timegrids freq, otherwise it is assumed
-                                                that the ramp is given in the timegrids main_time_unit and will be
-                                                interpolated accordingly. Defaults to None.
+                                                of freq ramp_freq after starting.  Defaults to None.
             start_ramp_upper_bounds (Sequence): The i-th element of this sequence specifies an upper bound of the
                                                 virtual dispatch (power + conversion_factor_power_heat * heat) at i timesteps
-                                                after starting. If it is None, it is set equal to start_ramp_lower_bounds.
-                                                If interpolate_ramp_frequency is False, it is assumed
-                                                that the ramp is given in the timegrids freq, otherwise it is assumed
-                                                that the ramp is given in the timegrids main_time_unit and will be
-                                                interpolated accordingly.
-                                                Defaults to None.
+                                                of freq ramp_freq after starting.  Defaults to None.
             shutdown_ramp_lower_bounds (Sequence): The i-th element of this sequence specifies a lower bound of the
                                                    virtual dispatch (power + conversion_factor_power_heat * heat) at i timesteps
-                                                   before turning off. If interpolate_ramp_frequency is False, it is assumed
-                                                   that the ramp is given in the timegrids freq, otherwise it is assumed
-                                                   that the ramp is given in the timegrids main_time_unit and will be
-                                                   interpolated accordingly. Defaults to None.
+                                                   of freq ramp_freq before turning off. Defaults to None.
             shutdown_ramp_upper_bounds (Sequence): The i-th element of this sequence specifies an upper bound of the
                                                    virtual dispatch (power + conversion_factor_power_heat * heat) at i timesteps
-                                                   before turning off. If it is None, it is set equal to shutdown_ramp_upper_bounds.
-                                                   If interpolate_ramp_frequency is False, it is assumed
-                                                   that the ramp is given in the timegrids freq, otherwise it is assumed
-                                                   that the ramp is given in the timegrids main_time_unit and will be
-                                                   interpolated accordingly. Defaults to None.
-            interpolate_ramp_frequency (bool): If this is False, it is assumed that the start and shutdown ramp specification
-                                               are given in the timegrids freq, otherwise it is assumed that they are given
-                                               in the timegrids main_time_unit and the ramps will be interpolated with
-                                               a piecewise linear function. Defaults to True.
+                                                   of freq ramp_freq before turning off. If it is None, it is set equal to shutdown_ramp_upper_bounds.
+                                                   Defaults to None.
+            ramp_freq (str): A string specifying the frequency of the start-and shutdown ramp specification.
+                             If this is None, the timegrids main_time_unit is used. Otherwise the start and shutdown ramps are
+                             interpolated to get values in the timegrids freq.
+
 
             Optional: Explicit fuel consumption (e.g. gas) for multi-commodity simulation
                  start_fuel (float, dict, str): detaults to  0
@@ -1254,7 +1243,7 @@ class CHPAsset(Contract):
         assert self.shutdown_ramp_lower_bounds is None or len(self.shutdown_ramp_lower_bounds) == len(self.shutdown_ramp_upper_bounds), "start_ramp_lower_bounds and start_ramp_upper_bounds cannot have different lengths. Asset: " + self.name
         self.shutdown_ramp_time = len(self.shutdown_ramp_lower_bounds) if self.shutdown_ramp_lower_bounds is not None else 0
         assert np.all([self.shutdown_ramp_lower_bounds[i] <= self.shutdown_ramp_upper_bounds[i] for i in range(self.shutdown_ramp_time)]), "shutdown_ramp_lower_bounds is higher than shutdown_ramp_upper bounds at some point. Asset: " + self.name
-        self.interpolate_ramp_frequency = interpolate_ramp_frequency
+        self.ramp_freq = ramp_freq
 
         if len(nodes) >= 3:
             self.fuel_efficiency      = fuel_efficiency
@@ -1291,29 +1280,30 @@ class CHPAsset(Contract):
         min_downtime = self.convert_to_timegrid_freq(self.min_downtime, "min_downtime")
         time_already_off = self.convert_to_timegrid_freq(self.time_already_off, "time_already_off")
 
-        # Convert start ramp and shutdown ramp from timegrids main_time_unit to
-        # timegrid.freq IF self.interpolate_ramp_frequency is True, otherwise leave as is
+        # Convert start ramp and shutdown ramp from ramp_freq to timegrid.freq
+        ramp_freq = self.ramp_freq
+        if ramp_freq is None:
+            ramp_freq = timegrid.main_time_unit
         start_ramp_time = self.start_ramp_time
         start_ramp_lower_bounds = self.start_ramp_lower_bounds
         start_ramp_upper_bounds = self.start_ramp_upper_bounds
         shutdown_ramp_time = self.shutdown_ramp_time
         shutdown_ramp_lower_bounds = self.shutdown_ramp_lower_bounds
         shutdown_ramp_upper_bounds = self.shutdown_ramp_upper_bounds
-        if self.interpolate_ramp_frequency:
+        if ramp_freq != timegrid.freq:
+            conversion_factor = convert_time_unit(value=1, old_freq=timegrid.freq, new_freq=ramp_freq)
             if self.start_ramp_time:
-                start_ramp_lower_bounds = self._convert_ramp(self.start_ramp_lower_bounds)
-                start_ramp_upper_bounds = self._convert_ramp(self.start_ramp_upper_bounds)
+                start_ramp_lower_bounds = self._convert_ramp(self.start_ramp_lower_bounds, ramp_freq)
+                start_ramp_upper_bounds = self._convert_ramp(self.start_ramp_upper_bounds, ramp_freq)
                 start_ramp_time = len(start_ramp_lower_bounds)
+                start_ramp_lower_bounds *= conversion_factor
+                start_ramp_upper_bounds *= conversion_factor
             if self.shutdown_ramp_time:
-                shutdown_ramp_lower_bounds = self._convert_ramp(self.shutdown_ramp_lower_bounds)
-                shutdown_ramp_upper_bounds = self._convert_ramp(self.shutdown_ramp_upper_bounds)
+                shutdown_ramp_lower_bounds = self._convert_ramp(self.shutdown_ramp_lower_bounds, ramp_freq)
+                shutdown_ramp_upper_bounds = self._convert_ramp(self.shutdown_ramp_upper_bounds, ramp_freq)
                 shutdown_ramp_time = len(shutdown_ramp_lower_bounds)
-        if start_ramp_time:
-            start_ramp_lower_bounds *= self.timegrid.restricted.dt[:start_ramp_time]
-            start_ramp_upper_bounds *= self.timegrid.restricted.dt[:start_ramp_time]
-        if shutdown_ramp_time:
-            shutdown_ramp_lower_bounds *= self.timegrid.restricted.dt[:shutdown_ramp_time]
-            shutdown_ramp_upper_bounds *= self.timegrid.restricted.dt[:shutdown_ramp_time]
+                shutdown_ramp_lower_bounds *= conversion_factor
+                shutdown_ramp_upper_bounds *= conversion_factor
 
         min_runtime += start_ramp_time + shutdown_ramp_time
 
@@ -1414,11 +1404,11 @@ class CHPAsset(Contract):
 
         return op
 
-    def _convert_ramp(self, ramp, timegrid=None):
+    def _convert_ramp(self, ramp, ramp_freq, timegrid=None):
         ramp_duration = len(ramp)
-        old_timepoints_in_new_freq = [self.convert_to_timegrid_freq(i, "ramp", timegrid, round=False) for i in
+        old_timepoints_in_new_freq = [self.convert_to_timegrid_freq(time_value=i+1, attribute_name="ramp", old_freq=ramp_freq, timegrid=timegrid, round=False) for i in
                                       range(ramp_duration)]
-        new_timepoints = np.arange(self.convert_to_timegrid_freq(ramp_duration, "ramp_duration", timegrid))
+        new_timepoints = np.arange(np.ceil(self.convert_to_timegrid_freq(time_value=ramp_duration, attribute_name="ramp_duration", old_freq=ramp_freq, timegrid=timegrid, round=False))) + 1
         ramp_new_freq = np.interp(new_timepoints, old_timepoints_in_new_freq, ramp)
         return ramp_new_freq
 
