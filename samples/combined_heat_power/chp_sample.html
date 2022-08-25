@@ -491,7 +491,7 @@ s_t + d_t &\leq& 1
 <span class="n">node_heat</span> <span class="o">=</span> <span class="n">eao</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s1">&#39;node_heat&#39;</span><span class="p">)</span>
 <span class="n">node_gas</span> <span class="o">=</span> <span class="n">eao</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s1">&#39;node_gas&#39;</span><span class="p">)</span>
 
-<span class="n">timegrid</span> <span class="o">=</span> <span class="n">eao</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">Timegrid</span><span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2021</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">dt</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2021</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;h&#39;</span><span class="p">,</span> <span class="n">main_time_unit</span><span class="o">=</span><span class="s1">&#39;h&#39;</span><span class="p">)</span>
+<span class="n">timegrid</span> <span class="o">=</span> <span class="n">eao</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">Timegrid</span><span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2021</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">dt</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2021</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;15min&#39;</span><span class="p">,</span> <span class="n">main_time_unit</span><span class="o">=</span><span class="s1">&#39;h&#39;</span><span class="p">)</span>
 <span class="n">simple_contract_power</span> <span class="o">=</span> <span class="n">eao</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">SimpleContract</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;SC_power&#39;</span><span class="p">,</span> <span class="n">price</span><span class="o">=</span><span class="s1">&#39;price_power&#39;</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="n">node_power</span><span class="p">,</span>
                                              <span class="n">min_cap</span><span class="o">=-</span><span class="mf">30.</span><span class="p">,</span> <span class="n">max_cap</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
 <span class="n">simple_contract_heat</span> <span class="o">=</span> <span class="n">eao</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">SimpleContract</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;SC_heat&#39;</span><span class="p">,</span> <span class="n">price</span><span class="o">=</span><span class="s1">&#39;price_heat&#39;</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="n">node_heat</span><span class="p">,</span>
@@ -505,12 +505,12 @@ s_t + d_t &\leq& 1
                                <span class="n">min_cap</span><span class="o">=</span><span class="mf">5.</span><span class="p">,</span>
                                <span class="n">max_cap</span><span class="o">=</span><span class="mf">30.</span><span class="p">,</span>
                                <span class="n">extra_costs</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                               <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;h&#39;</span><span class="p">,</span>
                                <span class="n">conversion_factor_power_heat</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
                                <span class="n">max_share_heat</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
                                <span class="n">ramp</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
-                               <span class="n">start_ramp_lower_bounds</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">],</span>
-                               <span class="n">shutdown_ramp_lower_bounds</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">],</span>
+                               <span class="n">start_ramp_lower_bounds</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+                               <span class="n">shutdown_ramp_lower_bounds</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+                               <span class="n">ramp_freq</span><span class="o">=</span><span class="s2">&quot;15min&quot;</span><span class="p">,</span>
                                <span class="n">start_costs</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
                                <span class="n">running_costs</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
                                <span class="n">min_runtime</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
@@ -596,7 +596,7 @@ s_t + d_t &\leq& 1
     </tr>
     <tr>
       <th>value</th>
-      <td>206.848838</td>
+      <td>243.759802</td>
     </tr>
   </tbody>
 </table>
