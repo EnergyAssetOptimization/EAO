@@ -955,14 +955,16 @@ class CHPAssetTest(unittest.TestCase):
         shutdown_variables = res.x[4 * timegrid.T:]
         # Asset follows interpolated start ramp, then immediately interpolated shutdown ramp at highest possible load while the price is
         # negative, otherwise asset is off
-        start_ramp_interpolated = start_ramp[3::4]
-        if len(start_ramp) % 4 != 0:
-            start_ramp_interpolated += [start_ramp[-1]]
-        start_ramp_interpolated = [element * 4 for element in start_ramp_interpolated]
-        shutdown_ramp_interpolated = shutdown_ramp[3::4]
-        if len(shutdown_ramp) % 4 != 0:
-            shutdown_ramp_interpolated += [shutdown_ramp[-1]]
-        shutdown_ramp_interpolated = [element * 4 for element in shutdown_ramp_interpolated]
+        converted_time_rounded = int(np.ceil(eao.assets.convert_time_unit(value=1, old_freq=timegrid.freq, new_freq=ramp_freq)))
+        start_ramp_padding_size = int(np.ceil(len(start_ramp) / converted_time_rounded) * converted_time_rounded) - len(start_ramp)
+        start_ramp_padded = start_ramp + [start_ramp[-1]] * start_ramp_padding_size
+        start_ramp_interpolated = np.reshape(start_ramp_padded, (-1, converted_time_rounded)).mean(axis=1)
+
+        shutdown_ramp_padding_size = int(np.ceil(len(shutdown_ramp) / converted_time_rounded) * converted_time_rounded) - len(
+            shutdown_ramp)
+        shutdown_ramp_padded = shutdown_ramp + [shutdown_ramp[-1]] * shutdown_ramp_padding_size
+        shutdown_ramp_interpolated = np.reshape(shutdown_ramp_padded, (-1, converted_time_rounded)).mean(axis=1)
+
         disp_res = power_variables + a.conversion_factor_power_heat * heat_variables
         disp_true = [0] * 5 + list(start_ramp_interpolated) + list(reversed(shutdown_ramp_interpolated)) + [0] * (timegrid.T-len(start_ramp_interpolated)-len(shutdown_ramp_interpolated)-5)
         self.assertAlmostEqual(abs(disp_res - disp_true).sum(), 0, 4)
