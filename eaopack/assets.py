@@ -1421,7 +1421,8 @@ class CHPAsset(Contract):
         else:
             # ramp_freq is finer than timegrid.freq => use average
             ramp_padded = ramp + [ramp[-1]] * int(np.ceil(converted_time))
-            ramp_new_freq = np.zeros(self.convert_to_timegrid_freq(len(ramp), "start_ramp_duration", ramp_freq, timegrid))
+            new_ramp_duration = int(np.ceil(self.convert_to_timegrid_freq(len(ramp), "ramp_duration", ramp_freq, timegrid, round=False)))
+            ramp_new_freq = np.zeros(new_ramp_duration)
             for i in range(ramp_new_freq.shape[0]):
                 start_idx = i * converted_time
                 start_idx_rounded = int(np.ceil(start_idx))
