@@ -1290,20 +1290,19 @@ class CHPAsset(Contract):
         shutdown_ramp_time = self.shutdown_ramp_time
         shutdown_ramp_lower_bounds = self.shutdown_ramp_lower_bounds
         shutdown_ramp_upper_bounds = self.shutdown_ramp_upper_bounds
-        if ramp_freq != timegrid.freq:
-            conversion_factor = convert_time_unit(value=1, old_freq=timegrid.freq, new_freq=ramp_freq)
-            if self.start_ramp_time:
-                start_ramp_lower_bounds = self._convert_ramp(self.start_ramp_lower_bounds, ramp_freq)
-                start_ramp_upper_bounds = self._convert_ramp(self.start_ramp_upper_bounds, ramp_freq)
-                start_ramp_time = len(start_ramp_lower_bounds)
-                start_ramp_lower_bounds *= conversion_factor
-                start_ramp_upper_bounds *= conversion_factor
-            if self.shutdown_ramp_time:
-                shutdown_ramp_lower_bounds = self._convert_ramp(self.shutdown_ramp_lower_bounds, ramp_freq)
-                shutdown_ramp_upper_bounds = self._convert_ramp(self.shutdown_ramp_upper_bounds, ramp_freq)
-                shutdown_ramp_time = len(shutdown_ramp_lower_bounds)
-                shutdown_ramp_lower_bounds *= conversion_factor
-                shutdown_ramp_upper_bounds *= conversion_factor
+        conversion_factor = convert_time_unit(value=1, old_freq=timegrid.freq, new_freq=timegrid.main_time_unit)
+        if self.start_ramp_time:
+            start_ramp_lower_bounds = self._convert_ramp(self.start_ramp_lower_bounds, ramp_freq)
+            start_ramp_upper_bounds = self._convert_ramp(self.start_ramp_upper_bounds, ramp_freq)
+            start_ramp_time = len(start_ramp_lower_bounds)
+            start_ramp_lower_bounds *= conversion_factor
+            start_ramp_upper_bounds *= conversion_factor
+        if self.shutdown_ramp_time:
+            shutdown_ramp_lower_bounds = self._convert_ramp(self.shutdown_ramp_lower_bounds, ramp_freq)
+            shutdown_ramp_upper_bounds = self._convert_ramp(self.shutdown_ramp_upper_bounds, ramp_freq)
+            shutdown_ramp_time = len(shutdown_ramp_lower_bounds)
+            shutdown_ramp_lower_bounds *= conversion_factor
+            shutdown_ramp_upper_bounds *= conversion_factor
 
         min_runtime += start_ramp_time + shutdown_ramp_time
 
