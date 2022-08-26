@@ -172,7 +172,7 @@ class Asset:
         if round:
             if not time_value_converted.is_integer():
                 print("Warning for asset ", self.name, ": ", attribute_name, " is ", time_value,
-                      " in freq '", timegrid.main_time_unit,
+                      " in freq '", old_freq,
                       "' which corresponds to ", time_value_converted, " in freq '", timegrid.freq,"'. ",
                       "This is not an integer and will therefore be rounded to ", np.ceil(time_value_converted),
                       " in freq '", timegrid.freq, "'.", sep='')
@@ -1404,6 +1404,7 @@ class CHPAsset(Contract):
         return op
 
     def _convert_ramp(self, ramp, ramp_freq, timegrid=None):
+        """ Change the timepoints of the ramp from ramp_freq to the timegrids freq """
         if timegrid is None:
             timegrid = self.timegrid
         if ramp_freq == timegrid.freq:
