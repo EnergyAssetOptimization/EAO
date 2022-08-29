@@ -1434,7 +1434,7 @@ class CHPAsset(Contract):
                 if start_idx_rounded > start_idx:
                     ramp_value += (start_idx_rounded - start_idx) * ramp_padded[start_idx_rounded-1]
                 if stop_idx > stop_idx_rounded:
-                    ramp_value += (stop_idx - stop_idx_rounded)*ramp_padded[stop_idx_rounded+1]
+                    ramp_value += (stop_idx - stop_idx_rounded)*ramp_padded[stop_idx_rounded]
                 ramp_new_freq[i] = ramp_value / (stop_idx - start_idx)
 
             return ramp_new_freq
