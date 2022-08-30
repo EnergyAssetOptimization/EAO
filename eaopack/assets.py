@@ -172,7 +172,7 @@ class Asset:
         if round:
             if not time_value_converted.is_integer():
                 print("Warning for asset ", self.name, ": ", attribute_name, " is ", time_value,
-                      " in freq '", timegrid.main_time_unit,
+                      " in freq '", old_freq,
                       "' which corresponds to ", time_value_converted, " in freq '", timegrid.freq,"'. ",
                       "This is not an integer and will therefore be rounded to ", np.ceil(time_value_converted),
                       " in freq '", timegrid.freq, "'.", sep='')
@@ -1290,20 +1290,19 @@ class CHPAsset(Contract):
         shutdown_ramp_time = self.shutdown_ramp_time
         shutdown_ramp_lower_bounds = self.shutdown_ramp_lower_bounds
         shutdown_ramp_upper_bounds = self.shutdown_ramp_upper_bounds
-        if ramp_freq != timegrid.freq:
-            conversion_factor = convert_time_unit(value=1, old_freq=timegrid.freq, new_freq=ramp_freq)
-            if self.start_ramp_time:
-                start_ramp_lower_bounds = self._convert_ramp(self.start_ramp_lower_bounds, ramp_freq)
-                start_ramp_upper_bounds = self._convert_ramp(self.start_ramp_upper_bounds, ramp_freq)
-                start_ramp_time = len(start_ramp_lower_bounds)
-                start_ramp_lower_bounds *= conversion_factor
-                start_ramp_upper_bounds *= conversion_factor
-            if self.shutdown_ramp_time:
-                shutdown_ramp_lower_bounds = self._convert_ramp(self.shutdown_ramp_lower_bounds, ramp_freq)
-                shutdown_ramp_upper_bounds = self._convert_ramp(self.shutdown_ramp_upper_bounds, ramp_freq)
-                shutdown_ramp_time = len(shutdown_ramp_lower_bounds)
-                shutdown_ramp_lower_bounds *= conversion_factor
-                shutdown_ramp_upper_bounds *= conversion_factor
+        conversion_factor = convert_time_unit(value=1, old_freq=timegrid.freq, new_freq=timegrid.main_time_unit)
+        if self.start_ramp_time:
+            start_ramp_lower_bounds = self._convert_ramp(self.start_ramp_lower_bounds, ramp_freq)
+            start_ramp_upper_bounds = self._convert_ramp(self.start_ramp_upper_bounds, ramp_freq)
+            start_ramp_time = len(start_ramp_lower_bounds)
+            start_ramp_lower_bounds = start_ramp_lower_bounds * conversion_factor
+            start_ramp_upper_bounds = start_ramp_upper_bounds * conversion_factor
+        if self.shutdown_ramp_time:
+            shutdown_ramp_lower_bounds = self._convert_ramp(self.shutdown_ramp_lower_bounds, ramp_freq)
+            shutdown_ramp_upper_bounds = self._convert_ramp(self.shutdown_ramp_upper_bounds, ramp_freq)
+            shutdown_ramp_time = len(shutdown_ramp_lower_bounds)
+            shutdown_ramp_lower_bounds = shutdown_ramp_lower_bounds * conversion_factor
+            shutdown_ramp_upper_bounds = shutdown_ramp_upper_bounds * conversion_factor
 
         min_runtime += start_ramp_time + shutdown_ramp_time
 
@@ -1405,12 +1404,40 @@ class CHPAsset(Contract):
         return op
 
     def _convert_ramp(self, ramp, ramp_freq, timegrid=None):
-        ramp_duration = len(ramp)
-        old_timepoints_in_new_freq = [self.convert_to_timegrid_freq(time_value=i+1, attribute_name="ramp", old_freq=ramp_freq, timegrid=timegrid, round=False) for i in
-                                      range(ramp_duration)]
-        new_timepoints = np.arange(np.ceil(self.convert_to_timegrid_freq(time_value=ramp_duration, attribute_name="ramp_duration", old_freq=ramp_freq, timegrid=timegrid, round=False))) + 1
-        ramp_new_freq = np.interp(new_timepoints, old_timepoints_in_new_freq, ramp)
-        return ramp_new_freq
+        """ Change the timepoints of the ramp from ramp_freq to the timegrids freq """
+        if timegrid is None:
+            timegrid = self.timegrid
+        if ramp_freq == timegrid.freq:
+            return np.array(ramp)
+        converted_time = convert_time_unit(value=1, old_freq=timegrid.freq, new_freq=ramp_freq)
+        if converted_time < 1:
+            # timegrid.freq is finer than ramp_freq => interpolate
+            ramp_duration = len(ramp)
+            old_timepoints_in_new_freq = [self.convert_to_timegrid_freq(time_value=i+1, attribute_name="ramp", old_freq=ramp_freq, timegrid=timegrid, round=False) for i in
+                                          range(ramp_duration)]
+            new_timepoints = np.arange(np.ceil(self.convert_to_timegrid_freq(time_value=ramp_duration, attribute_name="ramp_duration", old_freq=ramp_freq, timegrid=timegrid, round=False))) + 1
+            ramp_new_freq = np.interp(new_timepoints, old_timepoints_in_new_freq, ramp)
+            return ramp_new_freq
+        else:
+            # ramp_freq is finer than timegrid.freq => use average
+            ramp_padded = ramp + [ramp[-1]] * int(np.ceil(converted_time))
+            new_ramp_duration = int(np.ceil(self.convert_to_timegrid_freq(len(ramp), "ramp_duration", ramp_freq, timegrid, round=False)))
+            ramp_new_freq = np.zeros(new_ramp_duration)
+            for i in range(ramp_new_freq.shape[0]):
+                start_idx = i * converted_time
+                start_idx_rounded = int(np.ceil(start_idx))
+                stop_idx = (i + 1) * converted_time
+                stop_idx_rounded = int(np.floor(stop_idx))
+                ramp_value = 0
+                if start_idx_rounded < stop_idx_rounded:
+                    ramp_value = np.average(ramp_padded[start_idx_rounded: stop_idx_rounded]) * (stop_idx_rounded-start_idx_rounded)
+                if start_idx_rounded > start_idx:
+                    ramp_value += (start_idx_rounded - start_idx) * ramp_padded[start_idx_rounded-1]
+                if stop_idx > stop_idx_rounded:
+                    ramp_value += (stop_idx - stop_idx_rounded)*ramp_padded[stop_idx_rounded]
+                ramp_new_freq[i] = ramp_value / (stop_idx - start_idx)
+
+            return ramp_new_freq
 
     def _add_dispatch_variables(self, op, conversion_factor_power_heat, max_cap, max_share_heat):
         """ Divide each dispatch variable in op into a power dispatch that flows into the power node self.nodes[1]
