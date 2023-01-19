@@ -44,6 +44,53 @@ class Portfolio:
         """
         self.timegrid = timegrid
 
+    def optimize_intervals(self, prices: dict=None, timegrid: Timegrid=None, intervall_size=None, solver="GLPK_MI"):
+        intervall_timepoints = pd.date_range(start=timegrid.start, end=timegrid.end, freq=intervall_size, tz=timegrid.tz)
+        intervall_timepoints = intervall_timepoints.append(pd.to_datetime([timegrid.end]))
+        prices = timegrid.prices_to_grid(prices)
+        res = Results(0, np.array([]), None)
+        mappings = []
+        t = 0
+        for i in range(len(intervall_timepoints)-1):
+            start_tmp = intervall_timepoints[i]
+            end_tmp = intervall_timepoints[i+1]
+            timegrid_tmp = Timegrid(start_tmp, end_tmp, timegrid.freq, ref_timegrid=timegrid)
+            timegrid_tmp.I = np.array(range(0, timegrid_tmp.T)) # TODO do this in Timegrid constructor
+            prices_tmp = timegrid_tmp.prices_to_grid(prices)
+            op = self.setup_optim_problem(prices_tmp, timegrid_tmp)
+            res_tmp = op.optimize()
+            op.mapping["time_step"] += t
+            for i in range(len(res_tmp.x)):
+                op.mapping.loc[i, "i"] = i + len(res.x)
+            res.x = np.hstack((res.x, res_tmp.x))
+            res.value += res_tmp.value
+            # TODO duals
+            # TODO mapping["index_assets"], mapping["nodal_restr"]
+            mappings.append(op.mapping)
+            t += timegrid_tmp.T
+        mapping = pd.concat(mappings).drop(["index_assets", "nodal_restr"], axis=1) # TODO deal with dropped cola
+        op_full = self.setup_optim_problem(prices, timegrid)
+        op_full_mapping = op_full.mapping.drop(["index_assets", "nodal_restr"], axis=1).reset_index(drop=True)
+        mapping_ri = mapping.reset_index(drop=True).drop(["i"], axis=1)
+        used_duplicate_keys = set()
+        def sort_key(i):
+            tmp = op_full_mapping.index[((mapping_ri.loc[i] == op_full_mapping) | (pd.isna(mapping_ri.loc[i]) & pd.isna(op_full_mapping))).all(axis=1)]
+            res = tmp[0]
+            i = 1
+            while res in used_duplicate_keys and len(tmp) > i:
+                res = tmp[i]
+                i += 1
+            if len(tmp)>1:
+                used_duplicate_keys.add(res)
+            return res
+        idx = list(np.arange(mapping.shape[0]))
+        idx.sort(key=sort_key)
+        mapping2 = mapping.iloc[idx]
+        idx_unique = np.unique(op_full.mapping.index, return_index=True)[1]
+        idx_x = np.array(mapping2["i"], dtype=int)[idx_unique]
+        res.x = res.x[idx_x]
+        op_full.c=op_full.c[idx_x]
+        return op_full, res
 
     def setup_optim_problem(self, prices: dict = None, 
                             timegrid:Timegrid = None, 
