@@ -92,6 +92,76 @@ class Portfolio:
         op_full.c=op_full.c[idx_x]
         return op_full, res
 
+    def setup_optim_problem_with_intervals(self, prices: dict = None,
+                                           timegrid: Timegrid = None,
+                                           interval_size: str = None,
+                                           skip_nodes: list = [],
+                                           fix_time_window: Dict = None):
+        interval_timepoints = pd.date_range(start=timegrid.start, end=timegrid.end, freq=interval_size,
+                                             tz=timegrid.tz)
+        interval_timepoints = interval_timepoints.append(pd.to_datetime([timegrid.end]))
+        prices = timegrid.prices_to_grid(prices)
+        mappings = []
+        t = 0
+        A = sp.coo_matrix((0,0))
+        b = np.zeros(0)
+        c = np.zeros(0)
+        cType = ''
+        l = np.zeros(0)
+        u = np.zeros(0)
+        for i in range(len(interval_timepoints) - 1):
+            start_tmp = interval_timepoints[i]
+            end_tmp = interval_timepoints[i + 1]
+            timegrid_tmp = Timegrid(start_tmp, end_tmp, timegrid.freq, ref_timegrid=timegrid)
+            timegrid_tmp.I = np.array(range(0, timegrid_tmp.T))  # TODO do this in Timegrid constructor
+            prices_tmp = timegrid_tmp.prices_to_grid(prices)
+            op_tmp = self.setup_optim_problem(prices_tmp, timegrid_tmp, skip_nodes=skip_nodes, fix_time_window=fix_time_window)
+            op_tmp.mapping["time_step"] += t
+            for i in range(op_tmp.c.shape[0]):
+                op_tmp.mapping.loc[i, "i"] = i + c.shape[0]
+            # op_tmp.mapping.index += c.shape[0]
+            # TODO duals
+            # TODO mapping["index_assets"], mapping["nodal_restr"]
+            A = sp.block_diag((A, op_tmp.A))
+            b = np.hstack((b, op_tmp.b))
+            c = np.hstack((c, op_tmp.c))
+            cType += op_tmp.cType
+            l = np.hstack((l, op_tmp.l))
+            u = np.hstack((u, op_tmp.u))
+            mappings.append(op_tmp.mapping)
+            t += timegrid_tmp.T
+        mapping = pd.concat(mappings).drop(["index_assets", "nodal_restr"], axis=1)  # TODO deal with dropped cola
+        op_full = self.setup_optim_problem(prices, timegrid)
+        op_full_mapping = op_full.mapping.drop(["index_assets", "nodal_restr"], axis=1).reset_index(drop=True)
+        mapping_ri = mapping.reset_index(drop=True).drop(["i"], axis=1)
+        used_duplicate_keys = set()
+
+        def sort_key(i):
+            tmp = op_full_mapping.index[
+                ((mapping_ri.loc[i] == op_full_mapping) | (pd.isna(mapping_ri.loc[i]) & pd.isna(op_full_mapping))).all(
+                    axis=1)]
+            res = tmp[0]
+            i = 1
+            while res in used_duplicate_keys and len(tmp) > i:
+                res = tmp[i]
+                i += 1
+            if len(tmp) > 1:
+                used_duplicate_keys.add(res)
+            return res
+
+        idx = list(np.arange(mapping.shape[0]))
+        idx.sort(key=sort_key)
+        mapping2 = mapping.iloc[idx]
+        idx_unique = np.unique(op_full.mapping.index, return_index=True)[1]
+        idx_x = np.array(mapping2["i"], dtype=int)[idx_unique]
+        A = sp.coo_matrix(A.todense()[:, idx_x])
+        c = c[idx_x]
+        l = l[idx_x]
+        u = u[idx_x]
+        op = OptimProblem(A=A, b=b, c=c, cType=cType, l=l, mapping=op_full.mapping, u=u)
+        # op = OptimProblem(A=A, b=b, c=c, cType=cType, l=l, mapping=mapping, u=u)
+        return op
+
     def setup_optim_problem(self, prices: dict = None, 
                             timegrid:Timegrid = None, 
                             costs_only:bool = False, 
