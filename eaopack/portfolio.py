@@ -48,6 +48,8 @@ class Portfolio:
     def optimize_intervals(self, prices: dict=None, timegrid: Timegrid=None, interval_size=None, solver="GLPK_MI"):
         interval_timepoints = pd.date_range(start=timegrid.start, end=timegrid.end, freq=interval_size, tz=timegrid.tz)
         interval_timepoints = interval_timepoints.append(pd.to_datetime([timegrid.end]))
+        if interval_timepoints[0] != pd.Timestamp(timegrid.start):
+            interval_timepoints = interval_timepoints.insert(0, timegrid.start)
         prices = timegrid.prices_to_grid(prices)
         res = Results(0, np.array([]), None)
         mappings = []
@@ -81,6 +83,8 @@ class Portfolio:
         interval_timepoints = pd.date_range(start=timegrid.start, end=timegrid.end, freq=interval_size,
                                              tz=timegrid.tz)
         interval_timepoints = interval_timepoints.append(pd.to_datetime([timegrid.end]))
+        if interval_timepoints[0] != pd.Timestamp(timegrid.start):
+            interval_timepoints = interval_timepoints.insert(0, timegrid.start)
         prices = timegrid.prices_to_grid(prices)
         ops = []
         mappings = []
