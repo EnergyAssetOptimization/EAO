@@ -342,3 +342,24 @@ class OptimProblem:
         return results
 
 
+class SplitOptimProblem(OptimProblem):
+    def __init__(self, ops, mapping):
+        self.ops = ops
+        self.mapping = mapping
+        self.c = np.hstack([op.c for op in ops])
+
+    def optimize(self, target='value',
+                 samples=None,
+                 interface: str = 'cvxpy',
+                 solver=None,
+                 make_soft_problem=False,
+                 rel_tol: float = 1e-3,
+                 iterations: int = 5000) -> Results:
+        res = Results(0, np.array([]), None)
+        for op in self.ops:
+            res_tmp = op.optimize()
+            res.value += res_tmp.value
+            res.x = np.hstack((res.x, res_tmp.x))
+        return res
+
+

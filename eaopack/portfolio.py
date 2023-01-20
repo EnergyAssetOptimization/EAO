@@ -3,9 +3,10 @@ import pandas as pd
 import datetime as dt
 import abc
 import scipy.sparse as sp
+from copy import deepcopy
 from typing import Union, List, Tuple, Dict, Sequence
 from eaopack.assets import Node, Asset, Timegrid, convert_time_unit
-from eaopack.optimization import OptimProblem          
+from eaopack.optimization import OptimProblem, SplitOptimProblem
 from eaopack.optimization import Results 
 
 class Portfolio:
@@ -81,14 +82,10 @@ class Portfolio:
                                              tz=timegrid.tz)
         interval_timepoints = interval_timepoints.append(pd.to_datetime([timegrid.end]))
         prices = timegrid.prices_to_grid(prices)
+        ops = []
         mappings = []
         t = 0
-        A = sp.coo_matrix((0,0))
-        b = np.zeros(0)
-        c = np.zeros(0)
-        cType = ''
-        l = np.zeros(0)
-        u = np.zeros(0)
+        len_res = 0
         for i in range(len(interval_timepoints) - 1):
             start_tmp = interval_timepoints[i]
             end_tmp = interval_timepoints[i + 1]
@@ -96,20 +93,20 @@ class Portfolio:
             timegrid_tmp.I = np.array(range(0, timegrid_tmp.T))  # TODO do this in Timegrid constructor
             prices_tmp = timegrid_tmp.prices_to_grid(prices)
             op_tmp = self.setup_optim_problem(prices_tmp, timegrid_tmp, skip_nodes=skip_nodes, fix_time_window=fix_time_window)
-            op_tmp.mapping["time_step"] += t
-            op_tmp.mapping.index += c.shape[0]
+            mapping_tmp = deepcopy(op_tmp.mapping)
+            mapping_tmp["time_step"] += t
+            mapping_tmp.index += len_res
+            mappings.append(mapping_tmp)
+            ops.append(op_tmp)
             # TODO duals
             # TODO mapping["index_assets"], mapping["nodal_restr"]
-            A = sp.block_diag((A, op_tmp.A))
-            b = np.hstack((b, op_tmp.b))
-            c = np.hstack((c, op_tmp.c))
-            cType += op_tmp.cType
-            l = np.hstack((l, op_tmp.l))
-            u = np.hstack((u, op_tmp.u))
-            mappings.append(op_tmp.mapping)
+            len_res += op_tmp.c.shape[0]
             t += timegrid_tmp.T
-        mapping = pd.concat(mappings).drop(["index_assets", "nodal_restr"], axis=1)  # TODO deal with dropped cola
-        op = OptimProblem(A=A, b=b, c=c, cType=cType, l=l, mapping=mapping, u=u)
+        mapping = pd.concat(mappings).drop(["index_assets", "nodal_restr"], axis=1)
+        op = SplitOptimProblem(ops, mapping)
+        self.set_timegrid(timegrid)
+        for a in self.assets:
+            a.set_timegrid(timegrid)
         return op
 
     def setup_optim_problem(self, prices: dict = None, 
