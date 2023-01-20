@@ -73,11 +73,11 @@ class Portfolio:
         op_full.mapping = mapping
         return op_full, res
 
-    def setup_optim_problem_with_intervals(self, prices: dict = None,
-                                           timegrid: Timegrid = None,
-                                           interval_size: str = None,
-                                           skip_nodes: list = [],
-                                           fix_time_window: Dict = None):
+    def setup_split_optim_problem(self, prices: dict = None,
+                                        timegrid: Timegrid = None,
+                                        interval_size: str = None,
+                                        skip_nodes: list = [],
+                                        fix_time_window: Dict = None):
         interval_timepoints = pd.date_range(start=timegrid.start, end=timegrid.end, freq=interval_size,
                                              tz=timegrid.tz)
         interval_timepoints = interval_timepoints.append(pd.to_datetime([timegrid.end]))
