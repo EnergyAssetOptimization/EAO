@@ -45,36 +45,6 @@ class Portfolio:
         """
         self.timegrid = timegrid
 
-    def optimize_intervals(self, prices: dict=None, timegrid: Timegrid=None, interval_size=None, solver="GLPK_MI"):
-        interval_timepoints = pd.date_range(start=timegrid.start, end=timegrid.end, freq=interval_size, tz=timegrid.tz)
-        interval_timepoints = interval_timepoints.append(pd.to_datetime([timegrid.end]))
-        if interval_timepoints[0] != pd.Timestamp(timegrid.start):
-            interval_timepoints = interval_timepoints.insert(0, timegrid.start)
-        prices = timegrid.prices_to_grid(prices)
-        res = Results(0, np.array([]), None)
-        mappings = []
-        t = 0
-        for i in range(len(interval_timepoints)-1):
-            start_tmp = interval_timepoints[i]
-            end_tmp = interval_timepoints[i+1]
-            timegrid_tmp = Timegrid(start_tmp, end_tmp, timegrid.freq, ref_timegrid=timegrid)
-            timegrid_tmp.I = np.array(range(0, timegrid_tmp.T)) # TODO do this in Timegrid constructor
-            prices_tmp = timegrid_tmp.prices_to_grid(prices)
-            op = self.setup_optim_problem(prices_tmp, timegrid_tmp)
-            res_tmp = op.optimize()
-            op.mapping["time_step"] += t
-            op.mapping.index += len(res.x)
-            res.x = np.hstack((res.x, res_tmp.x))
-            res.value += res_tmp.value
-            # TODO duals
-            # TODO mapping["index_assets"], mapping["nodal_restr"]
-            mappings.append(op.mapping)
-            t += timegrid_tmp.T
-        mapping = pd.concat(mappings).drop(["index_assets", "nodal_restr"], axis=1) # TODO deal with dropped cola
-        op_full = self.setup_optim_problem(prices, timegrid)
-        op_full.mapping = mapping
-        return op_full, res
-
     def setup_split_optim_problem(self, prices: dict = None,
                                         timegrid: Timegrid = None,
                                         interval_size: str = None,
@@ -94,19 +64,23 @@ class Portfolio:
             start_tmp = interval_timepoints[i]
             end_tmp = interval_timepoints[i + 1]
             timegrid_tmp = Timegrid(start_tmp, end_tmp, timegrid.freq, ref_timegrid=timegrid)
+            if timegrid_tmp.T == 0: continue
             timegrid_tmp.I = np.array(range(0, timegrid_tmp.T))  # TODO do this in Timegrid constructor
             prices_tmp = timegrid_tmp.prices_to_grid(prices)
             op_tmp = self.setup_optim_problem(prices_tmp, timegrid_tmp, skip_nodes=skip_nodes, fix_time_window=fix_time_window)
             mapping_tmp = deepcopy(op_tmp.mapping)
             mapping_tmp["time_step"] += t
+            if i >0 :
+                mapping_tmp["nodal_restr"] += mappings[-1]["nodal_restr"].max()
+                for asset in self.assets:
+                    shift = mappings[-1][mappings[-1]["asset"]==asset.name]["index_assets"].max() + 1
+                    mapping_tmp.loc[mapping_tmp["asset"] == asset.name, "index_assets"] += shift
             mapping_tmp.index += len_res
             mappings.append(mapping_tmp)
             ops.append(op_tmp)
-            # TODO duals
-            # TODO mapping["index_assets"], mapping["nodal_restr"]
             len_res += op_tmp.c.shape[0]
             t += timegrid_tmp.T
-        mapping = pd.concat(mappings).drop(["index_assets", "nodal_restr"], axis=1)
+        mapping = pd.concat(mappings)
         op = SplitOptimProblem(ops, mapping)
         self.set_timegrid(timegrid)
         for a in self.assets:

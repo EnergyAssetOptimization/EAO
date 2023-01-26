@@ -360,6 +360,12 @@ class SplitOptimProblem(OptimProblem):
             res_tmp = op.optimize()
             res.value += res_tmp.value
             res.x = np.hstack((res.x, res_tmp.x))
+            if res_tmp.duals:
+                if res.duals:
+                    for key in res_tmp.duals:
+                        res.duals[key] = np.hstack((res.duals[key], res_tmp.duals[key]))
+                else:
+                    res.duals = res_tmp.duals
         return res
 
 
