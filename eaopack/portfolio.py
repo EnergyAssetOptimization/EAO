@@ -45,48 +45,6 @@ class Portfolio:
         """
         self.timegrid = timegrid
 
-    def setup_split_optim_problem(self, prices: dict = None,
-                                        timegrid: Timegrid = None,
-                                        interval_size: str = None,
-                                        skip_nodes: list = [],
-                                        fix_time_window: Dict = None):
-        interval_timepoints = pd.date_range(start=timegrid.start, end=timegrid.end, freq=interval_size,
-                                             tz=timegrid.tz)
-        interval_timepoints = interval_timepoints.append(pd.to_datetime([timegrid.end]))
-        if interval_timepoints[0] != pd.Timestamp(timegrid.start):
-            interval_timepoints = interval_timepoints.insert(0, timegrid.start)
-        prices = timegrid.prices_to_grid(prices)
-        ops = []
-        mappings = []
-        t = 0
-        len_res = 0
-        for i in range(len(interval_timepoints) - 1):
-            start_tmp = interval_timepoints[i]
-            end_tmp = interval_timepoints[i + 1]
-            timegrid_tmp = Timegrid(start_tmp, end_tmp, timegrid.freq, ref_timegrid=timegrid)
-            if timegrid_tmp.T == 0: continue
-            timegrid_tmp.I = np.array(range(0, timegrid_tmp.T))  # TODO do this in Timegrid constructor
-            prices_tmp = timegrid_tmp.prices_to_grid(prices)
-            op_tmp = self.setup_optim_problem(prices_tmp, timegrid_tmp, skip_nodes=skip_nodes, fix_time_window=fix_time_window)
-            mapping_tmp = deepcopy(op_tmp.mapping)
-            mapping_tmp["time_step"] += t
-            if i >0 :
-                mapping_tmp["nodal_restr"] += mappings[-1]["nodal_restr"].max()
-                for asset in self.assets:
-                    shift = mappings[-1][mappings[-1]["asset"]==asset.name]["index_assets"].max() + 1
-                    mapping_tmp.loc[mapping_tmp["asset"] == asset.name, "index_assets"] += shift
-            mapping_tmp.index += len_res
-            mappings.append(mapping_tmp)
-            ops.append(op_tmp)
-            len_res += op_tmp.c.shape[0]
-            t += timegrid_tmp.T
-        mapping = pd.concat(mappings)
-        op = SplitOptimProblem(ops, mapping)
-        self.set_timegrid(timegrid)
-        for a in self.assets:
-            a.set_timegrid(timegrid)
-        return op
-
     def setup_optim_problem(self, prices: dict = None, 
                             timegrid:Timegrid = None, 
                             costs_only:bool = False, 
@@ -258,6 +216,65 @@ class Portfolio:
             l[I] = fix_time_window['x'][I]
             u[I] = fix_time_window['x'][I]
         return OptimProblem(c = c, l = l, u = u, A = A, b = b, cType = cType, mapping = mapping)
+
+    def setup_split_optim_problem(self, prices: dict = None,
+                                  timegrid: Timegrid = None,
+                                  interval_size: str = 'd',
+                                  skip_nodes: list = [],
+                                  fix_time_window: Dict = None):
+        """ Set up a split optimization problem for portfolio, i.e. split the timegrid into intervals of size
+            interval_size and create a separate optimization problem for each interval
+
+        Args:
+            prices (dict): Dictionary of price arrays needed by assets in portfolio. Defaults to None
+            timegrid (Timegrid, optional): Discretization grid for portfolio and all assets within.
+                                           Defaults to None, in which case it must have been set previously
+            interval_size (bool): Interval size according to pandas notation ('15min', 'h', 'd', ...). Defaults to 'd'
+            skip_nodes (List): Nodes to be skipped in nodal restrictions (defaults to [])
+            fix_time_window (Dict): Fix results for given indices on time grid to given values. Defaults to None
+                           fix_time_window['I']: Indices on timegrid or alternatively date (all dates before date taken)
+                           fix_time_window['x']: Results.x that results are to be fixed to in time window(full array, all times)
+
+            Returns:
+                SplitOptimProblem: A Split Optimization problem
+        """
+        interval_timepoints = pd.date_range(start=timegrid.start, end=timegrid.end, freq=interval_size,
+                                            tz=timegrid.tz)
+        interval_timepoints = interval_timepoints.append(pd.to_datetime([timegrid.end]))
+        if interval_timepoints[0] != pd.Timestamp(timegrid.start):
+            interval_timepoints = interval_timepoints.insert(0, timegrid.start)
+        prices = timegrid.prices_to_grid(prices)
+        ops = []
+        mappings = []
+        t = 0
+        len_res = 0
+        for i in range(len(interval_timepoints) - 1):
+            start_tmp = interval_timepoints[i]
+            end_tmp = interval_timepoints[i + 1]
+            timegrid_tmp = Timegrid(start_tmp, end_tmp, timegrid.freq, ref_timegrid=timegrid)
+            if timegrid_tmp.T == 0: continue
+            timegrid_tmp.I = np.array(range(0, timegrid_tmp.T))  # TODO do this in Timegrid constructor
+            prices_tmp = timegrid_tmp.prices_to_grid(prices)
+            op_tmp = self.setup_optim_problem(prices_tmp, timegrid_tmp, skip_nodes=skip_nodes,
+                                              fix_time_window=fix_time_window)
+            mapping_tmp = deepcopy(op_tmp.mapping)
+            mapping_tmp["time_step"] += t
+            if i > 0:
+                mapping_tmp["nodal_restr"] += mappings[-1]["nodal_restr"].max()
+                for asset in self.assets:
+                    shift = mappings[-1][mappings[-1]["asset"] == asset.name]["index_assets"].max() + 1
+                    mapping_tmp.loc[mapping_tmp["asset"] == asset.name, "index_assets"] += shift
+            mapping_tmp.index += len_res
+            mappings.append(mapping_tmp)
+            ops.append(op_tmp)
+            len_res += op_tmp.c.shape[0]
+            t += timegrid_tmp.T
+        mapping = pd.concat(mappings)
+        op = SplitOptimProblem(ops, mapping)
+        self.set_timegrid(timegrid)
+        for a in self.assets:
+            a.set_timegrid(timegrid)
+        return op
 
     def create_cost_samples(self, price_samples: List, timegrid: Timegrid = None) -> List:
         """ create costs vectors for LP on basis of price samples

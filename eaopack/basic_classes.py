@@ -165,7 +165,23 @@ class Timegrid:
         d = (1.+wacc)**(1./365.) # convert interest rate to daily
         self.discount_factors =  1./d**(self.Dt*pd.Timedelta(1, self.main_time_unit)/pd.Timedelta(1, 'd')) 
 
-    def prices_to_grid(self, prices):
+    def prices_to_grid(self, prices: dict):
+        """
+        Convert prices into a dataframe with index self.timepoints.
+        If the price points already have (possibly different) timepoints, then the prices at self.timepoints
+        are interpolated.
+
+        Args:
+            prices: This can be either a pandas dataframe with a Datetimeindex where each column corresponds to a price,
+                or a dictionary of prices. In the case of a dict, the items can have the following forms:
+                - array of length self.T. In this case it is assumed that the i-th entry of the array corresponds to the
+                    i-th point in self.timepoints.
+                - dict where the keys are timepoints and the corresponding items depict the prices at the specific
+                    timepoints
+
+        Returns:
+            prices:
+        """
         if not isinstance(prices, pd.DataFrame):
             prices = pd.DataFrame.from_dict(prices)
         if not isinstance(prices.index, pd.DatetimeIndex):

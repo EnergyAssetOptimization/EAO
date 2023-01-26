@@ -344,20 +344,22 @@ class OptimProblem:
 
 class SplitOptimProblem(OptimProblem):
     def __init__(self, ops, mapping):
+        """ Collection of consecutive OptimProblems
+
+            Args:
+                ops: List of OptimProblems
+                mapping (pd.DataFrame): Mapping of all result variables to 'asset', 'node', 'type' ('d' - dispatch and 'i' internal variable) and 'time_step'
+        """
         self.ops = ops
         self.mapping = mapping
         self.c = np.hstack([op.c for op in ops])
 
-    def optimize(self, target='value',
-                 samples=None,
-                 interface: str = 'cvxpy',
-                 solver=None,
-                 make_soft_problem=False,
-                 rel_tol: float = 1e-3,
-                 iterations: int = 5000) -> Results:
+    def optimize(self, *args, **kwargs) -> Results:
+        """ Optimize all OptimProblems in self.ops and piece the results together in one Result
+        """
         res = Results(0, np.array([]), None)
         for op in self.ops:
-            res_tmp = op.optimize()
+            res_tmp = op.optimize(*args, **kwargs)
             res.value += res_tmp.value
             res.x = np.hstack((res.x, res_tmp.x))
             if res_tmp.duals:
