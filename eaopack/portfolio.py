@@ -253,7 +253,8 @@ class Portfolio:
             end_tmp = interval_timepoints[i + 1]
             timegrid_tmp = Timegrid(start_tmp, end_tmp, timegrid.freq, ref_timegrid=timegrid)
             if timegrid_tmp.T == 0: continue
-            timegrid_tmp.I = np.array(range(0, timegrid_tmp.T))  # TODO do this in Timegrid constructor
+            timegrid_tmp.I = np.array(range(0, timegrid_tmp.T))
+            timegrid_tmp.Dt = np.cumsum(timegrid_tmp.dt)
             prices_tmp = timegrid_tmp.prices_to_grid(prices)
             op_tmp = self.setup_optim_problem(prices_tmp, timegrid_tmp, skip_nodes=skip_nodes,
                                               fix_time_window=fix_time_window)
