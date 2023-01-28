@@ -129,7 +129,7 @@ class Portfolio:
         if 'disp_factor' not in mapping.columns:
             mapping['disp_factor'] = 1.
         mapping['disp_factor'].fillna(1., inplace = True)
-        mapping['nodal_restr'] = None
+        # mapping['nodal_restr'] = None
 
         def create_nodal_restr(nodes, map_nodes, map_types, map_idx, map_dispf, map_times, timegrid_I, skip_nodes, n_vars):
             """ Specific function creating nodal restrictions """
@@ -138,6 +138,7 @@ class Portfolio:
             cols = np.zeros(0)
             rows = np.zeros(0)
             vals = np.zeros(0)
+            nodal_restr_map_expl = []
             for n in nodes:
                 if (skip_nodes is None) or (not n in skip_nodes):
                     Inode = (map_types=='d') & (map_nodes==n)
@@ -155,8 +156,9 @@ class Portfolio:
                             Itemp[Itemp] = I
                             map_nodal_restr[Itemp] = n_nodal_restr
                             n_nodal_restr +=1
+                            nodal_restr_map_expl.append((t, n))
                             # A = sp.vstack((A, myA))
-            return cols, rows, vals, map_nodal_restr, n_nodal_restr
+            return cols, rows, vals, nodal_restr_map_expl, n_nodal_restr
 
         # # easily readable version -  loop
         # perf = time.perf_counter()
@@ -191,7 +193,7 @@ class Portfolio:
                                                                                 map_times, self.timegrid.I,my_skip_nodes, 
                                                                                 n_vars)
         A = sp.vstack((A, sp.csr_matrix((vals, (rows.astype(np.int64), cols.astype(np.int64))), shape = (n_nodal_restr, n_vars))))
-        mapping['nodal_restr'] = map_nodal_restr.astype(np.int64)
+        # mapping['nodal_restr'] = map_nodal_restr.astype(np.int64)
         ### end cryptic version
 
         b = np.hstack((b,np.zeros(n_nodal_restr))) # must add to zero
@@ -215,7 +217,7 @@ class Portfolio:
             I = mapping['time_step'].isin(timegrid.I[fix_time_window['I']])
             l[I] = fix_time_window['x'][I]
             u[I] = fix_time_window['x'][I]
-        return OptimProblem(c = c, l = l, u = u, A = A, b = b, cType = cType, mapping = mapping)
+        return OptimProblem(c = c, l = l, u = u, A = A, b = b, cType = cType, mapping = mapping, map_nodal_restr = map_nodal_restr)
 
     def setup_split_optim_problem(self, prices: dict = None,
                                   timegrid: Timegrid = None,
@@ -253,20 +255,29 @@ class Portfolio:
             end_tmp = interval_timepoints[i + 1]
             timegrid_tmp = Timegrid(start_tmp, end_tmp, timegrid.freq, ref_timegrid=timegrid)
             if timegrid_tmp.T == 0: continue
-            timegrid_tmp.I = np.array(range(0, timegrid_tmp.T))
-            timegrid_tmp.Dt = np.cumsum(timegrid_tmp.dt)
+            tmp_I = timegrid_tmp.I # the original time steps
+            timegrid_tmp.I = np.array(range(0, timegrid_tmp.T))  
+            # timegrid_tmp.Dt = np.cumsum(timegrid_tmp.dt)           ### use the Dt from the reference --> for discounting
             prices_tmp = timegrid_tmp.prices_to_grid(prices)
             op_tmp = self.setup_optim_problem(prices_tmp, timegrid_tmp, skip_nodes=skip_nodes,
                                               fix_time_window=fix_time_window)
             mapping_tmp = deepcopy(op_tmp.mapping)
-            mapping_tmp["time_step"] += t
+            # mapping_tmp["time_step"] += t
+            # write original time step IDs to mapping
+            orig_I = [tmp_I[a] for a in mapping_tmp["time_step"]]
+            mapping_tmp["time_step"] = orig_I.copy()
             if i > 0:
-                mapping_tmp["nodal_restr"] += mappings[-1]["nodal_restr"].max()
+                # mapping_tmp["nodal_restr"] += mappings[-1]["nodal_restr"].max()
                 for asset in self.assets:
                     shift = mappings[-1][mappings[-1]["asset"] == asset.name]["index_assets"].max() + 1
                     mapping_tmp.loc[mapping_tmp["asset"] == asset.name, "index_assets"] += shift
             mapping_tmp.index += len_res
             mappings.append(mapping_tmp)
+            # adjust numbering for time steps in map_nodal_restr
+            tmp_nod_rest = []
+            for mynr in op_tmp.map_nodal_restr:
+                tmp_nod_rest.append((tmp_I[mynr[0]], mynr[1]))
+            op_tmp.map_nodal_restr = tmp_nod_rest
             ops.append(op_tmp)
             len_res += op_tmp.c.shape[0]
             t += timegrid_tmp.T

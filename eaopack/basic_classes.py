@@ -51,7 +51,7 @@ class Timegrid:
             freq (str, optional): Frequency for discretization according to pandas notation ('15min', 'h', 'd', ...). Defaults to 'h'
             main_time_unit (str, optional): All times in the optimization problem are measured in the main_time_unit. Pandas notation. Defaults to 'h'
             timezone: Timezone for times. String according to pandas tz definitions (e.g. CET). Defaults to None (naive timezone)
-
+            ref_timegrid (Timegrid, optional): reference TG in case this timegrid is a subset of a suber grid
         Returns:
             timepoints (daterange): specific points in time of mesh
             T (float): number of time steps
