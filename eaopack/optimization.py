@@ -373,7 +373,11 @@ class SplitOptimProblem(OptimProblem):
             if res_tmp.duals:
                 if res.duals:
                     for key in res_tmp.duals:
-                        res.duals[key] = np.hstack((res.duals[key], res_tmp.duals[key]))
+                        if res.duals[key] is not None:
+                            if res_tmp.duals[key] is None:
+                                res.duals[key] = None
+                            else:
+                                res.duals[key] = np.hstack((res.duals[key], res_tmp.duals[key]))
                 else:
                     res.duals = res_tmp.duals
         return res
