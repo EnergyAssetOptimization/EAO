@@ -54,4 +54,12 @@ Robust optimization
    samples/robust_optimization/robust_optimization_szenarios
 
 
+Split optimization
+------------------
+
+.. toctree:: 
+
+   samples/split_optimization/split_optimization
+
+
 
