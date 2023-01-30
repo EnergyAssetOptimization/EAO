@@ -130,6 +130,39 @@ class OptimizationTests(unittest.TestCase):
         resC = opC.optimize()                           
         self.assertAlmostEqual(sum(abs((resA.x[I] - resC.x[I]))), 0., 5)  
 
+class SplitOptimizationTests(unittest.TestCase):
+    def test_same_same(self):
+        node1 = eao.assets.Node('node_1')
+        node2 = eao.assets.Node('node_2')
+        Start = dt.date(2021,2,10) 
+        End   = dt.date(2021,3,12)
+        timegrid = eao.assets.Timegrid(Start, End, freq = 'h')
+        a1 = eao.assets.SimpleContract(name = 'SC_1', price = 'rand_price_1', nodes = node1 ,
+                        min_cap= -20., max_cap=20., start = dt.date(2021,2,10), end = dt.date(2021,3,20), wacc=0.2)
+        a2 = eao.assets.SimpleContract(name = 'SC_2', price = 'rand_price_2', nodes = node1 ,
+                        min_cap= -5., max_cap=10., wacc=0.)
+        a3 = eao.assets.SimpleContract(name = 'SC_3', price = 'rand_price_2', nodes = node2 ,
+                        min_cap= -1., max_cap=10., extra_costs= 1.)
+        a5 = eao.assets.Storage('storage', nodes = node1, \
+             start=dt.date(2021,1,1), end=dt.date(2021,2,1),size=10, \
+             cap_in=1.0/24.0, cap_out=1.0/24.0, start_level=5, end_level=5,
+             block_size='d')
+        pricesA ={'rand_price_1': np.sin(np.linspace(0,10,timegrid.T)),
+                'rand_price_2': np.cos(np.linspace(0,10,timegrid.T))}
+
+        portf = eao.portfolio.Portfolio([a1, a2, a3, a5])
+        ### original
+        opA    = portf.setup_optim_problem(pricesA, timegrid)
+        resA = opA.optimize()
+        outA = eao.io.extract_output(portf, opA, resA)
+        ### split_optim
+        opB    = portf.setup_split_optim_problem(pricesA, timegrid, interval_size='d')
+        resB   = opB.optimize()
+        outB = eao.io.extract_output(portf, opB, resB)
+        # all results must be equal        
+        self.assertAlmostEqual(resA.value, resB.value, 4)
+        self.assertTrue(all(abs(outA['dispatch']-outB['dispatch']).sum()<1e-5))
+        self.assertTrue(all(abs(outA['prices']-outB['prices']).sum()<1e-3))
 ###########################################################################################################
 ###########################################################################################################
 ###########################################################################################################
