@@ -140,6 +140,31 @@ class PortfolioTests(unittest.TestCase):
         eao.io.output_to_file(output=outp, file_name= 'test.xlsx')
 
 
+    def test_linked_asset(self):
+        """ Unit test. Linked asset with asset 1 having higher costs. Runs before asset 2
+        """
+        node_power = eao.assets.Node('node_power')
+        node_heat = eao.assets.Node('node_heat')
+        timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,2,1), freq = 'h')
+        demand = eao.assets.SimpleContract(name = 'demand', nodes = node_power ,     min_cap= -10., max_cap=-10.)
+        a1 =     eao.assets.CHPAsset(name='CHP1', extra_costs = 10, nodes = (node_power, node_heat), min_cap=5., max_cap= 5.)
+        a2 =     eao.assets.CHPAsset(name='CHP2', extra_costs = 5, nodes = (node_power, node_heat), min_cap=2., max_cap=15.)
+        p = eao.portfolio.Portfolio([a1, a2]) # collect the two assets
+        linked = eao.portfolio.LinkedAsset(p, nodes = [node_power, node_heat], 
+                                            asset1_variable=[a2, 'disp', node_power], 
+                                            asset2_variable=[a1, 'bool_on', None],
+                                            time_back=0,
+                                            name = 'extra_CHP')
+        check_op = linked.setup_optim_problem(prices = [], timegrid=timegrid)
+        portf = eao.portfolio.Portfolio([linked, demand])
+        op = portf.setup_optim_problem(prices = [], timegrid=timegrid)
+        res = op.optimize()
+        out = eao.io.extract_output(portf, op, res)
+        # if asset a1 must run first, before a2 can gererate, costs must be 5*10 + 5*5 = 75
+        self.assertAlmostEqual(np.abs(out['DCF']['extra_CHP'].values + 75.).sum(),0, 4)
+
+
+
     def test_various_vars_in_mapping(self):
         """ testing more efficient approach where more than one row in mapping
         can exist per variable """
@@ -209,6 +234,8 @@ class PortfolioTests(unittest.TestCase):
         self.assertAlmostEqual(abs(disp[0:9]).sum(), 0., 5)
         self.assertAlmostEqual(abs(disp[19:]).sum(), 0., 5)
         self.assertAlmostEqual(abs(disp[9:19]-prices['CAP'][9:19]).sum(), 0., 5)
+
+
 
 ###########################################################################################################
 

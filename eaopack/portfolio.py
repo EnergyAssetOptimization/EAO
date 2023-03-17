@@ -406,7 +406,7 @@ class LinkedAsset(StructuredAsset):
     This can be used to ensure that one asset turns on only after another asset has been running for at
     least a set amount of time.
     """
-    def __init__(self, portfolio,
+    def __init__(self, portfolio:Portfolio,
                  asset1_variable: Tuple[Union[Asset, str], str, Union[Node, str]],
                  asset2_variable: Tuple[Union[Asset, str], str, Union[Node, str]],
                  asset2_time_already_running: Union[str, float] = "time_already_running",
