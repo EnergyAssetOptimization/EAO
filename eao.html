@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EAO package &mdash; EAO  documentation</title>
@@ -29,11 +29,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html" class="icon icon-home"> EAO
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            EAO
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -68,7 +72,7 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
       <li class="breadcrumb-item active">EAO package</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/eao.rst.txt" rel="nofollow"> View page source</a>
@@ -79,31 +83,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  
-<style>
-/* CSS overrides for sphinx_rtd_theme */
-
-/* 24px margin */
-.nbinput.nblast.container,
-.nboutput.nblast.container {
-    margin-bottom: 19px;  /* padding has already 5px */
-}
-
-/* ... except between code cells! */
-.nblast.container + .nbinput.container {
-    margin-top: -19px;
-}
-
-.admonition > p:before {
-    margin-right: 4px;  /* make room for the exclamation icon */
-}
-
-/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
-.math {
-    text-align: unset;
-}
-</style>
-<section id="eao-package">
+  <section id="eao-package">
 <h1>EAO package<a class="headerlink" href="#eao-package" title="Permalink to this heading"></a></h1>
 <section id="module-eaopack.assets">
 <span id="assets"></span><h2>Assets<a class="headerlink" href="#module-eaopack.assets" title="Permalink to this heading"></a></h2>
@@ -115,7 +95,7 @@
 In particular ‘setup_optim_problem’ makes a particular asset such as storage or contract</p>
 <p>The base class to define an asset.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – Name of the asset. Must be unique in a portfolio</p></li>
 <li><p><strong>nodes</strong> (<em>Union</em><em>[</em><em>str</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – Nodes, in which the asset has a dispatch. Defaults to “default node”</p></li>
@@ -135,7 +115,7 @@ Defaults to None, only relevant if freq is not none</p></li>
 <span class="sig-name descname"><span class="pre">convert_to_timegrid_freq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attribute_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">old_freq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><span class="pre">Timegrid</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">round</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#eaopack.assets.Asset.convert_to_timegrid_freq" title="Permalink to this definition"></a></dt>
 <dd><p>Convert time_value from the old_freq to the timegrid.freq</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>time_value</strong> (<em>float</em>) – The time value in timegrid.main_time_unit</p></li>
 <li><p><strong>attribute_name</strong> (<em>str</em>) – The name of the attribute to be converted (only relevant for more specific warning)</p></li>
@@ -145,10 +125,10 @@ the asset’s own timegrid self.timegrid is taken instead. Defaults to None.</p>
 <li><p><strong>round</strong> – If true the result is rounded to the next highest integer.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>time_value converted to timegrid.freq</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>converted_time_value</p>
 </dd>
 </dl>
@@ -159,16 +139,16 @@ the asset’s own timegrid self.timegrid is taken instead. Defaults to None.</p>
 <span class="sig-name descname"><span class="pre">dcf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optim_problem</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">OptimProblem</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">results</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#eaopack.optimization.Results" title="eaopack.optimization.Results"><span class="pre">Results</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">array</span></span></span><a class="headerlink" href="#eaopack.assets.Asset.dcf" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate discounted cash flow for the asset given the optimization results</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>optim_problem</strong> (<a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><em>OptimProblem</em></a>) – optimization problem created by this asset</p></li>
 <li><p><strong>results</strong> (<a class="reference internal" href="#eaopack.optimization.Results" title="eaopack.optimization.Results"><em>Results</em></a>) – Results given by optimizer</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>array with DCF per time step as per timegrid of asset</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>np.array</p>
 </dd>
 </dl>
@@ -192,7 +172,7 @@ the asset’s own timegrid self.timegrid is taken instead. Defaults to None.</p>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">setup_optim_problem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><span class="pre">Timegrid</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">costs_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">OptimProblem</span></a></span></span><a class="headerlink" href="#eaopack.assets.Asset.setup_optim_problem" title="Permalink to this definition"></a></dt>
 <dd><p>set up optimization problem for the asset</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>prices</strong> (<em>dict</em>) – dictionary of price np.arrays. dict must contain a key that corresponds
 to str “price” in asset (if prices are required by the asset)</p></li>
@@ -200,10 +180,10 @@ to str “price” in asset (if prices are required by the asset)</p></li>
 <li><p><strong>costs_only</strong> (<em>bool</em>) – Only create costs vector (speed up e.g. for sampling prices). Defaults to False</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Optimization problem that may be used by optimizer</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem">OptimProblem</a></p>
 </dd>
 </dl>
@@ -225,7 +205,7 @@ to str “price” in asset (if prices are required by the asset)</p></li>
 </dd>
 </dl>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – Unique name of the asset                                              (asset parameter)</p></li>
 <li><p><strong>nodes</strong> (<a class="reference internal" href="#eaopack.basic_classes.Node" title="eaopack.basic_classes.Node"><em>Node</em></a>) – One node each for generated power and heat                          (asset parameter)
@@ -299,7 +279,7 @@ consumption_if_on (float, dict, str): defaults to 0</p></li>
 <span class="sig-name descname"><span class="pre">setup_optim_problem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><span class="pre">Timegrid</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">costs_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">OptimProblem</span></a></span></span><a class="headerlink" href="#eaopack.assets.CHPAsset.setup_optim_problem" title="Permalink to this definition"></a></dt>
 <dd><p>Set up optimization problem for asset</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>prices</strong> (<em>dict</em>) – Dictionary of price arrays needed by assets in portfolio</p></li>
 <li><p><strong>timegrid</strong> (<a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><em>Timegrid</em></a><em>, </em><em>optional</em>) – Discretization grid for asset. Defaults to None,
@@ -307,10 +287,10 @@ in which case it must have been set previously</p></li>
 <li><p><strong>costs_only</strong> (<em>bool</em>) – Only create costs vector (speed up e.g. for sampling prices). Defaults to False</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Optimization problem to be used by optimizer</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem">OptimProblem</a></p>
 </dd>
 </dl>
@@ -333,7 +313,7 @@ Examples
 </dd>
 </dl>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – Unique name of the asset                                              (asset parameter)</p></li>
 <li><p><strong>node</strong> (<a class="reference internal" href="#eaopack.basic_classes.Node" title="eaopack.basic_classes.Node"><em>Node</em></a>) – Node, the constract is located in                                    (asset parameter)</p></li>
@@ -383,7 +363,7 @@ dict[‘value’] = array</p>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">setup_optim_problem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><span class="pre">Timegrid</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">costs_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">OptimProblem</span></a></span></span><a class="headerlink" href="#eaopack.assets.Contract.setup_optim_problem" title="Permalink to this definition"></a></dt>
 <dd><p>Set up optimization problem for asset</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>prices</strong> (<em>dict</em>) – Dictionary of price arrays needed by assets in portfolio</p></li>
 <li><p><strong>timegrid</strong> (<a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><em>Timegrid</em></a><em>, </em><em>optional</em>) – Discretization grid for asset. Defaults to None,
@@ -391,10 +371,10 @@ in which case it must have been set previously</p></li>
 <li><p><strong>costs_only</strong> (<em>bool</em>) – Only create costs vector (speed up e.g. for sampling prices). Defaults to False</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Optimization problem to be used by optimizer</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem">OptimProblem</a></p>
 </dd>
 </dl>
@@ -458,7 +438,7 @@ dict[‘value’] = np.array</p>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">setup_optim_problem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><span class="pre">Timegrid</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">costs_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">OptimProblem</span></a></span></span><a class="headerlink" href="#eaopack.assets.ExtendedTransport.setup_optim_problem" title="Permalink to this definition"></a></dt>
 <dd><p>Set up optimization problem for asset</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>prices</strong> (<em>dict</em>) – Dictionary of price arrays needed by assets in portfolio</p></li>
 <li><p><strong>timegrid</strong> (<a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><em>Timegrid</em></a><em>, </em><em>optional</em>) – Discretization grid for asset. Defaults to None,
@@ -466,10 +446,10 @@ in which case it must have been set previously</p></li>
 <li><p><strong>costs_only</strong> (<em>bool</em>) – Only create costs vector (speed up e.g. for sampling prices). Defaults to False</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Optimization problem to be used by optimizer</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem">OptimProblem</a></p>
 </dd>
 </dl>
@@ -496,7 +476,7 @@ Examples
 </dd>
 </dl>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – Unique name of the asset                                              (asset parameter)</p></li>
 <li><p><strong>start</strong> (<em>dt.datetime</em>) – start of asset being active. defaults to none (-&gt; timegrid start relevant)</p></li>
@@ -549,7 +529,7 @@ There is only one dispatch variable, factor[i]*var is the dispatch per commodity
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">setup_optim_problem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><span class="pre">Timegrid</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">costs_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">OptimProblem</span></a></span></span><a class="headerlink" href="#eaopack.assets.MultiCommodityContract.setup_optim_problem" title="Permalink to this definition"></a></dt>
 <dd><p>Set up optimization problem for asset</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>prices</strong> (<em>dict</em>) – Dictionary of price arrays needed by assets in portfolio</p></li>
 <li><p><strong>timegrid</strong> (<a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><em>Timegrid</em></a><em>, </em><em>optional</em>) – Discretization grid for asset. Defaults to None,
@@ -557,10 +537,10 @@ in which case it must have been set previously</p></li>
 <li><p><strong>costs_only</strong> (<em>bool</em>) – Only create costs vector (speed up e.g. for sampling prices). Defaults to False</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Optimization problem to be used by optimizer</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem">OptimProblem</a></p>
 </dd>
 </dl>
@@ -579,7 +559,7 @@ optimally choosing the size of the asset</p>
 </dd>
 </dl>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – Name of the asset. Must be unique in a portfolio</p></li>
 <li><p><strong>nodes</strong> (<em>Union</em><em>[</em><em>str</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – Nodes, in which the asset has a dispatch</p></li>
@@ -602,7 +582,7 @@ Defaults to 0.</p></li>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">setup_optim_problem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><span class="pre">Timegrid</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">costs_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">OptimProblem</span></a></span></span><a class="headerlink" href="#eaopack.assets.ScaledAsset.setup_optim_problem" title="Permalink to this definition"></a></dt>
 <dd><p>Set up optimization problem for asset</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>prices</strong> (<em>dict</em>) – Dictionary of price arrays needed by assets in portfolio</p></li>
 <li><p><strong>timegrid</strong> (<a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><em>Timegrid</em></a><em>, </em><em>optional</em>) – Discretization grid for asset. Defaults to None,
@@ -610,10 +590,10 @@ in which case it must have been set previously</p></li>
 <li><p><strong>costs_only</strong> (<em>bool</em>) – Only create costs vector (speed up e.g. for sampling prices). Defaults to False</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Optimization problem to be used by optimizer</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem">OptimProblem</a></p>
 </dd>
 </dl>
@@ -631,7 +611,7 @@ in which case it must have been set previously</p></li>
 </dd>
 </dl>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – Unique name of the asset                                              (asset parameter)</p></li>
 <li><p><strong>node</strong> (<a class="reference internal" href="#eaopack.basic_classes.Node" title="eaopack.basic_classes.Node"><em>Node</em></a>) – Node, the constract is located in                                    (asset parameter)</p></li>
@@ -683,7 +663,7 @@ dict[‘value’] = array</p>
 <p>str:   refers to column in “prices” data that provides time series to set up OptimProblem (as for “price” below)</p>
 </div></blockquote>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>prices</strong> (<em>dict</em>) – Dictionary of price arrays needed by assets in portfolio</p></li>
 <li><p><strong>default_value</strong> (<em>float</em>) – The value that is used if any of the entries of the resulting vector are not specified</p></li>
@@ -698,7 +678,7 @@ dict[‘value’] = array</p>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">setup_optim_problem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><span class="pre">Timegrid</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">costs_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">OptimProblem</span></a></span></span><a class="headerlink" href="#eaopack.assets.SimpleContract.setup_optim_problem" title="Permalink to this definition"></a></dt>
 <dd><p>Set up optimization problem for asset</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>prices</strong> (<em>dict</em>) – Dictionary of price arrays needed by assets in portfolio</p></li>
 <li><p><strong>timegrid</strong> (<a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><em>Timegrid</em></a><em>, </em><em>optional</em>) – Discretization grid for asset. Defaults to None,
@@ -706,10 +686,10 @@ in which case it must have been set previously</p></li>
 <li><p><strong>costs_only</strong> (<em>bool</em>) – Only create costs vector (speed up e.g. for sampling prices). Defaults to False</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Optimization problem to be used by optimizer</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem">OptimProblem</a></p>
 </dd>
 </dl>
@@ -731,7 +711,7 @@ in which case it must have been set previously</p></li>
 </dd>
 </dl>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – Unique name of the asset (asset parameter)</p></li>
 <li><p><strong>node</strong> (<a class="reference internal" href="#eaopack.basic_classes.Node" title="eaopack.basic_classes.Node"><em>Node</em></a>) – Node, the storage is located in (asset parameter)
@@ -767,7 +747,7 @@ Using pandas type frequency strings (e.g. ‘d’ to have a block each day)</p><
 <span class="sig-name descname"><span class="pre">setup_optim_problem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><span class="pre">Timegrid</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">costs_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">OptimProblem</span></a></span></span><a class="headerlink" href="#eaopack.assets.Storage.setup_optim_problem" title="Permalink to this definition"></a></dt>
 <dd><p>Set up optimization problem for asset</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>prices</strong> (<em>dict</em>) – Dictionary of price arrays needed by assets in portfolio</p></li>
 <li><p><strong>timegrid</strong> (<a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><em>Timegrid</em></a><em>, </em><em>optional</em>) – Discretization grid for asset. Defaults to None,
@@ -775,10 +755,10 @@ in which case it must have been set previously</p></li>
 <li><p><strong>costs_only</strong> (<em>bool</em>) – Only create costs vector (speed up e.g. for sampling prices). Defaults to False</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Optimization problem to be used by optimizer</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem">OptimProblem</a></p>
 </dd>
 </dl>
@@ -793,7 +773,7 @@ in which case it must have been set previously</p></li>
 <p>Contract Class</p>
 <p>Transport: Link two nodes, transporting the commodity at given efficiency and costs</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – Unique name of the asset                                              (asset parameter)</p></li>
 <li><p><strong>nodes</strong> (<em>list of nodes</em>) – 2 nodes, the transport links                               (asset parameter)</p></li>
@@ -820,7 +800,7 @@ Defaults to None, only relevant if freq is not none</p></li>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">setup_optim_problem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><span class="pre">Timegrid</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">costs_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">OptimProblem</span></a></span></span><a class="headerlink" href="#eaopack.assets.Transport.setup_optim_problem" title="Permalink to this definition"></a></dt>
 <dd><p>Set up optimization problem for asset</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>prices</strong> (<em>dict</em>) – Dictionary of price arrays needed by assets in portfolio</p></li>
 <li><p><strong>timegrid</strong> (<a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><em>Timegrid</em></a><em>, </em><em>optional</em>) – Discretization grid for asset. Defaults to None,
@@ -828,10 +808,10 @@ in which case it must have been set previously</p></li>
 <li><p><strong>costs_only</strong> (<em>bool</em>) – Only create costs vector (speed up e.g. for sampling prices). Defaults to False</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Optimization problem to be used by optimizer</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem">OptimProblem</a></p>
 </dd>
 </dl>
@@ -848,7 +828,7 @@ in which case it must have been set previously</p></li>
 :param old_freq: pandas frequency string, e.g. ‘d’, ‘h’, ‘min’, ‘15min’, ‘1d1h’
 :param new_freq: pandas frequency string, e.g. ‘d’, ‘h’, ‘min’, ‘15min’, ‘1d1h’</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>the time value converted from old_freq to new_freq</p>
 </dd>
 </dl>
@@ -865,7 +845,7 @@ in which case it must have been set previously</p></li>
 <span id="portfolio"></span><h2>Portfolio<a class="headerlink" href="#module-eaopack.portfolio" title="Permalink to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="eaopack.portfolio.LinkedAsset">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LinkedAsset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">portfolio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">asset1_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.assets.Asset" title="eaopack.assets.Asset"><span class="pre">Asset</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.basic_classes.Node" title="eaopack.basic_classes.Node"><span class="pre">Node</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">asset2_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.assets.Asset" title="eaopack.assets.Asset"><span class="pre">Asset</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.basic_classes.Node" title="eaopack.basic_classes.Node"><span class="pre">Node</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">asset2_time_already_running</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'time_already_running'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_back</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_forward</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default_name_linkedAsset'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.portfolio.LinkedAsset" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LinkedAsset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">portfolio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#eaopack.portfolio.Portfolio" title="eaopack.portfolio.Portfolio"><span class="pre">Portfolio</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">asset1_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.assets.Asset" title="eaopack.assets.Asset"><span class="pre">Asset</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.basic_classes.Node" title="eaopack.basic_classes.Node"><span class="pre">Node</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">asset2_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.assets.Asset" title="eaopack.assets.Asset"><span class="pre">Asset</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.basic_classes.Node" title="eaopack.basic_classes.Node"><span class="pre">Node</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">asset2_time_already_running</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'time_already_running'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_back</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_forward</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default_name_linkedAsset'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.portfolio.LinkedAsset" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#eaopack.portfolio.StructuredAsset" title="eaopack.portfolio.StructuredAsset"><code class="xref py py-class docutils literal notranslate"><span class="pre">StructuredAsset</span></code></a></p>
 <p>Linked asset that wraps a portfolio in one asset and poses additional constraints on variables.
 This can be used to ensure that one asset turns on only after another asset has been running for at
@@ -879,7 +859,7 @@ u1_t stands for the upper bound for variable v1_t as specified in asset1.</p>
 For example, it can be ensured that asset1 only turns “on” or has positive dispatch once asset2 has
 been running for a minimum amount of time.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>portf</strong> (<a class="reference internal" href="#eaopack.portfolio.Portfolio" title="eaopack.portfolio.Portfolio"><em>Portfolio</em></a>) – Portfolio to be wrapped</p></li>
 <li><p><strong>nodes</strong> (<em>nodes as in std. asset</em>) – where to connect the asset to the outside.
@@ -907,7 +887,7 @@ This defaults to “time_already_running”</p></li>
 <span class="sig-name descname"><span class="pre">setup_optim_problem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><span class="pre">Timegrid</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">costs_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">OptimProblem</span></a></span></span><a class="headerlink" href="#eaopack.portfolio.LinkedAsset.setup_optim_problem" title="Permalink to this definition"></a></dt>
 <dd><p>set up optimization problem for the asset</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>prices</strong> (<em>dict</em>) – dictionary of price np.arrays. dict must contain a key that corresponds
 to str “price” in asset (if prices are required by the asset)</p></li>
@@ -915,10 +895,10 @@ to str “price” in asset (if prices are required by the asset)</p></li>
 <li><p><strong>costs_only</strong> (<em>bool</em>) – Only create costs vector (speed up e.g. for sampling prices). Defaults to False</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Optimization problem that may be used by optimizer</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem">OptimProblem</a></p>
 </dd>
 </dl>
@@ -939,7 +919,7 @@ and optimizing them jointly. In terms of setting up the problem, the portfolio
 collects the assets and imposes the restriction of forcing the flows of a commodity
 in each node to be zero in each time step.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>assets</strong> (<em>List</em><em>[</em><a class="reference internal" href="#eaopack.assets.Asset" title="eaopack.assets.Asset"><em>Asset</em></a><em>]</em>) – Collection of the assets. The assets are assigned to nodes, which,
 together with ‘Transport’ assets define the network of the portfolio.</p>
 </dd>
@@ -955,7 +935,7 @@ together with ‘Transport’ assets define the network of the portfolio.</p>
 <div><p>Defaults to None, in which case it must have been set previously</p>
 </div></blockquote>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>list of costs vectors for use in OptimProblem (e.g. for robust optimization)</p>
 </dd>
 </dl>
@@ -966,13 +946,13 @@ together with ‘Transport’ assets define the network of the portfolio.</p>
 <span class="sig-name descname"><span class="pre">get_asset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">asset_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#eaopack.assets.Asset" title="eaopack.assets.Asset"><span class="pre">Asset</span></a></span></span><a class="headerlink" href="#eaopack.portfolio.Portfolio.get_asset" title="Permalink to this definition"></a></dt>
 <dd><p>Return the asset with name asset_name or None if no asset with this name exists in the portfolio.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>asset_name</strong> (<em>str</em>) – The name of the asset</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The asset with name asset_name</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>asset (<a class="reference internal" href="#eaopack.assets.Asset" title="eaopack.assets.Asset">Asset</a>)</p>
 </dd>
 </dl>
@@ -983,13 +963,13 @@ together with ‘Transport’ assets define the network of the portfolio.</p>
 <span class="sig-name descname"><span class="pre">get_node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#eaopack.basic_classes.Node" title="eaopack.basic_classes.Node"><span class="pre">Node</span></a></span></span><a class="headerlink" href="#eaopack.portfolio.Portfolio.get_node" title="Permalink to this definition"></a></dt>
 <dd><p>Return the node with name node_name or None if no nodes with this name exists in the portfolio.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>node_name</strong> (<em>str</em>) – The name of the node</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The node with name node_name</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>node (<a class="reference internal" href="#eaopack.basic_classes.Node" title="eaopack.basic_classes.Node">Node</a>)</p>
 </dd>
 </dl>
@@ -1008,7 +988,7 @@ together with ‘Transport’ assets define the network of the portfolio.</p>
 <span class="sig-name descname"><span class="pre">setup_optim_problem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><span class="pre">Timegrid</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">costs_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_nodes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fix_time_window</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">OptimProblem</span></a></span></span><a class="headerlink" href="#eaopack.portfolio.Portfolio.setup_optim_problem" title="Permalink to this definition"></a></dt>
 <dd><p>Set up optimization problem for portfolio</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>prices</strong> (<em>dict</em>) – Dictionary of price arrays needed by assets in portfolio. Defaults to None</p></li>
 <li><p><strong>timegrid</strong> (<a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><em>Timegrid</em></a><em>, </em><em>optional</em>) – Discretization grid for portfolio and all assets within.
@@ -1020,10 +1000,10 @@ fix_time_window[‘I’]: Indices on timegrid or alternatively date (all dates b
 fix_time_window[‘x’]: Results.x that results are to be fixed to in time window(full array, all times)</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Optimization problem to be used by optimizer</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem">OptimProblem</a></p>
 </dd>
 </dl>
@@ -1037,7 +1017,7 @@ fix_time_window[‘x’]: Results.x that results are to be fixed to in time wind
 </dd>
 </dl>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>prices</strong> (<em>dict</em>) – Dictionary of price arrays needed by assets in portfolio. Defaults to None</p></li>
 <li><p><strong>timegrid</strong> (<a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><em>Timegrid</em></a><em>, </em><em>optional</em>) – Discretization grid for portfolio and all assets within.
@@ -1063,7 +1043,7 @@ fix_time_window[‘x’]: Results.x that results are to be fixed to in time wind
 Example: hydro storage with inflow consisting of several linked storage levels</p>
 <p>Structured asset that wraps a portfolio</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>portf</strong> (<a class="reference internal" href="#eaopack.portfolio.Portfolio" title="eaopack.portfolio.Portfolio"><em>Portfolio</em></a>) – Portfolio to be wrapped</p></li>
 <li><p><strong>nodes</strong> (<em>nodes as in std. asset</em>) – where to connect the asset to the outside.
@@ -1076,7 +1056,7 @@ Must correspond to (a) node(s) of the internal structure</p></li>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">setup_optim_problem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><span class="pre">Timegrid</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">costs_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">OptimProblem</span></a></span></span><a class="headerlink" href="#eaopack.portfolio.StructuredAsset.setup_optim_problem" title="Permalink to this definition"></a></dt>
 <dd><p>Set up optimization problem for asset</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>prices</strong> (<em>dict</em>) – Dictionary of price arrays needed by assets in portfolio</p></li>
 <li><p><strong>timegrid</strong> (<a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><em>Timegrid</em></a><em>, </em><em>optional</em>) – Discretization grid for asset. Defaults to None,
@@ -1084,10 +1064,10 @@ in which case it must have been set previously</p></li>
 <li><p><strong>costs_only</strong> (<em>bool</em>) – Only create costs vector (speed up e.g. for sampling prices). Defaults to False</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Optimization problem to be used by optimizer</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem">OptimProblem</a></p>
 </dd>
 </dl>
@@ -1104,7 +1084,7 @@ in which case it must have been set previously</p></li>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Formulated optimization problem. LP problem.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>c</strong> (<em>np.array</em>) – cost vector</p></li>
 <li><p><strong>l</strong> (<em>np.array</em>) – lower bound (per time step)</p></li>
@@ -1132,7 +1112,7 @@ here specific types may be defined:</p>
 <span class="sig-name descname"><span class="pre">optimize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'value'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interface</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'cvxpy'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">make_soft_problem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iterations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5000</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#eaopack.optimization.Results" title="eaopack.optimization.Results"><span class="pre">Results</span></a></span></span><a class="headerlink" href="#eaopack.optimization.OptimProblem.optimize" title="Permalink to this definition"></a></dt>
 <dd><p>optimize the optimization problem</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>target</strong> (<em>str</em>) – Target function. Defaults to ‘value’ (maximize DCF).
 Alternative: ‘robust’, maximizing the minimum DCF across given price samples</p></li>
@@ -1157,7 +1137,7 @@ Alternative: ‘robust’, maximizing the minimum DCF across given price samples
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>collection of optimization results</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>value</strong> (<em>float</em>) – value of optimized target function</p></li>
 <li><p><strong>x</strong> (<em>np.array</em>) – optimal values of variables</p></li>
@@ -1173,7 +1153,7 @@ Alternative: ‘robust’, maximizing the minimum DCF across given price samples
 <dd><p>Bases: <a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><code class="xref py py-class docutils literal notranslate"><span class="pre">OptimProblem</span></code></a></p>
 <p>Collection of consecutive OptimProblems</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>ops</strong> – List of OptimProblems</p></li>
 <li><p><strong>mapping</strong> (<em>pd.DataFrame</em>) – Mapping of all result variables to ‘asset’, ‘node’, ‘type’ (‘d’ - dispatch and ‘i’ internal variable) and ‘time_step’</p></li>
@@ -1203,7 +1183,7 @@ Examples are MWh and MW or liters and liters per minute.</p>
 </dd>
 </dl>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – Name of the node (must be unique in the portfolio)</p></li>
 <li><p><strong>commodity</strong> (<em>str</em>) – Commodity traded in the node. None possible if there is no distinction. Defaults to None</p></li>
@@ -1219,7 +1199,7 @@ Examples are MWh and MW or liters and liters per minute.</p>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Manage the timegrid used for optimization.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>start</strong> (<em>dt.datetime</em>) – Start datetime</p></li>
 <li><p><strong>end</strong> (<em>dt.datetime</em>) – End datetime</p></li>
@@ -1229,13 +1209,13 @@ Examples are MWh and MW or liters and liters per minute.</p>
 <li><p><strong>ref_timegrid</strong> (<a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><em>Timegrid</em></a><em>, </em><em>optional</em>) – reference TG in case this timegrid is a subset of a suber grid</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>specific points in time of mesh
 T (float): number of time steps
 dt (np.array): time step for each step
 Dt (np.array): cummulative time steps (total duration since start)</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>timepoints (daterange)</p>
 </dd>
 </dl>
@@ -1248,10 +1228,10 @@ time zone</p>
 </dd>
 </dl>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>dd</strong> (<em>dict</em>) – date dict – dict with keys “start’, “end”, “values”</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>date dict with same keys</p>
 </dd>
 </dl>
@@ -1264,7 +1244,7 @@ time zone</p>
 If the price points already have (possibly different) timepoints, then the prices at self.timepoints
 are interpolated.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>prices</strong> – <p>This can be either a pandas dataframe with a Datetimeindex where each column corresponds to a price,
 or a dictionary of prices. In the case of a dict, the items can have the following forms:
 - array of length self.T. In this case it is assumed that the i-th entry of the array corresponds to the</p>
@@ -1280,7 +1260,7 @@ or a dictionary of prices. In the case of a dict, the items can have the followi
 </ul>
 </p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>prices</p>
 </dd>
 </dl>
@@ -1294,7 +1274,7 @@ or a dictionary of prices. In the case of a dict, the items can have the followi
 </dd>
 </dl>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>start</strong> (<em>dt.datetime</em>) – start and end of restricted arrays. Default to None –&gt; full timegrid’s start/end</p></li>
 <li><p><strong>end</strong> (<em>dt.datetime</em>) – start and end of restricted arrays. Default to None –&gt; full timegrid’s start/end</p></li>
@@ -1319,7 +1299,7 @@ or a dictionary of prices. In the case of a dict, the items can have the followi
 :param inp: each defining time interval where value is to be used
 :type inp: dict</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>array of values on the time grid</p>
 </dd>
 </dl>
@@ -1333,7 +1313,7 @@ or a dictionary of prices. In the case of a dict, the items can have the followi
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Defines the units used in a node and how to convert between volums and flows (volume/time)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>volume</strong> (<em>str</em><em>, </em><em>optional</em>) – ‘volume’ is a quantity unit, typically MWh or MJ for energy. Defaults to ‘MWh’.</p></li>
 <li><p><strong>flow</strong> (<em>str</em><em>, </em><em>optional</em>) – ‘flow’ is a quantity per time unit, typically MW (J/s) for energy. Defaults to ‘MW’.</p></li>
@@ -1358,7 +1338,7 @@ only unit valid choices with factor 1 are used. Conversion to be added in later 
 </dd>
 </dl>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>portf</strong> (<a class="reference internal" href="#eaopack.portfolio.Portfolio" title="eaopack.portfolio.Portfolio"><em>Portfolio</em></a>) – portfolio optimized</p></li>
 <li><p><strong>op</strong> (<a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><em>OptimProblem</em></a>) – optimization problem</p></li>
@@ -1382,7 +1362,7 @@ special: dataframe with specific asset parameters (such as size in scaled assets
 <span class="sig-name descname"><span class="pre">output_to_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format_output</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'xlsx'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">csv_ger</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.io.output_to_file" title="Permalink to this definition"></a></dt>
 <dd><p>write extracted output to file(s)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>output</strong> (<em>[</em><em>type</em><em>]</em>) – Target file (excel)</p></li>
 <li><p><strong>file_name</strong> (<em>str</em>) – file name</p></li>
@@ -1408,10 +1388,10 @@ special: dataframe with specific asset parameters (such as size in scaled assets
 :param obj: object to be serialized
 :type obj: [type]</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>serialized object for json</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>dict</p>
 </dd>
 </dl>
@@ -1428,7 +1408,7 @@ special: dataframe with specific asset parameters (such as size in scaled assets
 <div><p>one of the two must be given</p>
 </div></blockquote>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>object</p>
 </dd>
 </dl>
@@ -1443,7 +1423,7 @@ special: dataframe with specific asset parameters (such as size in scaled assets
 (3) write output to file (if file name given)</p></li>
 </ol>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>file_name_in</strong> (<em>str</em>) – Filename containing json string. Optional</p></li>
 <li><p><strong>json_str</strong> (<em>str</em>) – json string. Optional
@@ -1456,11 +1436,11 @@ Defaults to None (if portfolio comes with timegrid)</p></li>
 <li><p><strong>csv_ger</strong> (<em>bool</em>) – English (False) or German (True) csv format. Defaults to False.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Optimization run successfully (bool)
 no file_name_out given: Results dict</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>file_name_out given</p>
 </dd>
 </dl>
@@ -1471,7 +1451,7 @@ no file_name_out given: Results dict</p>
 <span class="sig-name descname"><span class="pre">to_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.serialization.to_json" title="Permalink to this definition"></a></dt>
 <dd><p>serialize object to JSON and save to file</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>obj</strong> – json serializable object</p></li>
 <li><p><strong>file_name</strong> (<em>str</em>) – Filename. Defaults to None (return str)</p></li>
@@ -1488,7 +1468,7 @@ no file_name_out given: Results dict</p>
 <span class="sig-name descname"><span class="pre">make_slp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optim_problem</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">OptimProblem</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">portf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#eaopack.portfolio.Portfolio" title="eaopack.portfolio.Portfolio"><span class="pre">Portfolio</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><span class="pre">Timegrid</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_future</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">OptimProblem</span></a></span></span><a class="headerlink" href="#eaopack.stoch_lin_prog.make_slp" title="Permalink to this definition"></a></dt>
 <dd><p>Create a two stage SLP (stochastic linear program) from a given OptimProblem</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>optim_problem</strong> (<a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><em>OptimProblem</em></a>) – start problem</p></li>
 <li><p><strong>portf</strong> (<a class="reference internal" href="#eaopack.portfolio.Portfolio" title="eaopack.portfolio.Portfolio"><em>Portfolio</em></a>) – portfolio that is the basis of the optim_problem (e.g. to translate price samples to effect on LP)</p></li>
@@ -1499,10 +1479,10 @@ and future with uncertain prices, represented by samples</p></li>
 (!) the future part of the original portfolio is added as an additional sample</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Two stage SLP formulated as OptimProblem</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem">OptimProblem</a></p>
 </dd>
 </dl>
@@ -1516,7 +1496,7 @@ and future with uncertain prices, represented by samples</p></li>
 <span class="sig-name descname"><span class="pre">create_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">portf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#eaopack.portfolio.Portfolio" title="eaopack.portfolio.Portfolio"><span class="pre">Portfolio</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.network_graphs.create_graph" title="Permalink to this definition"></a></dt>
 <dd><p>generate a network graph from a portfolio and save to pdf</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>portf</strong> (<a class="reference internal" href="#eaopack.portfolio.Portfolio" title="eaopack.portfolio.Portfolio"><em>Portfolio</em></a>) – portfolio object</p></li>
 <li><p><strong>file_name</strong> (<em>str</em>) – file name. Defaults to None (show plot)</p></li>
