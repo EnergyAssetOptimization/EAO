@@ -289,6 +289,10 @@ class Storage(Asset):
         assert hasattr(self, 'timegrid'), 'Set timegrid of asset before creating optim problem. Asset: '+ self.name
 
         dt =  self.timegrid.restricted.dt
+
+        if len(dt) == 0: # no overlap between timegrids, asset not active
+            return OptimProblem(c=np.array([]),l=np.array([]), u=np.array([]), cType='', mapping =  pd.DataFrame(),
+                                timegrid = self.timegrid)
         n = self.timegrid.restricted.T # moved to Timegrid
 
         ct = self.cap_out * dt #  Adjust capacity (unit is in vol/h)

@@ -31,7 +31,8 @@ class OptimProblem:
                  mapping:pd.DataFrame = None,
                  timegrid:Timegrid = None,  # needed if periodic
                  periodic_period_length:str = None,
-                 periodic_duration:str = None
+                 periodic_duration:str = None,
+                 map_nodal_restr:list = None 
                  ):
         """ Formulated optimization problem. LP problem.
 
@@ -46,6 +47,7 @@ class OptimProblem:
                                                          sum of dispatch at node zero: N
                                                       Optional. Defaults to None (no restrictions given)
             mapping (pd.DataFrame): Mapping of variables to 'asset', 'node', 'type' ('d' - dispatch and 'i' internal variable) and 'time_step' 
+            map_nodal_restr (list): Mapping to identify node and timepoint for duals in the solution of the LP
 
             --- if periodic
             timegrid (Timegrid)          : timegrid underneath optim problem (defaults to None)
@@ -59,7 +61,7 @@ class OptimProblem:
         self.b     = b     # restriction result vector
         self.cType = cType # GLPK type of restriction (le, ge, ...)      
         self.mapping = mapping 
-
+        self.map_nodal_restr = map_nodal_restr
         assert not np.isnan(c.sum()), 'nan value in optim problem. Check input data -- c'
         assert not np.isnan(l.sum()), 'nan value in optim problem. Check input data -- l'
         assert not np.isnan(u.sum()), 'nan value in optim problem. Check input data -- u'
@@ -223,7 +225,7 @@ class OptimProblem:
                     my_bools = False
                 else:
                     isMIP = True ### !!! Need to change solver
-                    print('...MIP problem configured. Beware of potentially long optimization and other issues inherent to MIP')
+                    # print('...MIP problem configured. Beware of potentially long optimization and other issues inherent to MIP')
             else:
                 my_bools = False
             x = CVX.Variable(self.c.size, boolean = my_bools)
@@ -340,5 +342,44 @@ class OptimProblem:
             raise NotImplementedError('Solver - '+str(solver)+ ' -not implemented')
 
         return results
+
+
+class SplitOptimProblem(OptimProblem):
+    def __init__(self, ops, mapping):
+        """ Collection of consecutive OptimProblems
+
+            Args:
+                ops: List of OptimProblems
+                mapping (pd.DataFrame): Mapping of all result variables to 'asset', 'node', 'type' ('d' - dispatch and 'i' internal variable) and 'time_step'
+        """
+        self.ops = ops
+        self.mapping = mapping
+        self.c = np.hstack([op.c for op in ops])
+        if not ops[0].map_nodal_restr is None:
+            self.map_nodal_restr = []
+            for op in ops:
+                self.map_nodal_restr += op.map_nodal_restr
+        else:
+             self.map_nodal_restr = None
+
+    def optimize(self, *args, **kwargs) -> Results:
+        """ Optimize all OptimProblems in self.ops and piece the results together in one Result
+        """
+        res = Results(0, np.array([]), None)
+        for op in self.ops:
+            res_tmp = op.optimize(*args, **kwargs)
+            res.value += res_tmp.value
+            res.x = np.hstack((res.x, res_tmp.x))
+            if res_tmp.duals:
+                if res.duals:
+                    for key in res_tmp.duals:
+                        if res.duals[key] is not None:
+                            if res_tmp.duals[key] is None:
+                                res.duals[key] = None
+                            else:
+                                res.duals[key] = np.hstack((res.duals[key], res_tmp.duals[key]))
+                else:
+                    res.duals = res_tmp.duals
+        return res
 
 

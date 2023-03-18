@@ -83,16 +83,12 @@ def extract_output(portf: Portfolio, op: OptimProblem, res:Results, prices: dict
         # extract duals from nodal restrictions
         # looping through nodes and their recorded nodal restrictions and extract dual
         if not res.duals is None and not res.duals['N'] is None:
-            for i_node, n in enumerate(portf.nodes):
-                name_nodal_price = 'nodal price: '+n
-                duals[name_nodal_price] = np.nan # initialize column
-                my_mapping = op.mapping.loc[op.mapping['node']==n,:]
-                all_nr = my_mapping.loc[~my_mapping['nodal_restr'].isnull(),'nodal_restr'].unique()
-                for nr in all_nr:
-                    # relevant info same for all; get first row that fits
-                    r = my_mapping[my_mapping['nodal_restr'] == nr].iloc[0]
-                    # attention: change sign to obtain nodal price from dual
-                    duals.loc[times[r.time_step], name_nodal_price] = -res.duals['N'][r['nodal_restr']]
+            ### new version withour nodal_restr column in mapping, rather explicit reference to time and node in OP
+            for ii, id in enumerate(op.map_nodal_restr):
+                name_nodal_price = 'nodal price: '+ id[1]
+                duals.loc[times[id[0]], name_nodal_price] = -res.duals['N'][ii]
+                pass
+            pass
         else:   
             duals = pd.DataFrame()
         # extract specific parameters for all assets
