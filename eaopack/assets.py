@@ -1833,6 +1833,91 @@ class CHPAsset(Contract):
         op.mapping = new_map
         return op
 
+
+class CHPAsset_with_min_load_costs(CHPAsset):
+    def __init__(self,
+                 min_load_threshhold: Union[float, Sequence[float], Dict] = 0.,
+                 min_load_costs: Union[float, Sequence[float], Dict] = None,
+                **kwargs                 
+                 ):
+        """ CHPContract with additional Min Load costs: 
+            adding costs when running below a threshhold capacity
+        Args:
+
+        CHPAsset arguments
+
+        additional:
+
+        min_load_threshhold (float: optional): capacity below which additional costs apply
+        min_load_costs      (float: optional): costs that apply below a threshhold (fixed costs "is below * costs" independend of capacity)
+
+        """
+        super().__init__(**kwargs)
+        self.min_load_threshhold = min_load_threshhold
+        self.min_load_costs      = min_load_costs
+
+
+    def setup_optim_problem(self, prices: dict, timegrid: Timegrid = None,
+                            costs_only: bool = False) -> OptimProblem:
+        """ Set up optimization problem for asset
+
+        Args:
+            prices (dict): Dictionary of price arrays needed by assets in portfolio
+            timegrid (Timegrid, optional): Discretization grid for asset. Defaults to None,
+                                           in which case it must have been set previously
+            costs_only (bool): Only create costs vector (speed up e.g. for sampling prices). Defaults to False
+
+        Returns:
+            OptimProblem: Optimization problem to be used by optimizer
+        """
+        op = super().setup_optim_problem(prices=prices, timegrid=timegrid, costs_only=costs_only)
+
+        min_load_threshhold = self.make_vector(self.min_load_threshhold, prices, default_value=0.)
+        min_load_costs      = self.make_vector(self.min_load_costs, prices, default_value=0.)
+        ### new part: add boolean "below threshhold" and restriction
+        if (min_load_threshhold is not None) and (max(min_load_threshhold) >=0.)\
+              and (min_load_costs is not None) and (max(min_load_costs) >=0.):
+
+            ###  include bools:
+            map_bool = pd.DataFrame()
+            map_bool['time_step'] = self.timegrid.restricted.I
+            map_bool['node'] = np.nan
+            map_bool['asset'] = self.name
+            map_bool['type'] = 'i'  # internal
+            map_bool['bool'] = True
+            map_bool['var_name'] = 'bool_threshhold'
+            op.mapping = pd.concat([op.mapping, map_bool])
+            # extend A for on variables (not relevant in exist. restrictions)
+            op.A = sp.hstack((op.A, sp.lil_matrix((op.A.shape[0], len(map_bool)))))
+            # set lower and upper bounds, costs:
+            op.l = np.hstack((op.l, np.zeros(self.timegrid.restricted.T)))
+            op.u = np.hstack((op.u, np.ones(self.timegrid.restricted.T)))
+            op.c = np.hstack([op.c, min_load_costs])
+            # indexing
+            op.mapping.reset_index(inplace=True, drop=True)  # need to reset index (which enumerates variables)
+            ### Define restriction
+            node_power = self.nodes[0].name
+            map_disp = op.mapping.loc[(op.mapping['node'] == node_power) & (op.mapping['var_name'] == 'disp'),:]
+            map_bool = op.mapping.loc[(op.mapping['var_name'] == 'bool_threshhold'),:]
+            assert len(map_disp)==len(map_disp), 'error- lengths of disp and bools do not match'
+            # disp_t >= threshhold * (1-bool_t)
+            # disp_t + bool_t * threshhold >= threshhold
+            myA = sp.lil_matrix((len(map_disp), op.A.shape[1]))
+            i_bool = 0 # counter booleans
+            myb = np.zeros(len(map_disp))
+            for t in map_disp['time_step'].values:
+                ind_disp = map_disp.index[map_disp['time_step'] == t][0]
+                ind_bool = map_bool.index[map_disp['time_step'] == t][0]
+                myA[i_bool, ind_disp] = 1
+                myA[i_bool, ind_bool] = min_load_threshhold[t]
+                myb[i_bool]           = min_load_threshhold[t]
+                i_bool += 1
+            op.A = sp.vstack((op.A, myA))
+            op.cType += 'L' * (len(map_disp))
+            op.b = np.hstack((op.b, myb))
+
+        return op
+
 class MultiCommodityContract(Contract):
     """ Multi commodity contract class - implements a Contract that generates two or more commoditites at a time.
         The main idea is to implement a CHP generating unit that would generate power and heat at the same time.
