@@ -1872,8 +1872,8 @@ class CHPAsset_with_min_load_costs(CHPAsset):
         """
         op = super().setup_optim_problem(prices=prices, timegrid=timegrid, costs_only=costs_only)
 
-        min_load_threshhold = self.make_vector(self.min_load_threshhold, prices, default_value=0.)
-        min_load_costs      = self.make_vector(self.min_load_costs, prices, default_value=0.)
+        min_load_threshhold = self.make_vector(self.min_load_threshhold, prices, default_value=0., convert=True)
+        min_load_costs      = self.make_vector(self.min_load_costs, prices, default_value=0., convert = True)
         ### new part: add boolean "below threshhold" and restriction
         if (min_load_threshhold is not None) and (max(min_load_threshhold) >=0.)\
               and (min_load_costs is not None) and (max(min_load_costs) >=0.):
