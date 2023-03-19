@@ -49,8 +49,8 @@ def json_serialize_objects(obj) -> dict:
     elif isinstance(obj, Asset):
         res = obj.__dict__.copy()
         res.pop('asset_names',None)
-        res.pop('start_ramp_time', None)  # only relevant for class CHPAsset
-        res.pop('shutdown_ramp_time', None)  # only relevant for class CHPAsset
+        res.pop('start_ramp_time', None)  # only relevant for class CHPAsset, calculated
+        res.pop('shutdown_ramp_time', None)  # only relevant for class CHPAsset, calculated
         # res.pop('timegrid', None) # not to be serialized
         res['__class__']  = 'Asset' # super class Asset
         res['asset_type'] = obj.__class__.__name__ # store child class

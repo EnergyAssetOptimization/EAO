@@ -1899,18 +1899,24 @@ class CHPAsset_with_min_load_costs(CHPAsset):
             node_power = self.nodes[0].name
             map_disp = op.mapping.loc[(op.mapping['node'] == node_power) & (op.mapping['var_name'] == 'disp'),:]
             map_bool = op.mapping.loc[(op.mapping['var_name'] == 'bool_threshhold'),:]
+            map_bool_on = op.mapping.loc[(op.mapping['var_name'] == 'bool_on'),:]
             assert len(map_disp)==len(map_disp), 'error- lengths of disp and bools do not match'
-            # disp_t >= threshhold * (1-bool_t)
-            # disp_t + bool_t * threshhold >= threshhold
+            # disp_t >= threshhold * (1-bool_t)  -  threshhold * (1- bool_on) 
+            # disp_t + (bool_t - bool_on) * threshhold >= 0
             myA = sp.lil_matrix((len(map_disp), op.A.shape[1]))
             i_bool = 0 # counter booleans
             myb = np.zeros(len(map_disp))
             for t in map_disp['time_step'].values:
-                ind_disp = map_disp.index[map_disp['time_step'] == t][0]
-                ind_bool = map_bool.index[map_disp['time_step'] == t][0]
-                myA[i_bool, ind_disp] = 1
-                myA[i_bool, ind_bool] = min_load_threshhold[t]
-                myb[i_bool]           = min_load_threshhold[t]
+                ind_disp    = map_disp.index[map_disp['time_step'] == t][0]
+                ind_bool    = map_bool.index[map_bool['time_step'] == t][0]
+                myA[i_bool, ind_disp]    = 1
+                myA[i_bool, ind_bool]    =  min_load_threshhold[t]
+                if len(map_bool_on)>0:
+                    ind_bool_on = map_bool_on.index[map_bool_on['time_step'] == t][0]
+                    myA[i_bool, ind_bool_on] = -min_load_threshhold[t]
+                    myb[i_bool]              = 0.
+                else:
+                    myb[i_bool]              = min_load_threshhold[t]
                 i_bool += 1
             op.A = sp.vstack((op.A, myA))
             op.cType += 'L' * (len(map_disp))

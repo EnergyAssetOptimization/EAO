@@ -575,7 +575,7 @@ class CHPAssetTest(unittest.TestCase):
 
 class CHPAssetTest_with_threshhold(unittest.TestCase):
 
-    def test_inheritance(self):
+    def test_basics(self):
         """ Unit test. Test inheritance of CHPAsset class
         """
         node_power = eao.assets.Node('node_power')
@@ -594,6 +594,26 @@ class CHPAssetTest_with_threshhold(unittest.TestCase):
         tot_dcf = np.around((a.dcf(op, res)).sum(), decimals = 3) # asset dcf, calculated independently
         check = check and (tot_dcf == np.around(res.value , decimals = 3))
         self.assertTrue(check)
+
+        # serialization
+        a = eao.assets.CHPAsset(name='CHP', price='rand_price', nodes = (node_power, node_heat),
+                                min_cap=5., max_cap=10.)
+        tt = eao.serialization.to_json(a)
+        aa = eao.serialization.load_from_json(tt)
+        self.assertAlmostEqual(aa.min_cap, a.min_cap, 5)
+
+        a = eao.assets.CHPAsset_with_min_load_costs(name='CHP', price='rand_price', nodes = (node_power, node_heat),
+                                min_cap=5., max_cap=10., min_load_costs=5, min_load_threshhold=1)
+        tt = eao.serialization.to_json(a)
+        aa = eao.serialization.load_from_json(tt)
+        self.assertAlmostEqual(aa.min_cap, a.min_cap, 5)
+        self.assertAlmostEqual(aa.min_load_costs, a.min_load_costs, 5)
+
+        a = eao.assets.CHPAsset_with_min_load_costs(name='CHP', price='rand_price', nodes = (node_power, node_heat),
+                                min_cap=5., max_cap=10.)
+        tt = eao.serialization.to_json(a)
+        aa = eao.serialization.load_from_json(tt)
+        self.assertAlmostEqual(aa.min_cap, a.min_cap, 5)
 
     def test_optimization(self):
         """ Unit test. Test simple case with theshhold
@@ -618,8 +638,8 @@ class CHPAssetTest_with_threshhold(unittest.TestCase):
         costs = out['DCF']['CHP'].values
         disp  = out['dispatch']['CHP (node_power)'].values
         # check: costs below threshhold are 1, above 0
-        self.assertAlmostEqual(np.abs(costs[disp>=4]).sum(), 0, -5)
-        self.assertAlmostEqual(np.abs(costs[disp<4]+1).sum(), 0, -5)
+        self.assertAlmostEqual(np.abs(costs[disp>=4]).sum(), 0, 5)
+        self.assertAlmostEqual(np.abs(costs[disp<4]+1).sum(), 0, 5)
 
     def test_optimization_vectors(self):
         """ Unit test. Test simple case with theshhold
@@ -646,10 +666,38 @@ class CHPAssetTest_with_threshhold(unittest.TestCase):
         costs = out['DCF']['CHP'].values
         disp  = out['dispatch']['CHP (node_power)'].values
         # check: costs below threshhold are 1, above 0
-        self.assertAlmostEqual(np.abs(costs[disp<prices['ml_t']]+prices['ml_c'][disp<=prices['ml_t']]).sum(), 0, -5)
-        self.assertAlmostEqual(np.abs(costs[disp>prices['ml_t']]).sum(), 0, -5)
+        self.assertAlmostEqual(np.abs(costs[disp<prices['ml_t']]+prices['ml_c'][disp<=prices['ml_t']]).sum(), 0, 5)
+        self.assertAlmostEqual(np.abs(costs[disp>prices['ml_t']]).sum(), 0, 5)
 
+    def test_isrunning(self):
+        """ Unit test. Test simple case with theshhold
+        """
+        node_power = eao.assets.Node('node_power')
+        node_heat = eao.assets.Node('node_heat')
+        timegrid = eao.assets.Timegrid(dt.date(2020,2,1), dt.date(2020,2,2), freq = '2h')
+        # define a CHP with extra costs when dispatch is below threshhold of 4
+        a = eao.assets.CHPAsset_with_min_load_costs(name='CHP', price='price', nodes = (node_power, node_heat),
+                                min_cap=2., max_cap=10.,
+                                min_load_threshhold= 7,
+                                min_load_costs = 1.)
+        demand = eao.assets.SimpleContract(name = 'demand', 
+                                           nodes = node_power,
+                                           min_cap = 'demand', max_cap = 'demand')
+        prices ={'price':  np.zeros(timegrid.T),
+                 'demand': -np.linspace(2, 10, timegrid.T)}
+        prices['demand'][0:5] = 0
+        portf = eao.portfolio.Portfolio([demand, a])
+        op = portf.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        out = eao.io.extract_output(portf, op, res, prices)
+        costs = out['DCF']['CHP'].values
+        disp  = out['dispatch']['CHP (node_power)'].values
+        # check: costs below threshhold are 1, above 0
+        self.assertAlmostEqual(np.abs(costs[disp==0]).sum(), 0, 5)
+        self.assertAlmostEqual(np.abs(costs[(disp<7*2)&(disp>0)]+2).sum(), 0, 5)
+        self.assertAlmostEqual(np.abs(costs[(disp>7*2)]).sum(), 0, 5)
 
+        
 ###########################################################################################################
 ###########################################################################################################
 ###########################################################################################################
