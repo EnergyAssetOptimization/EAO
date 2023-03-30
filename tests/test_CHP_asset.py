@@ -32,6 +32,7 @@ class CHPAssetTest(unittest.TestCase):
         check = check and (tot_dcf == np.around(res.value , decimals = 3))
         self.assertTrue(check)
 
+
     def test_min_cap_vector(self):
         """ Unit test. Setting up a CHPAsset with positive prices and a simple contract with a minimum demand that is
             smaller than the min capacity. Check that it runs at minimum capacity.
@@ -697,7 +698,45 @@ class CHPAssetTest_with_threshhold(unittest.TestCase):
         self.assertAlmostEqual(np.abs(costs[(disp<7*2)&(disp>0)]+2).sum(), 0, 5)
         self.assertAlmostEqual(np.abs(costs[(disp>7*2)]).sum(), 0, 5)
 
-        
+    def test_check_indexing(self):
+        """ Unit test. Test simple case with theshhold
+        """
+        # portf = eao.serialization.load_from_json(file_name='out_portf.json')
+        # tg = eao.serialization.load_from_json(file_name='out_timegrid.json')
+        # prices = {'xx': np.ones(tg.T)}
+        # op = portf.setup_optim_problem(prices = prices, timegrid = tg)
+        node_power = eao.assets.Node('node_power')
+        node_gas = eao.assets.Node('node_gas')
+        node_heat = eao.assets.Node('node_heat')
+        timegrid = eao.assets.Timegrid(dt.date(2020,2,1), dt.date(2020,2,2), freq = 'h')
+        # define a CHP with extra costs when dispatch is below threshhold of 4
+        a = eao.assets.CHPAsset_with_min_load_costs(name='CHP', price='price', nodes = (node_power, node_heat, node_gas),
+                                min_cap=2., max_cap=10.,
+                                min_load_threshhold= 7,
+                                start_costs=0.,
+                                fuel_efficiency=0.9,
+                                min_load_costs = 100)
+        demand = eao.assets.SimpleContract(name = 'demand', 
+                                           nodes = node_power,
+                                           min_cap = 'demand', max_cap = 'demand')
+        gas = eao.assets.SimpleContract(name = 'gas', 
+                                           nodes = node_gas,
+                                           min_cap = -1000, max_cap = 1000)        
+        prices ={'price':  np.zeros(timegrid.T),
+                 'demand': -np.linspace(2, 10, timegrid.T)}
+        prices['demand'][0:5] = 0
+        portf = eao.portfolio.Portfolio([demand, a, gas])
+        op = portf.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        out = eao.io.extract_output(portf, op, res, prices)
+        costs = out['DCF']['CHP'].values
+        disp  = out['dispatch']['CHP (node_power)'].values
+        # check: costs below threshhold are 1, above 0
+        self.assertAlmostEqual(np.abs(costs[disp==0]).sum(), 0, 5)
+        self.assertAlmostEqual(np.abs(costs[(disp<7)&(disp>0)]+100).sum(), 0, 5)
+        self.assertAlmostEqual(np.abs(costs[(disp>7)]).sum(), 0, 5)        
+
+
 ###########################################################################################################
 ###########################################################################################################
 ###########################################################################################################

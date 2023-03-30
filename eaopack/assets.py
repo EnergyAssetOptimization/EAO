@@ -1886,6 +1886,7 @@ class CHPAsset_with_min_load_costs(CHPAsset):
             map_bool['type'] = 'i'  # internal
             map_bool['bool'] = True
             map_bool['var_name'] = 'bool_threshhold'
+            map_bool.index += op.mapping.index.max()+1 # those are new variables
             op.mapping = pd.concat([op.mapping, map_bool])
             # extend A for on variables (not relevant in exist. restrictions)
             op.A = sp.hstack((op.A, sp.lil_matrix((op.A.shape[0], len(map_bool)))))
@@ -1893,14 +1894,12 @@ class CHPAsset_with_min_load_costs(CHPAsset):
             op.l = np.hstack((op.l, np.zeros(self.timegrid.restricted.T)))
             op.u = np.hstack((op.u, np.ones(self.timegrid.restricted.T)))
             op.c = np.hstack([op.c, min_load_costs])
-            # indexing
-            op.mapping.reset_index(inplace=True, drop=True)  # need to reset index (which enumerates variables)
             ### Define restriction
             node_power = self.nodes[0].name
             map_disp = op.mapping.loc[(op.mapping['node'] == node_power) & (op.mapping['var_name'] == 'disp'),:]
             map_bool = op.mapping.loc[(op.mapping['var_name'] == 'bool_threshhold'),:]
-            map_bool_on = op.mapping.loc[(op.mapping['var_name'] == 'bool_on'),:]
-            assert len(map_disp)==len(map_disp), 'error- lengths of disp and bools do not match'
+            map_bool_on = op.mapping.loc[(op.mapping['var_name'] == 'bool_on') & (op.mapping['node'].isnull()),:]
+            assert len(map_disp)==len(map_bool), 'error- lengths of disp and bools do not match'
             # disp_t >= threshhold * (1-bool_t)  -  threshhold * (1- bool_on) 
             # disp_t + (bool_t - bool_on) * threshhold >= 0
             myA = sp.lil_matrix((len(map_disp), op.A.shape[1]))
