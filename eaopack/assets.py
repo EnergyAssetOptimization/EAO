@@ -1540,18 +1540,19 @@ class CHPAsset(Contract):
         start = max(0, start_ramp_time - time_already_running) if time_already_running > 0 else 0
         A_lower_bounds = sp.lil_matrix((self.n, op.A.shape[1]))
         A_upper_bounds = sp.lil_matrix((self.n, op.A.shape[1]))
+        starting_timestep = self.timegrid.restricted.I[0]
         for i in range(start, self.n):
             var = op.mapping.iloc[i]
 
             A_lower_bounds[i, i] = 1
             A_lower_bounds[i, self.heat_idx + i] = conversion_factor_power_heat[i]
             if include_on_variables:
-                A_lower_bounds[i, self.on_idx + var["time_step"]] = - min_cap[i]
+                A_lower_bounds[i, self.on_idx + var["time_step"] - starting_timestep] = - min_cap[i]
 
             A_upper_bounds[i, i] = 1
             A_upper_bounds[i, self.heat_idx + i] = conversion_factor_power_heat[i]
             if include_on_variables:
-                A_upper_bounds[i, self.on_idx + var["time_step"]] = - max_cap[i]
+                A_upper_bounds[i, self.on_idx + var["time_step"] - starting_timestep] = - max_cap[i]
 
             for j in range(start_ramp_time):
                 if i - j < 0:
