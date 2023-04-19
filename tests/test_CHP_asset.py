@@ -631,6 +631,69 @@ class CHPAssetTest(unittest.TestCase):
         # need to start power an hour before heat
         self.assertAlmostEqual(out['dispatch']['CHP (node_power)'][9], 10, 4)
 
+    def test_start_and_shutdown_ramp_heat_2(self):
+        """ Testing heat start ramp
+        """
+        node_power = eao.assets.Node('node_power')
+        node_heat = eao.assets.Node('node_heat')
+        node_gas = eao.assets.Node('node_gas')
+
+        Start = dt.date(2021, 1, 1)
+        End = dt.date(2021, 1, 2)
+        timegrid = eao.assets.Timegrid(Start, End, freq='h')
+        # start ramps
+        start_ramp_lower_bounds = [10, 20, 30, 40]
+        start_ramp_upper_bounds = [10, 20, 30, 40]
+        shutdown_ramp_lower_bounds = [10, 40, 45, 50, 50]
+        shutdown_ramp_upper_bounds = [10, 40, 45, 50, 50]
+
+        # heat ... NEW
+        start_ramp_lower_bounds_heat = [1, 2, 3, 4]
+        start_ramp_upper_bounds_heat = [1, 2, 3, 4]
+        shutdown_ramp_lower_bounds_heat = [1, 2, 3, 4, 5]
+        shutdown_ramp_upper_bounds_heat = [1, 2, 3, 4, 5]
+        cr = .2
+        a = eao.assets.CHPAsset(name='CHP',
+                                nodes=(node_power, node_heat, node_gas),
+                                min_cap=1.,
+                                max_cap=50.,
+                                start_costs=0.,
+                                running_costs=5.,
+                                conversion_factor_power_heat= cr,
+                                max_share_heat= 1,
+                                start_fuel = 10,
+                                fuel_efficiency= .5,
+                                consumption_if_on= .1,                     
+                                start_ramp_lower_bounds=start_ramp_lower_bounds,
+                                start_ramp_upper_bounds=start_ramp_upper_bounds,
+                                shutdown_ramp_lower_bounds=shutdown_ramp_lower_bounds,
+                                shutdown_ramp_upper_bounds=shutdown_ramp_upper_bounds,                                
+                                start_ramp_lower_bounds_heat=start_ramp_lower_bounds_heat,
+                                start_ramp_upper_bounds_heat=start_ramp_upper_bounds_heat,
+                                shutdown_ramp_lower_bounds_heat=shutdown_ramp_lower_bounds_heat,
+                                shutdown_ramp_upper_bounds_heat=shutdown_ramp_upper_bounds_heat 
+                                )
+        b = eao.assets.SimpleContract(name = 'powerMarket', price='price', nodes = node_power, min_cap=-100, max_cap=100)
+        c = eao.assets.SimpleContract(name = 'gasMarket', price='priceGas', nodes = node_gas, min_cap=-500, max_cap=500)
+        d = eao.assets.SimpleContract(name = 'heatMarket', nodes = node_heat, min_cap=-100, max_cap=100)
+        prices ={'price': 0.*np.ones(timegrid.T), 
+                 'priceGas': 10*np.ones(timegrid.T)}
+#                 'heat_demand': np.zeros(timegrid.T)}
+#        prices['heat_demand'][10:20] = -1
+        prices['price'][10:20] = 1000
+        portf = eao.portfolio.Portfolio([a, b, c, d])
+        op = portf.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        out = eao.io.extract_output(portf, op, res, prices)
+        # need to start power an hour before heat
+        myr = out['dispatch']['CHP (node_heat)'][6:10].values
+        myrp = out['dispatch']['CHP (node_power)'][6:10].values
+        myrt = myr*cr+myrp # total
+        # check start ramps are fulfilled
+        for i in range(0,4):
+             self.assertAlmostEqual(myr[i], start_ramp_lower_bounds_heat[i], 4)
+                # check power side ... total virtual dispatch
+             self.assertAlmostEqual(myrt[i], start_ramp_lower_bounds[i], 4)        
 
 class CHPAssetTest_with_threshhold(unittest.TestCase):
 
