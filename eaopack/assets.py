@@ -54,6 +54,7 @@ class Asset:
             self.profile = profile
             if profile is not None:
                 assert isinstance(profile, pd.Series), 'Profile must be np.Series. Asset:'+str(name)
+
     def set_timegrid(self, timegrid: Timegrid):
         """ Set the timegrid for the asset
         Args:
@@ -179,6 +180,8 @@ class Asset:
                 time_value_converted = np.ceil(time_value_converted)
             time_value_converted = int(time_value_converted)
         return time_value_converted
+
+
 
 ##########################
 
