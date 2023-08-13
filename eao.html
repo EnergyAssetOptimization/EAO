@@ -1399,6 +1399,33 @@ special: dataframe with specific asset parameters (such as size in scaled assets
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="eaopack.io.get_param">
+<span class="sig-name descname"><span class="pre">get_param</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.io.get_param" title="Permalink to this definition"></a></dt>
+<dd><p>get specific parameter from an object using the path as generated from get_params_tree</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>_type_</em>) – list down to parameter as given by get_params_tree (e.g. [asset, timegrid, start] –&gt; value)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="eaopack.io.get_params_tree">
+<span class="sig-name descname"><span class="pre">get_params_tree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj)</span> <span class="pre">-&gt;</span> <span class="pre">(&lt;class</span> <span class="pre">'list'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'dict'&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.io.get_params_tree" title="Permalink to this definition"></a></dt>
+<dd><p>get parameters of object - typically asset or portfolio</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>obj</strong> (<em>object</em>) – object to analyze</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Returns</dt><dd><p>dict of parameters (nested)
+list of parameter names (nested)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="eaopack.io.output_to_file">
 <span class="sig-name descname"><span class="pre">output_to_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format_output</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'xlsx'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">csv_ger</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.io.output_to_file" title="Permalink to this definition"></a></dt>
 <dd><p>write extracted output to file(s)</p>
@@ -1410,6 +1437,24 @@ special: dataframe with specific asset parameters (such as size in scaled assets
 <li><p><strong>format_output</strong> (<em>str</em>) – xlsx, csv. format of output file. Defaults to ‘xlsx’</p></li>
 <li><p><strong>csv_ger</strong> (<em>bool</em>) – English (False) or German (True) csv format. Defaults to False.</p></li>
 </ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="eaopack.io.set_param">
+<span class="sig-name descname"><span class="pre">set_param</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.io.set_param" title="Permalink to this definition"></a></dt>
+<dd><p>Set parameters of EAO objects. Limited checks, but facilitating managing nested objects such as portfolios or assets</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>obj</strong> (<em>object</em>) – Object to manipulate</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Manipulated object
+status (bool): True - &gt; successful, False -&gt; not successful</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>obj (object)</p>
 </dd>
 </dl>
 </dd></dl>

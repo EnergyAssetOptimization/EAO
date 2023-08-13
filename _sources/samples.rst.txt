@@ -63,3 +63,10 @@ Split optimization
 
 
 
+Parameter handling
+------------------
+
+.. toctree:: 
+
+   samples/parameter_management/parameter_management
+
