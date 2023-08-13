@@ -48,6 +48,7 @@ def json_serialize_objects(obj) -> dict:
                }
     elif isinstance(obj, Asset):
         res = obj.__dict__.copy()
+        res.pop('timegrid',None)
         res.pop('asset_names',None)
         res.pop('start_ramp_time', None)  # only relevant for class CHPAsset, calculated
         res.pop('shutdown_ramp_time', None)  # only relevant for class CHPAsset, calculated

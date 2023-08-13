@@ -1,9 +1,11 @@
 import numpy as np
 import pandas as pd
 import datetime as dt
+import copy
 
 from eaopack.portfolio import Portfolio
 from eaopack.optimization import Results, OptimProblem
+from eaopack import serialization 
 
 
 def extract_output(portf: Portfolio, op: OptimProblem, res:Results, prices: dict = None) -> dict:
@@ -126,7 +128,6 @@ def extract_output(portf: Portfolio, op: OptimProblem, res:Results, prices: dict
 
     return output
 
-
 def output_to_file(output, file_name:str, format_output:str = 'xlsx',csv_ger:bool = False):
     """ write extracted output to file(s)
 
@@ -161,3 +162,92 @@ def output_to_file(output, file_name:str, format_output:str = 'xlsx',csv_ger:boo
             output[myk].to_csv(myk+'_'+file_name, sep = sep, decimal = decimal)                
     else:
         raise NotImplementedError('output format - '+format_output+' - not implemented')
+
+#### easy access to object parameters e.g. for assets & portfolio
+## get tree, get parameter, set parameter
+def get_params_tree(obj) -> (list, dict):
+    """ get parameters of object - typically asset or portfolio
+
+    Args:
+        obj (object): object to analyze
+    Returns 
+        dict of parameters (nested)
+        list of parameter names (nested)
+    """
+
+    def make_dict(dd) -> (list, dict):
+        if isinstance(dd, list): dd_keys = range(0,len(dd))
+        elif isinstance(dd, dict): dd_keys = list(dd)
+        else: 
+            return None, None
+        keys = [] # record keys
+        for k in dd_keys:
+            if isinstance(dd[k], dict) or isinstance(dd[k], list): 
+                if isinstance(dd[k], list): ks = range(0,len(dd[k]))
+                if isinstance(dd[k], dict): ks = list(dd[k])
+                for myk in ks:
+                    if not isinstance(myk, list): l_myk = [myk]
+                    else: l_myk = myk
+                    if isinstance(dd[k][myk], dict) or isinstance(dd[k][myk], list):
+                        _ , tk = make_dict(dd[k][myk])
+                        for ttk in tk:
+                            if not isinstance(ttk, list): l_ttk = [ttk]
+                            else: l_ttk = ttk
+                            keys.append([k] + l_myk + l_ttk)
+                    else: keys.append([k] + l_myk)
+            else: keys.append(k)
+
+        return copy.deepcopy(dd), keys
+        
+    # serialize and back to get rid of superfluous parameters (not set during __init__)
+    s = serialization.to_json(obj) # serialize using all specific definitions
+    dd = serialization.json.loads(s) # create simple dict
+    o, k = make_dict(dd)
+    return k, o
+
+def get_param(obj, path):
+    """ get specific parameter from an object using the path as generated from get_params_tree
+
+    Args:
+        path (_type_): list down to parameter as given by get_params_tree (e.g. [asset, timegrid, start] --> value)
+    """
+    def get(d,l):
+        """ recursion to access nested dict """
+        if len(l) == 1: return d[l[0]]
+        return get(d[l[0]], l[1:])
+    
+    k,o = get_params_tree(obj)
+    if not isinstance(path, list): path = [path]
+    return get(o, path)
+    
+
+def set_param(obj, path, value):
+    """ Set parameters of EAO objects. Limited checks, but facilitating managing nested objects such as portfolios or assets
+
+    Args:
+        obj (object): Object to manipulate
+
+    Returns:
+        obj (object): Manipulated object
+        status (bool): True - > successful, False -> not successful
+    """
+    def sett(o,l,v):
+        """ recursion to access nested object """
+        if len(l) == 1: # leaf in tree. Set value
+            o[l[0]] = v
+            return o
+        return sett(o[l[0]], l[1:], v) # recursion. Go down path
+    
+    if not isinstance(path, list): path = [path]
+    k,o = get_params_tree(obj)
+    _ = sett(o, path, value) # manipulates dict. output not needed
+    
+    try:
+        s = serialization.json.dumps(o)
+        res = serialization.load_from_json(s) # create object again (properly initializing)
+    except:
+        if 'name' in o: n = o['name']
+        else: n = 'NA'
+        raise ValueError('Error. Object could not be created. Parameter issue? Object: '+n+' | parameter '+str(path))
+    return res
+
