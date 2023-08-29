@@ -3,11 +3,15 @@ import datetime as dt
 import numpy as np
 import pandas as pd
 
-# class StartEndValue(TypedDict):
-#     start: Sequence[dt.datetime]
-#     end:   Sequence[float]
-#     value: Sequence[float]
-
+class StartEndValueDict(TypedDict):
+    """ New type to contain info of the type start, end, value
+        dict with
+            start: array of datetime 
+            end:   array of datetime (optional)
+            values: array of floats """
+    start:  Sequence[dt.datetime]
+    end:    Sequence[float]
+    values: Sequence[float]
 
 class Unit:
     def __init__(self, volume:str='MWh', flow:str='MW', factor:float=1.):
@@ -239,7 +243,7 @@ class Timegrid:
         out['values'] = dd['values']
         return out
 
-    def values_to_grid(self,inp:dict) -> np.array:
+    def values_to_grid(self,inp:StartEndValueDict) -> np.array:
         """ Assignment of data from interval data to timegrid
             Args:
                 inp (dict) with keys --- start, end, values
