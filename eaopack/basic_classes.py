@@ -1,8 +1,12 @@
-from typing import Union, List, Dict
+from typing import Union, List, Dict, TypedDict, Sequence
 import datetime as dt
 import numpy as np
 import pandas as pd
 
+# class StartEndValue(TypedDict):
+#     start: Sequence[dt.datetime]
+#     end:   Sequence[float]
+#     value: Sequence[float]
 
 
 class Unit:
@@ -39,7 +43,6 @@ class Node:
         self.name = name
         self.commodity = commodity
         self.unit = unit
-
 
 class Timegrid:
     def __init__(self, start:dt.datetime, end:dt.datetime, freq:str='h', main_time_unit = 'h', ref_timegrid=None, timezone: str = None):

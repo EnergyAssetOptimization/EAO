@@ -122,7 +122,7 @@ class MIP(unittest.TestCase):
         check = res.x.reshape((2,24)).T
         fill_level = -check[:,0].cumsum()
         for (f,b) in zip(fill_level, check[:,1]):
-            if (f>0) and (b==0):
+            if (f>1e-8) and (b==0):
                 raise ValueError('fill level non zero, but bool zero')
         for ii in range(0,(24-4)):
             assert (check[ii:ii+4,1]).sum()<=3

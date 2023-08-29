@@ -7,7 +7,7 @@ from pandas.tseries.frequencies import to_offset
 import scipy.sparse as sp
 from scipy.sparse.lil import lil_matrix
 
-from eaopack.basic_classes import Timegrid, Unit, Node
+from eaopack.basic_classes import Timegrid, Unit, Node # , StartEndValue
 from eaopack.optimization import OptimProblem
 from eaopack.optimization import Results
 
@@ -145,7 +145,7 @@ class Asset:
                     rr['disp_factor'] = weight*rr['disp_factor']
                 else:
                     rr['disp_factor'] = weight
-                mapping = mapping.append(rr)
+                mapping = pd.concat([mapping, pd.DataFrame([rr])])  #mapping.append(rr)
         mapping['time_step'] = mapping['time_step'].astype('int64')
         return mapping
 
@@ -605,6 +605,8 @@ class SimpleContract(Asset):
             assert (isinstance(self.price, str)), 'Error in asset '+self.name+' --> price must be given as string'
             assert (self.price in prices)
             price = prices[self.price].copy()
+            # convert to array
+            if isinstance(price, list): price = np.asarray(price)
         else:
             price = np.zeros(timegrid.T)
 
@@ -2415,6 +2417,6 @@ class ScaledAsset(Asset):
                  'var_name' : 'scale',
                  'type'     : 'size'}
         op.mapping['asset'] = self.name # in case scaled asset has a different name than the base asset
-        op.mapping = op.mapping.append(mymap, ignore_index = True)
+        op.mapping = pd.concat([op.mapping, pd.DataFrame([mymap])], ignore_index = True)# op.mapping.append(mymap, ignore_index = True)
 
         return op

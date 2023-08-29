@@ -347,7 +347,7 @@ class ContractTest(unittest.TestCase):
         timegrid = eao.assets.Timegrid(Start, End, freq = 'h')
 
         # capacities    
-        restr_times = pd.date_range(Start, End, freq = 'd', closed = 'left')
+        restr_times = pd.date_range(Start, End, freq = 'd', inclusive = 'left')
         min_cap = {}
         min_cap['start']  = restr_times.to_list()
         min_cap['end']    = (restr_times + dt.timedelta(days = 1)).to_list()
@@ -371,7 +371,7 @@ class ContractTest(unittest.TestCase):
         startA = dt.date(2021,1,3)
         timegrid = eao.assets.Timegrid(Start, End, freq = 'h')
         # capacities    
-        restr_times = pd.date_range(Start, End, freq = 'd', closed = 'left')
+        restr_times = pd.date_range(Start, End, freq = 'd', inclusive = 'left')
         min_cap = {}
         min_cap['start']  = restr_times.to_list()
         min_cap['end']    = (restr_times + dt.timedelta(days = 1)).to_list()
@@ -379,7 +379,7 @@ class ContractTest(unittest.TestCase):
         max_cap = min_cap.copy()
         max_cap['values'] = np.ones(len(min_cap['start'] ))*10.
         # min and max take
-        #restr_times = pd.date_range(Start, End, freq = '4h', closed = 'left')
+        #restr_times = pd.date_range(Start, End, freq = '4h', inclusive = 'left')
         min_take = {}
         min_take['start']  = Start
         min_take['end']    = End

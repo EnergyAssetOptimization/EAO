@@ -46,7 +46,7 @@ class CHPAssetTest(unittest.TestCase):
         timegrid = eao.assets.Timegrid(Start, End, freq='h')
 
         # capacities
-        restr_times = pd.date_range(Start, End, freq='d', closed='left')
+        restr_times = pd.date_range(Start, End, freq='d', inclusive='left')
         min_cap = {}
         min_cap['start'] = restr_times.to_list()
         min_cap['end'] = (restr_times + dt.timedelta(days=1)).to_list()
@@ -83,7 +83,7 @@ class CHPAssetTest(unittest.TestCase):
         timegrid = eao.assets.Timegrid(Start, End, freq='h')
 
         # capacities
-        restr_times = pd.date_range(Start, End, freq='d', closed='left')
+        restr_times = pd.date_range(Start, End, freq='d', inclusive='left')
         min_cap = {}
         min_cap['start'] = restr_times.to_list()
         min_cap['end'] = (restr_times + dt.timedelta(days=1)).to_list()
@@ -320,23 +320,23 @@ class CHPAssetTest(unittest.TestCase):
         """
         Check the time conversion function that is used to convert e.g. min_runtime and time_already_running in CHPAsset
         """
-        old_value = np.random.rand() * 30
+        old_value = 10 * 30
         new_value = eao.assets.convert_time_unit(old_value, old_freq='h', new_freq='d')
         self.assertAlmostEqual(new_value - old_value / 24, 0, 5)
 
-        old_value = np.random.rand() * 30
+        old_value = 12 * 30
         new_value = eao.assets.convert_time_unit(old_value, old_freq='h', new_freq='15min')
         self.assertAlmostEqual(new_value - old_value * 4, 0, 5)
 
-        old_value = np.random.rand() * 30
+        old_value = 14 * 30
         new_value = eao.assets.convert_time_unit(old_value, old_freq='d', new_freq='15min')
         self.assertAlmostEqual(new_value - old_value * 24 * 4, 0, 5)
 
-        old_value = np.random.rand() * 30
+        old_value = 16 * 30
         new_value = eao.assets.convert_time_unit(old_value, old_freq='30min', new_freq='min')
         self.assertAlmostEqual(new_value - old_value * 30, 0, 5)
 
-        old_value = np.random.rand() * 30
+        old_value = 22 * 30
         new_value = eao.assets.convert_time_unit(old_value, old_freq='min', new_freq='h')
         self.assertAlmostEqual(new_value - old_value / 60, 0, 5)
 
