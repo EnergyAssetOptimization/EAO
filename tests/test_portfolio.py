@@ -116,8 +116,8 @@ class PortfolioTests(unittest.TestCase):
                         min_cap= 0., max_cap=100.)
 
         #a3.set_timegrid(timegrid)
-        prices ={'rand_price_1': np.ones(timegrid.T)*1.,
-                'rand_price_2': np.ones(timegrid.T)*10.,
+        prices ={'rand_price_1': (np.ones(timegrid.T)*1.).tolist(),
+                'rand_price_2': (np.ones(timegrid.T)*10.).tolist(),
                 }
 
         portf2 = eao.portfolio.Portfolio([a1, a2, a3, a4,a1a])

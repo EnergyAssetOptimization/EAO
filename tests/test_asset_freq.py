@@ -76,8 +76,8 @@ class AssetFrequency(unittest.TestCase):
         # eao.io.output_to_file(out, 'test_XXX.xlsx')
         self.assertAlmostEqual(disp.sum(axis = 1).abs().sum(), 0., 5) # in each hour net zero
         for t in a1.timegrid.restricted.timepoints:
-            assert (len(disp[disp.index.date == t]) == 24)
-            all(disp[disp.index.date == t]['SC_2'] == disp[disp.index.date == t].iloc[0,1])
+            assert (len(disp[disp.index.date == t.date()]) == 24)
+            all(disp[disp.index.date == t.date()]['SC_2'] == disp[disp.index.date == t.date()].iloc[0,1])
         assert all(disp['SC_2'].iloc[0:23].values.round(3)==10.)
         assert all(disp['SC_2'].iloc[24:].values.round(3)==-5.)        
         assert (out['DCF']['SC_2'].sum().round(4)==60000.)
@@ -125,7 +125,7 @@ class AssetFrequency(unittest.TestCase):
             weeks = disp.index.isocalendar().week
             weeks[disp.index.isocalendar().day==7]+=1
             weeks[weeks == 54] = 1            
-            assert all(disp[weeks == t_week]['lt'] == disp[disp.index.date == t].iloc[0,2])
+            assert all(disp[weeks == t_week]['lt'] == disp[disp.index.date == t.date()].iloc[0,2])
             self.assertAlmostEqual(disp[weeks == t_week]['st'].sum(), 0., 4)   
         # check var naming
         self.assertTrue(len(op.mapping[op.mapping['asset']=='lt']['var_name'].unique())==1)

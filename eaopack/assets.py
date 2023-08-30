@@ -5,9 +5,9 @@ import numpy as np
 import pandas as pd
 from pandas.tseries.frequencies import to_offset
 import scipy.sparse as sp
-from scipy.sparse.lil import lil_matrix
+# from scipy.sparse.lil import lil_matrix
 
-from eaopack.basic_classes import Timegrid, Unit, Node
+from eaopack.basic_classes import Timegrid, Unit, Node, StartEndValueDict
 from eaopack.optimization import OptimProblem
 from eaopack.optimization import Results
 
@@ -145,7 +145,7 @@ class Asset:
                     rr['disp_factor'] = weight*rr['disp_factor']
                 else:
                     rr['disp_factor'] = weight
-                mapping = mapping.append(rr)
+                mapping = pd.concat([mapping, pd.DataFrame([rr])])  #mapping.append(rr)
         mapping['time_step'] = mapping['time_step'].astype('int64')
         return mapping
 
@@ -508,7 +508,6 @@ class Storage(Asset):
                                 periodic_duration      = self.periodicity_duration,
                                 timegrid               = self.timegrid)
 
-
 class SimpleContract(Asset):
     """ Contract Class """
     def __init__(self,
@@ -518,9 +517,9 @@ class SimpleContract(Asset):
                 end:   dt.datetime = None,
                 wacc: float = 0,
                 price:str = None,
-                extra_costs: Union[float, Dict, str] = 0.,
-                min_cap: Union[float, Dict, str] = 0.,
-                max_cap: Union[float, Dict, str] = 0.,
+                extra_costs: Union[float, StartEndValueDict, str] = 0.,
+                min_cap: Union[float, StartEndValueDict, str] = 0.,
+                max_cap: Union[float, StartEndValueDict, str] = 0.,
                 freq: str = None,
                 profile: pd.Series = None,
                 periodicity: str = None,
@@ -545,14 +544,14 @@ class SimpleContract(Asset):
                                     float: constant value
                                     dict:  dict['start'] = array
                                            dict['end']   = array
-                                           dict['value'] = array
+                                           dict['values'] = array
                                     str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
             price (str): Name of price vector for buying / selling. Defaults to None
             extra_costs (float, dict, str): extra costs added to price vector (in or out). Defaults to 0.
                                             float: constant value
                                             dict:  dict['start'] = array
                                                    dict['end']   = array
-                                                   dict['value'] = array
+                                                   dict['values'] = array
                                             str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
 
             periodicity (str, pd freq style): Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)
@@ -605,6 +604,8 @@ class SimpleContract(Asset):
             assert (isinstance(self.price, str)), 'Error in asset '+self.name+' --> price must be given as string'
             assert (self.price in prices)
             price = prices[self.price].copy()
+            # convert to array
+            if isinstance(price, list): price = np.asarray(price)
         else:
             price = np.zeros(timegrid.T)
 
@@ -696,7 +697,7 @@ class SimpleContract(Asset):
             return OptimProblem(c = c, l = l, u = u,
                                 mapping = mapping)
 
-    def make_vector(self, value:  Union[float, Dict, str], prices:dict, default_value: float = None, convert=False):
+    def make_vector(self, value:  Union[float, StartEndValueDict, str], prices:dict, default_value: float = None, convert=False):
         """
         Make a vector out of value
         Args:
@@ -704,7 +705,7 @@ class SimpleContract(Asset):
                                       float: constant value
                                       dict:  dict['start'] = array
                                              dict['end']   = array
-                                             dict['value'] = array
+                                             dict['values'] = array
                                       str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
             prices (dict): Dictionary of price arrays needed by assets in portfolio
             default_value (float): The value that is used if any of the entries of the resulting vector are not specified
@@ -730,7 +731,6 @@ class SimpleContract(Asset):
         if convert:
             vec = vec * self.timegrid.restricted.dt
         return vec
-
 
 class Transport(Asset):
     """ Contract Class """
@@ -954,11 +954,11 @@ class Contract(SimpleContract):
                 end:   dt.datetime = None,
                 wacc: float = 0,
                 price:str = None,
-                extra_costs: Union[float, Dict, str] = 0.,
-                min_cap: Union[float, Dict, str] = 0.,
-                max_cap: Union[float, Dict, str] = 0.,
-                min_take: dict = None,
-                max_take: dict = None,
+                extra_costs: Union[float, StartEndValueDict, str] = 0.,
+                min_cap: Union[float, StartEndValueDict, str] = 0.,
+                max_cap: Union[float, StartEndValueDict, str] = 0.,
+                min_take: StartEndValueDict = None,
+                max_take: StartEndValueDict = None,
                 freq: str = None,
                 profile: pd.Series = None,
                 periodicity: str = None,
@@ -987,19 +987,19 @@ class Contract(SimpleContract):
                                     float: constant value
                                     dict:  dict['start'] = array
                                            dict['end']   = array
-                                           dict['value'] = array
+                                           dict['values"] = array
                                     str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
             min_take (dict) : Minimum volume within given period. Defaults to None
             max_take (dict) : Maximum volume within given period. Defaults to None
                               dict:  dict['start'] = np.array
                                      dict['end']   = np.array
-                                     dict['value'] = np.array
+                                     dict['values"] = np.array
             price (str): Name of price vector for buying / selling
             extra_costs (float, dict, str): extra costs added to price vector (in or out). Defaults to 0.
                                             float: constant value
                                             dict:  dict['start'] = array
                                                    dict['end']   = array
-                                                   dict['value'] = array
+                                                   dict['values"] = array
                                             str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
 
             periodicity (str, pd freq style): Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)
@@ -1108,25 +1108,25 @@ def convert_time_unit(value: float, old_freq:str, new_freq:str) -> float:
 class CHPAsset(Contract):
     def __init__(self,
                  name: str = 'default_name_contract',
-                 nodes: List[Node] = [Node(name = 'default_node_power'), Node(name = 'default_node_heat')],
+                 nodes: List[Node] = [Node(name = 'default_node_power'), Node(name = 'default_node_heat'), Node(name = 'default_node_gas_optional')],
                  start: dt.datetime = None,
                  end:   dt.datetime = None,
                  wacc: float = 0,
                  price:str = None,
-                 extra_costs: Union[float, Dict, str] = 0.,
-                 min_cap: Union[float, Dict, str] = 0.,
-                 max_cap: Union[float, Dict, str] = 0.,
-                 min_take:dict = None,
-                 max_take:dict = None,
+                 extra_costs: Union[float, StartEndValueDict, str] = 0.,
+                 min_cap: Union[float, StartEndValueDict, str] = 0.,
+                 max_cap: Union[float, StartEndValueDict, str] = 0.,
+                 min_take:StartEndValueDict = None,
+                 max_take:StartEndValueDict = None,
                  freq: str = None,
                  profile: pd.Series = None,
                  periodicity: str = None,
                  periodicity_duration: str = None,
-                 conversion_factor_power_heat: Union[float, Dict, str] = 1.,
-                 max_share_heat: Union[float, Dict, str] = None,
+                 conversion_factor_power_heat: Union[float, StartEndValueDict, str] = 1.,
+                 max_share_heat: Union[float, StartEndValueDict, str] = None,
                  ramp: float = None,
-                 start_costs: Union[float, Sequence[float], Dict] = 0.,
-                 running_costs: Union[float, Dict, str] = 0.,
+                 start_costs: Union[float, Sequence[float], StartEndValueDict] = 0.,
+                 running_costs: Union[float, StartEndValueDict, str] = 0.,
                  min_runtime: float = 0,
                  time_already_running: float = 0,
                  min_downtime: float = 0,
@@ -1141,9 +1141,9 @@ class CHPAsset(Contract):
                  shutdown_ramp_lower_bounds_heat: Sequence = None,
                  shutdown_ramp_upper_bounds_heat: Sequence = None,
                  ramp_freq: str = None,
-                 start_fuel: Union[float, Dict, str] = 0.,
-                 fuel_efficiency: Union[float, Dict, str] = 1.,
-                 consumption_if_on: Union[float, Dict, str] = 0.
+                 start_fuel: Union[float, StartEndValueDict, str] = 0.,
+                 fuel_efficiency: Union[float, StartEndValueDict, str] = 1.,
+                 consumption_if_on: Union[float, StartEndValueDict, str] = 0.
                  ):
         """ CHPContract: Generate heat and power
             Restrictions
@@ -1171,13 +1171,13 @@ class CHPAsset(Contract):
                               float: constant value
                               dict:  dict['start'] = np.array
                                      dict['end']   = np.array
-                                     dict['value'] = np.array
+                                     dict['values"] = np.array
             price (str): Name of price vector for buying / selling
             extra_costs (float, dict, str): extra costs added to price vector (in or out). Defaults to 0.
                                             float: constant value
                                             dict:  dict['start'] = array
                                                    dict['end']   = array
-                                                   dict['value'] = array
+                                                   dict['values"] = array
                                             str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
             periodicity (str, pd freq style): Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)
             periodicity_duration (str, pd freq style): Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)
@@ -1926,11 +1926,10 @@ class CHPAsset(Contract):
         op.mapping = new_map
         return op
 
-
 class CHPAsset_with_min_load_costs(CHPAsset):
     def __init__(self,
-                 min_load_threshhold: Union[float, Sequence[float], Dict] = 0.,
-                 min_load_costs: Union[float, Sequence[float], Dict] = None,
+                 min_load_threshhold: Union[float, Sequence[float], StartEndValueDict] = 0.,
+                 min_load_costs: Union[float, Sequence[float], StartEndValueDict] = None,
                 **kwargs                 
                  ):
         """ CHPContract with additional Min Load costs: 
@@ -2029,11 +2028,11 @@ class MultiCommodityContract(Contract):
                 end:   dt.datetime = None,
                 wacc: float = 0,
                 price:str = None,
-                extra_costs: Union[float, Dict, str] = 0.,
-                min_cap: Union[float, Dict, str] = 0.,
-                max_cap: Union[float, Dict, str] = 0.,
-                min_take: dict = None,
-                max_take: dict = None,
+                extra_costs: Union[float, StartEndValueDict, str] = 0.,
+                min_cap: Union[float, StartEndValueDict, str] = 0.,
+                max_cap: Union[float, StartEndValueDict, str] = 0.,
+                min_take: StartEndValueDict = None,
+                max_take: StartEndValueDict = None,
                 factors_commodities: list = [1,1],
                 freq: str = None,
                 profile: pd.Series = None,
@@ -2062,19 +2061,19 @@ class MultiCommodityContract(Contract):
                                     float: constant value
                                     dict:  dict['start'] = array
                                            dict['end']   = array
-                                           dict['value'] = array
+                                           dict['values"] = array
                                     str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
             min_take (dict) : Minimum volume within given period. Defaults to None
             max_take (dict) : Maximum volume within given period. Defaults to None
                               dict:  dict['start'] = np.array
                                      dict['end']   = np.array
-                                     dict['value'] = np.array
+                                     dict['values"] = np.array
             price (str): Name of price vector for buying / selling
             extra_costs (float, dict, str): extra costs added to price vector (in or out). Defaults to 0.
                                             float: constant value
                                             dict:  dict['start'] = array
                                                    dict['end']   = array
-                                                   dict['value'] = array
+                                                   dict['values"] = array
                                             str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
             periodicity (str, pd freq style): Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)
             periodicity_duration (str, pd freq style): Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)
@@ -2170,8 +2169,8 @@ class ExtendedTransport(Transport):
                 min_cap:float = 0.,
                 max_cap:float = 0.,
                 efficiency: float = 1.,
-                min_take: dict = None,
-                max_take: dict = None,
+                min_take: StartEndValueDict = None,
+                max_take: StartEndValueDict = None,
                 freq: str = None,
                 profile: pd.Series = None,
                 periodicity:str=None,
@@ -2211,7 +2210,7 @@ class ExtendedTransport(Transport):
             max_take (dict) : Maximum volume within given period. Defaults to None
                               dict:  dict['start'] = np.array
                                      dict['end']   = np.array
-                                     dict['value'] = np.array
+                                     dict['values"] = np.array
         """
         super(ExtendedTransport, self).__init__(name=name,
                                                 nodes=nodes,
@@ -2415,6 +2414,6 @@ class ScaledAsset(Asset):
                  'var_name' : 'scale',
                  'type'     : 'size'}
         op.mapping['asset'] = self.name # in case scaled asset has a different name than the base asset
-        op.mapping = op.mapping.append(mymap, ignore_index = True)
+        op.mapping = pd.concat([op.mapping, pd.DataFrame([mymap])], ignore_index = True)# op.mapping.append(mymap, ignore_index = True)
 
         return op
