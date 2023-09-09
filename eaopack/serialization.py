@@ -110,7 +110,7 @@ def json_deserialize_objects(obj):
                     obj['np_list'] = [np.datetime64(ll, 'ns') for ll in obj['np_list']]
             res = np.asarray(obj['np_list'])
         elif obj['__class__'] == 'pd_DateTimeIndex':
-            res = pd.Index(obj['__value__'], freq = obj['__freq__'])
+            res = pd.DatetimeIndex(obj['__value__'], freq = obj['__freq__'])
         else:
             raise NotImplementedError(obj['__class__']+ ' not deseralizable')
     else:
