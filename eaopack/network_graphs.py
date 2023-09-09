@@ -44,15 +44,16 @@ def create_graph(portf: Portfolio, file_name: str = None, title = None, no_image
                 color_map_edges.append('grey')
             
     pos=nx.spring_layout(G)
-    nx.draw_networkx_nodes(G,pos,node_color=color_map, node_size=node_sizes, \
-                         alpha = 0.7)
-    nx.draw_networkx_edges(G,pos,  edge_color='grey')#color_map_edges)
-    nx.draw_networkx_labels(G,pos, font_size=8)
-    g_labels = nx.get_edge_attributes(G,'label')
-    nx.draw_networkx_edge_labels(G,pos,edge_labels= g_labels, font_size=8)
 
     if not no_image_output:
+        nx.draw_networkx_nodes(G,pos,node_color=color_map, node_size=node_sizes, \
+                            alpha = 0.7)
+        nx.draw_networkx_edges(G,pos,  edge_color='grey')#color_map_edges)
+        nx.draw_networkx_labels(G,pos, font_size=8)
+        g_labels = nx.get_edge_attributes(G,'label')
+        nx.draw_networkx_edge_labels(G,pos,edge_labels= g_labels, font_size=8)
         if title is None: title = 'Network graph for portfolio'
+        # pyplot version
         plt.title(title)
         plt.axis("off")
         if not file_name is None:
@@ -60,10 +61,11 @@ def create_graph(portf: Portfolio, file_name: str = None, title = None, no_image
             plt.clf()
         else:
             plt.show()
-            plt.close()
+            plt.close()        
     else:
-        return nx.node_link_data(G)
-
+        res = nx.node_link_data(G)
+        res['position'] = pos
+        return res
 if __name__ == "__main__" :
     myf = 'demo_portf.json'
     portf = load_from_json(file_name= myf)
