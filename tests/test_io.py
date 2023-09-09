@@ -130,6 +130,14 @@ class IOTests(unittest.TestCase):
         create_graph(portf = portf, file_name='tests/test_graph.pdf')
         return True
 
+    def test_create_network_output_no_image(self):
+        """ simple test to create network graph """
+        myf = 'tests/demo_portf.json'
+        portf = load_from_json(file_name= myf)
+        res = create_graph(portf = portf, no_image_output=True)
+        assert res['nodes'][0]['id'] == 'location A'
+        return True
+
     def test_dates_serialize(self):
         """ test how to ensure correct serialization of dates in arrays """
 
