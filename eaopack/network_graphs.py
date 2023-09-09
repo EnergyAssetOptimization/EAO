@@ -44,14 +44,14 @@ def create_graph(portf: Portfolio, file_name: str = None, title = None, no_image
                 color_map_edges.append('grey')
             
     pos=nx.spring_layout(G)
-    nx.draw_networkx_nodes(G,pos,node_color=color_map, node_size=node_sizes, \
-                         alpha = 0.7)
-    nx.draw_networkx_edges(G,pos,  edge_color='grey')#color_map_edges)
-    nx.draw_networkx_labels(G,pos, font_size=8)
-    g_labels = nx.get_edge_attributes(G,'label')
-    nx.draw_networkx_edge_labels(G,pos,edge_labels= g_labels, font_size=8)
 
     if not no_image_output:
+        nx.draw_networkx_nodes(G,pos,node_color=color_map, node_size=node_sizes, \
+                            alpha = 0.7)
+        nx.draw_networkx_edges(G,pos,  edge_color='grey')#color_map_edges)
+        nx.draw_networkx_labels(G,pos, font_size=8)
+        g_labels = nx.get_edge_attributes(G,'label')
+        nx.draw_networkx_edge_labels(G,pos,edge_labels= g_labels, font_size=8)
         if title is None: title = 'Network graph for portfolio'
         # pyplot version
         plt.title(title)
