@@ -53,6 +53,7 @@ def create_graph(portf: Portfolio, file_name: str = None, title = None, no_image
 
     if not no_image_output:
         if title is None: title = 'Network graph for portfolio'
+        # pyplot version
         plt.title(title)
         plt.axis("off")
         if not file_name is None:
@@ -60,10 +61,11 @@ def create_graph(portf: Portfolio, file_name: str = None, title = None, no_image
             plt.clf()
         else:
             plt.show()
-            plt.close()
+            plt.close()        
     else:
-        return nx.node_link_data(G)
-
+        res = nx.node_link_data(G)
+        res['position'] = pos
+        return res
 if __name__ == "__main__" :
     myf = 'demo_portf.json'
     portf = load_from_json(file_name= myf)
