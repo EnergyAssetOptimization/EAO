@@ -5,13 +5,14 @@ from eaopack.portfolio import Portfolio
 from eaopack.serialization import load_from_json
 from eaopack.assets import Transport, ExtendedTransport
 
-def create_graph(portf: Portfolio, file_name: str = None, title = None):
+def create_graph(portf: Portfolio, file_name: str = None, title = None, no_image_output = False):
     """ generate a network graph from a portfolio and save to pdf
 
     Args:
         portf (Portfolio): portfolio object
         file_name (str)  : file name. Defaults to None (show plot)
         title (str)      : plot title. Defaults to -Network graph for portfolio-
+        no_image_output (bool, optional): no creation of graph, only return graph data
     """
     node_size  = 500
     asset_size = 200
@@ -50,16 +51,18 @@ def create_graph(portf: Portfolio, file_name: str = None, title = None):
     g_labels = nx.get_edge_attributes(G,'label')
     nx.draw_networkx_edge_labels(G,pos,edge_labels= g_labels, font_size=8)
 
-    if title is None: title = 'Network graph for portfolio'
-    plt.title(title)
-    plt.axis("off")
-    if not file_name is None:
-        plt.savefig(file_name)
-        plt.clf()
+    if not no_image_output:
+        if title is None: title = 'Network graph for portfolio'
+        plt.title(title)
+        plt.axis("off")
+        if not file_name is None:
+            plt.savefig(file_name)
+            plt.clf()
+        else:
+            plt.show()
+            plt.close()
     else:
-        plt.show()
-        plt.close()
-
+        return nx.node_link_data(G)
 
 if __name__ == "__main__" :
     myf = 'demo_portf.json'
