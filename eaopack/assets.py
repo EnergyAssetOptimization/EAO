@@ -410,14 +410,21 @@ class Storage(Asset):
         if sep_needed:
             mapping['time_step'] = np.hstack((self.timegrid.restricted.I, self.timegrid.restricted.I))
             mapping['var_name']  = np.nan # name variables for use e.g. in RI
-            mapping['var_name'].iloc[0:n] = 'disp_in'
-            mapping['var_name'].iloc[n:] = 'disp_out'
+            # mapping['var_name'].iloc[0:n] = 'disp_in'
+            # mapping['var_name'].iloc[n:] = 'disp_out'
+            ind_var_name = mapping.columns.get_indexer(['var_name'])[0]
+            mapping.iloc[0:n, ind_var_name] = 'disp_in'
+            mapping.iloc[n:, ind_var_name] = 'disp_out'
             if len(self.nodes)==1:
                 mapping['node']      = self.nodes[0].name
             else: # separate nodes in / out.
                 mapping['node']  = np.nan
-                mapping['node'].iloc[0:n]      = self.nodes[0].name
-                mapping['node'].iloc[n:2*n]    = self.nodes[1].name
+                my_ind = mapping.columns.get_indexer(['node'])[0]
+                # mapping['node'].iloc[0:n]      = self.nodes[0].name
+                # mapping['node'].iloc[n:2*n]    = self.nodes[1].name
+                mapping.iloc[0:n, my_ind]      = self.nodes[0].name
+                mapping.iloc[n:2*n, my_ind]    = self.nodes[1].name
+
         else:
             mapping['time_step'] = self.timegrid.restricted.I
             mapping['node']      = self.nodes[0].name
@@ -670,9 +677,12 @@ class SimpleContract(Asset):
             # mapping to be able to extract information later on
             # infos:             'asset', 'node', 'type'
             mapping['time_step'] = np.hstack((I, I))
+            ind_var_name = mapping.columns.get_indexer(['var_name'])[0]
             mapping['var_name']  = np.nan # name variables for use e.g. in RI
-            mapping['var_name'].iloc[0:T] = 'disp_in'
-            mapping['var_name'].iloc[T:] = 'disp_out'
+            # mapping['var_name'].iloc[0:T] = 'disp_in'
+            # mapping['var_name'].iloc[T:] = 'disp_out'
+            mapping.iloc[0:T, ind_var_name] = 'disp_in'
+            mapping.iloc[T:, ind_var_name] = 'disp_out'
 
         # shortcut if only costs required
         if costs_only:
