@@ -115,17 +115,25 @@ class OptimProblem:
         i_dur = 0
         i_per = 0
         i_sub_per = 0
-        df['dur'].iloc[0] = 0
-        df['per'].iloc[0] = 0
+        # df['dur'].iloc[0] = 0
+        # df['per'].iloc[0] = 0
+        ind_dur = df.columns.get_indexer(['dur'])[0]
+        ind_per = df.columns.get_indexer(['per'])[0]
+        ind_sub_per = df.columns.get_indexer(['sub_per'])[0]
+        df.iloc[0, ind_dur] = 0
+        df.iloc[0, ind_per] = 0
         for i in range(0,T):
             if tp[i] >= durations[i_dur]: 
                 i_dur +=1
-                df['dur'].iloc[i] = int(i_dur)
+                # df['dur'].iloc[i] = int(i_dur)
+                df.iloc[i, ind_dur] = int(i_dur)
             if tp[i] >= periods[i_per]: 
                 i_per +=1
-                df['per'].iloc[i] = int(i_per)
+                # df['per'].iloc[i] = int(i_per)
+                df.iloc[i, ind_per] = int(i_per)
                 i_sub_per = 0
-            df['sub_per'].iloc[i] = int(i_sub_per)
+            # df['sub_per'].iloc[i] = int(i_sub_per)
+            df.iloc[i, ind_sub_per] = int(i_sub_per)
             i_sub_per += 1
                 
         df.ffill(inplace = True)
