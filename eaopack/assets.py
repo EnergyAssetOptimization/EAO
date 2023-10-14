@@ -677,8 +677,8 @@ class SimpleContract(Asset):
             # mapping to be able to extract information later on
             # infos:             'asset', 'node', 'type'
             mapping['time_step'] = np.hstack((I, I))
-            ind_var_name = mapping.columns.get_indexer(['var_name'])[0]
             mapping['var_name']  = np.nan # name variables for use e.g. in RI
+            ind_var_name = mapping.columns.get_indexer(['var_name'])[0]
             # mapping['var_name'].iloc[0:T] = 'disp_in'
             # mapping['var_name'].iloc[T:] = 'disp_out'
             mapping.iloc[0:T, ind_var_name] = 'disp_in'
