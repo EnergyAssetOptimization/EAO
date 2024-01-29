@@ -858,6 +858,35 @@ class CHPAssetTest_with_threshhold(unittest.TestCase):
         self.assertAlmostEqual(np.abs(costs[(disp>7)]).sum(), 0, 5)        
 
 
+class CHPAssetTest_no_heat(unittest.TestCase):
+    def test_simple_no_heat(self):
+        """ Unit test. Setting up a CHPAsset with random prices
+            and check that it generates full load at negative prices and nothing at positive prices.
+        """
+        ## baseline: with heat node, but no heat
+        node_power = eao.assets.Node('node_power')
+        node_heat = eao.assets.Node('node_heat')
+        timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,2,1), freq = 'd')
+        a = eao.assets.CHPAsset(name='CHP', price='rand_price', nodes = (node_power, node_heat),
+                                min_cap=5., max_cap=10.)
+        np.random.seed(2709)
+        prices ={'rand_price': np.random.rand(timegrid.T)-0.5}
+        op_o = a.setup_optim_problem(prices, timegrid=timegrid)
+        res_o = op_o.optimize()
+        x_power_o = np.around(res_o.x[:timegrid.T], decimals = 3) # round
+        x_heat = np.around(res_o.x[timegrid.T:2*timegrid.T], decimals = 3) # round
+        self.assertTrue(all(x_heat==0))
+
+        ## new: heat node is None
+        a = eao.assets.CHPAsset(name='CHP', price='rand_price', 
+                                nodes = node_power,  # !!!!! heat node not given or None
+                                conversion_factor_power_heat = 0,  # use high number to assert I'd see effects if used
+                                min_cap=5., max_cap=10.)
+        op = a.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        x_power = np.around(res.x[:timegrid.T], decimals = 3) # round
+        self.assertTrue(all(x_power==x_power_o))
+
 ###########################################################################################################
 ###########################################################################################################
 ###########################################################################################################

@@ -43,6 +43,9 @@ class Asset:
             self.nodes = [nodes]
         else:
             self.nodes = nodes
+        assert isinstance(self.nodes, (tuple, list)), 'nodes must be of type Node or list of nodes in  '+self.name
+        for n in self.nodes:
+            assert isinstance(n, Node), 'noses mus be of type Node or list of nodes in '+self.name
         self.wacc = wacc
 
         self.start = start
@@ -1243,6 +1246,9 @@ class CHPAsset(Contract):
                                        max_take=max_take,
                                        periodicity=periodicity,
                                        periodicity_duration=periodicity_duration)
+        # if only one node is given - set second to None (simplified notation)
+        if len(self.nodes) == 1:
+            self.nodes.append(None)
         self.conversion_factor_power_heat                = conversion_factor_power_heat
         self.max_share_heat                 = max_share_heat
         self.ramp                 = ramp
@@ -1284,16 +1290,13 @@ class CHPAsset(Contract):
 
         self.ramp_freq = ramp_freq
 
-        if len(nodes) >= 3:
+        if len(self.nodes) >= 3:
             self.fuel_efficiency      = fuel_efficiency
             self.consumption_if_on    = consumption_if_on
             self.start_fuel           = start_fuel
 
         if self.min_downtime > 1:
             assert (self.time_already_off == 0) ^ (self.time_already_running == 0), "Either time_already_off or time_already_running has to be 0, but not both. Asset: " + self.name
-
-        if len(nodes) not in (2,3):
-            raise ValueError('Length of nodes has to be 2 or 3; power, heat and optionally fuel. Asset: ' + self.name)
 
     def setup_optim_problem(self, prices: dict, timegrid: Timegrid = None,
                             costs_only: bool = False) -> OptimProblem:
@@ -1375,7 +1378,8 @@ class CHPAsset(Contract):
         running_costs = self.make_vector(self.running_costs, prices, default_value=0., convert=True)
         max_share_heat = self.make_vector(self.max_share_heat, prices, default_value=1.)
         conversion_factor_power_heat = self.make_vector(self.conversion_factor_power_heat, prices, default_value=1.)
-        assert np.all(conversion_factor_power_heat != 0), 'conversion_factor_power_heat must not be zero. Asset: ' + self.name
+        if not self.nodes[1] is None: # heat note given
+            assert np.all(conversion_factor_power_heat != 0), 'conversion_factor_power_heat must not be zero. Asset: ' + self.name
         if len(self.nodes) >= 3:
             start_fuel = self.make_vector(self.start_fuel, prices, default_value=0.)
             fuel_efficiency = self.make_vector(self.fuel_efficiency, prices, default_value=1.)
@@ -1387,7 +1391,8 @@ class CHPAsset(Contract):
             c = op
         else:
             c = op.c
-        c = np.hstack([c, conversion_factor_power_heat * c])  # costs for power and heat dispatch
+        if self.nodes[1] is not None: # if heat node given
+            c = np.hstack([c, conversion_factor_power_heat * c])  # costs for power and heat dispatch
 
         include_shutdown_variables = shutdown_ramp_time > 0 or start_ramp_time > 0
         include_start_variables = min_runtime > 1 or np.any(start_costs != 0) or start_ramp_time > 0 or shutdown_ramp_time > 0
@@ -1426,8 +1431,12 @@ class CHPAsset(Contract):
             op.cType = ''
             op.b = np.zeros(0)
 
+        # set lower bound to zero if I have on variables
+        if include_on_variables:
+            op.l = 0.*op.l # now I can be off
         # Define the dispatch variables:
-        op = self._add_dispatch_variables(op, conversion_factor_power_heat, max_cap, max_share_heat)
+        if not self.nodes[1] is None: # heat note given        
+            op = self._add_dispatch_variables(op, conversion_factor_power_heat, max_cap, max_share_heat)
 
         # Add on-, start-, and shutdown-variables:
         op = self._add_bool_variables(op, include_on_variables, include_start_variables, include_shutdown_variables)
@@ -1605,12 +1614,14 @@ class CHPAsset(Contract):
             var = op.mapping.iloc[i]
 
             A_lower_bounds[i, i] = 1
-            A_lower_bounds[i, self.heat_idx + i] = conversion_factor_power_heat[i] 
+            if not self.nodes[1] is None: # heat note given            
+                A_lower_bounds[i, self.heat_idx + i] = conversion_factor_power_heat[i] 
             if include_on_variables:
                 A_lower_bounds[i, self.on_idx + var["time_step"] - starting_timestep] = - min_cap[i]
 
             A_upper_bounds[i, i] = 1
-            A_upper_bounds[i, self.heat_idx + i] = conversion_factor_power_heat[i] 
+            if not self.nodes[1] is None: # heat note given            
+                A_upper_bounds[i, self.heat_idx + i] = conversion_factor_power_heat[i] 
             if include_on_variables:
                 A_upper_bounds[i, self.on_idx + var["time_step"] - starting_timestep] = - max_cap[i]
 
@@ -1637,8 +1648,8 @@ class CHPAsset(Contract):
         else:
             op.b = np.hstack((op.b, max_cap[start:]))
 
-        # Minimum and maximum capacity for HEAT during start:
-        if shutdown_ramp_lower_bounds_heat is not None:
+        # Minimum and maximum capacity for HEAT during start  -  an heat node given:
+        if (shutdown_ramp_lower_bounds_heat is not None) and (self.nodes[1] is not None):
             start = max(0, start_ramp_time - time_already_running) if time_already_running > 0 else 0
             A_lower_bounds = sp.lil_matrix((self.n, op.A.shape[1]))
             A_upper_bounds = sp.lil_matrix((self.n, op.A.shape[1]))
@@ -1684,7 +1695,8 @@ class CHPAsset(Contract):
                 # Upper Bound:
                 a = sp.lil_matrix((1, op.A.shape[1]))
                 a[0, i] = 1
-                a[0, self.heat_idx + i] = conversion_factor_power_heat[i]
+                if self.nodes[1] is not None:
+                    a[0, self.heat_idx + i] = conversion_factor_power_heat[i]
                 op.A = sp.vstack((op.A, a))
                 op.cType += 'U'
                 op.b = np.hstack((op.b, start_ramp_upper_bounds[time_already_running + i]))
@@ -1692,7 +1704,8 @@ class CHPAsset(Contract):
                 # Lower Bound:
                 a = sp.lil_matrix((1, op.A.shape[1]))
                 a[0, i] = 1
-                a[0, self.heat_idx + i] = conversion_factor_power_heat[i]
+                if self.nodes[1] is not None:
+                    a[0, self.heat_idx + i] = conversion_factor_power_heat[i]
                 op.A = sp.vstack((op.A, a))
                 op.cType += 'L'
                 op.b = np.hstack((op.b, start_ramp_lower_bounds[time_already_running + i]))
@@ -1711,9 +1724,11 @@ class CHPAsset(Contract):
                 # Lower Bound
                 a = sp.lil_matrix((1, op.A.shape[1]))
                 a[0, t] = 1
-                a[0, self.heat_idx + t] = conversion_factor_power_heat[t]
+                if self.nodes[1] is not None:
+                    a[0, self.heat_idx + t] = conversion_factor_power_heat[t]
                 a[0, t - 1] = -1
-                a[0, self.heat_idx + t - 1] = -conversion_factor_power_heat[t]
+                if self.nodes[1] is not None:
+                    a[0, self.heat_idx + t - 1] = -conversion_factor_power_heat[t]
                 if include_on_variables:
                     a[0, self.on_idx + t - 1] = ramp
                 for i in range(shutdown_ramp_time):
@@ -1730,9 +1745,11 @@ class CHPAsset(Contract):
                 # Upper Bound
                 a = sp.lil_matrix((1, op.A.shape[1]))
                 a[0, t] = 1
-                a[0, self.heat_idx + t] = conversion_factor_power_heat[t]
+                if self.nodes[1] is not None:
+                    a[0, self.heat_idx + t] = conversion_factor_power_heat[t]
                 a[0, t - 1] = -1
-                a[0, self.heat_idx + t - 1] = -conversion_factor_power_heat[t]
+                if self.nodes[1] is not None:
+                    a[0, self.heat_idx + t - 1] = -conversion_factor_power_heat[t]
                 if include_on_variables:
                     a[0, self.on_idx + t] = -ramp
                     b_value = 0
@@ -1752,7 +1769,8 @@ class CHPAsset(Contract):
             # Initial ramp constraint
             a = sp.lil_matrix((1, op.A.shape[1]))
             a[0, 0] = 1
-            a[0, self.heat_idx] = conversion_factor_power_heat[0]
+            if self.nodes[1] is not None:
+                a[0, self.heat_idx] = conversion_factor_power_heat[0]
             for i in range(shutdown_ramp_time):
                 a[0, self.shutdown_idx + i] = last_dispatch - ramp
             op.A = sp.vstack([op.A, a])
@@ -1764,7 +1782,8 @@ class CHPAsset(Contract):
 
             a = sp.lil_matrix((1, op.A.shape[1]))
             a[0, 0] = 1
-            a[0, self.heat_idx] = conversion_factor_power_heat[0]
+            if self.nodes[1] is not None:
+                a[0, self.heat_idx] = conversion_factor_power_heat[0]
             if include_on_variables:
                 a[0, self.on_idx] = -ramp
             op.A = sp.vstack([op.A, a])
