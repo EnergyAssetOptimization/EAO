@@ -1257,15 +1257,15 @@ class CHPAsset(Contract):
             assert (len(self.nodes) in (2,3)), 'Length of nodes has to be 2 or 3; power, heat and optionally fuel. Asset: ' + self.name
             self.idx_nodes['heat']     = 1
             if len(self.nodes)==3:
-                self.idx_nodes['gas']  = 2
+                self.idx_nodes['fuel']  = 2
             else:
-                self.idx_nodes['gas']  = None
+                self.idx_nodes['fuel']  = None
         else:
             self.idx_nodes['heat']     = None
             if len(self.nodes)==2:
-                self.idx_nodes['gas']  = 1
+                self.idx_nodes['fuel']  = 1
             else:
-                self.idx_nodes['gas']  = None
+                self.idx_nodes['fuel']  = None
 
         self.conversion_factor_power_heat                = conversion_factor_power_heat
         self.max_share_heat                 = max_share_heat
@@ -1308,7 +1308,7 @@ class CHPAsset(Contract):
 
         self.ramp_freq = ramp_freq
 
-        if (self.idx_nodes['gas'] is not None):
+        if (self.idx_nodes['fuel'] is not None):
             self.fuel_efficiency      = fuel_efficiency
             self.consumption_if_on    = consumption_if_on
             self.start_fuel           = start_fuel
@@ -1398,7 +1398,7 @@ class CHPAsset(Contract):
         conversion_factor_power_heat = self.make_vector(self.conversion_factor_power_heat, prices, default_value=1.)
         if (self.idx_nodes['heat'] is not None): # heat note given
             assert np.all(conversion_factor_power_heat != 0), 'conversion_factor_power_heat must not be zero. Asset: ' + self.name
-        if (self.idx_nodes['gas'] is not None):
+        if (self.idx_nodes['fuel'] is not None):
             start_fuel = self.make_vector(self.start_fuel, prices, default_value=0.)
             fuel_efficiency = self.make_vector(self.fuel_efficiency, prices, default_value=1.)
             consumption_if_on = self.make_vector(self.consumption_if_on, prices, default_value=0., convert=True)
@@ -1415,7 +1415,7 @@ class CHPAsset(Contract):
         include_shutdown_variables = shutdown_ramp_time > 0 or start_ramp_time > 0
         include_start_variables = min_runtime > 1 or np.any(start_costs != 0) or start_ramp_time > 0 or shutdown_ramp_time > 0
         include_on_variables = include_start_variables or min_downtime > 1 or include_shutdown_variables or np.any(self.min_cap != 0.)
-        if (self.idx_nodes['gas'] is not None):
+        if (self.idx_nodes['fuel'] is not None):
             include_start_variables = include_start_variables or np.any(start_fuel != 0.)
             include_on_variables = include_on_variables or include_start_variables or np.any(consumption_if_on != 0.)
 
@@ -1488,7 +1488,7 @@ class CHPAsset(Contract):
         op.mapping.reset_index(inplace=True, drop=True)  # need to reset index (which enumerates variables)
 
         # Model fuel consumption:
-        if (self.idx_nodes['gas'] is not None):
+        if (self.idx_nodes['fuel'] is not None):
             op = self._add_fuel_consumption(op, fuel_efficiency, consumption_if_on, start_fuel, conversion_factor_power_heat, include_on_variables, include_start_variables)
 
         return op
@@ -1530,8 +1530,8 @@ class CHPAsset(Contract):
             return ramp_new_freq
 
     def _add_dispatch_variables(self, op, conversion_factor_power_heat, max_cap, max_share_heat):
-        """ Divide each dispatch variable in op into a power dispatch that flows into the power node self.nodes[1]
-            and a heat dispatch that flows into self.nodes[2] """
+        """ Divide each dispatch variable in op into a power dispatch that flows into the power node self.nodes[0]
+            and a heat dispatch that flows into self.nodes[1] """
         # Make sure that op.mapping contains only dispatch variables (i.e. with type=='d')
         var_types = op.mapping['type'].unique()
         assert np.all(
@@ -1949,7 +1949,7 @@ class CHPAsset(Contract):
         for i in my_node_idx:  # nodes power and heat
             initial_map = op.mapping[
                 (op.mapping['var_name'] == 'disp') & (op.mapping['node'] == self.node_names[i])].copy()
-            initial_map['node'] = self.node_names[self.idx_nodes['gas']]  # fuel node
+            initial_map['node'] = self.node_names[self.idx_nodes['fuel']]  # fuel node
             if i == 0:
                 initial_map['disp_factor'] = -1. / fuel_efficiency
             elif (i == 1):
@@ -1958,7 +1958,7 @@ class CHPAsset(Contract):
         # consumption  if on
         if include_on_variables:
             initial_map = op.mapping[op.mapping['var_name'] == 'bool_on'].copy()
-            initial_map['node'] = self.node_names[2]  # fuel node
+            initial_map['node'] = self.node_names[self.idx_nodes['fuel']]  # fuel node
             # initial_map['var_name'] = 'fuel_if_on'
             initial_map['type'] = 'd'
             initial_map['disp_factor'] = -consumption_if_on
@@ -1966,7 +1966,7 @@ class CHPAsset(Contract):
         # consumption on start
         if include_start_variables:
             initial_map = op.mapping[op.mapping['var_name'] == 'bool_start'].copy()
-            initial_map['node'] = self.node_names[2]  # fuel node
+            initial_map['node'] = self.node_names[self.idx_nodes['fuel']]  # fuel node
             # initial_map['var_name'] = 'fuel_start'
             initial_map['type'] = 'd'
             initial_map['disp_factor'] = -start_fuel
