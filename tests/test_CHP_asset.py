@@ -881,7 +881,8 @@ class CHPAssetTest_no_heat(unittest.TestCase):
         a = eao.assets.CHPAsset(name='CHP', price='rand_price', 
                                 nodes = node_power,  # !!!!! heat node not given or None
                                 conversion_factor_power_heat = 0,  # use high number to assert I'd see effects if used
-                                min_cap=5., max_cap=10.)
+                                min_cap=5., max_cap=10.,
+                                _no_heat = True)
         op = a.setup_optim_problem(prices, timegrid=timegrid)
         res = op.optimize()
         x_power = np.around(res.x[:timegrid.T], decimals = 3) # round
