@@ -2466,3 +2466,153 @@ class ScaledAsset(Asset):
         op.mapping = pd.concat([op.mapping, pd.DataFrame([mymap])], ignore_index = True)# op.mapping.append(mymap, ignore_index = True)
 
         return op
+
+class PowerPlant(CHPAsset):
+    def __init__(self,
+                 name: str = 'default_name_plant',
+                 nodes: List[Node] = [Node(name = 'default_node_power'), Node(name = 'default_node_gas_optional')],
+                 start: dt.datetime = None,
+                 end:   dt.datetime = None,
+                 wacc: float = 0,
+                 price:str = None,
+                 extra_costs: Union[float, StartEndValueDict, str] = 0.,
+                 min_cap: Union[float, StartEndValueDict, str] = 0.,
+                 max_cap: Union[float, StartEndValueDict, str] = 0.,
+                 min_take:StartEndValueDict = None,
+                 max_take:StartEndValueDict = None,
+                 freq: str = None,
+                 profile: pd.Series = None,
+                 periodicity: str = None,
+                 periodicity_duration: str = None,
+                 ramp: float = None,
+                 start_costs: Union[float, Sequence[float], StartEndValueDict] = 0.,
+                 running_costs: Union[float, StartEndValueDict, str] = 0.,
+                 min_runtime: float = 0,
+                 time_already_running: float = 0,
+                 min_downtime: float = 0,
+                 time_already_off: float = 0,
+                 last_dispatch: float = 0,
+                 start_ramp_lower_bounds: Sequence = None,
+                 start_ramp_upper_bounds: Sequence = None,
+                 shutdown_ramp_lower_bounds: Sequence = None,
+                 shutdown_ramp_upper_bounds: Sequence = None,
+                 ramp_freq: str = None,
+                 start_fuel: Union[float, StartEndValueDict, str] = 0.,
+                 fuel_efficiency: Union[float, StartEndValueDict, str] = 1.,
+                 consumption_if_on: Union[float, StartEndValueDict, str] = 0.,
+                 ):
+        """ PowerPlant: Generate power from fuel (fuel optional). Derived from more complex CHP, taking out heat
+            Restrictions
+            - time dependent capacity restrictions
+            - MinTake & MaxTake for a list of periods
+            - start costs
+            - minimum runtime
+            - ramps
+        Args:
+            name (str): Unique name of the asset                                              (asset parameter)
+            nodes (Node): One node  for generated power                                       (asset parameter)
+                          optional: node for fuel (e.g. gas)
+            start (dt.datetime) : start of asset being active. defaults to none (-> timegrid start relevant)
+            end (dt.datetime)   : end of asset being active. defaults to none (-> timegrid start relevant)
+            timegrid (Timegrid): Timegrid for discretization                                  (asset parameter)
+            wacc (float): Weighted average cost of capital to discount cash flows in target   (asset parameter)
+            freq (str, optional):   Frequency for optimization - in case different from portfolio (defaults to None, using portfolio's freq)
+                                    The more granular frequency of portf & asset is used
+            profile (pd.Series, optional):  If freq(asset) > freq(portf) assuming this profile for granular dispatch (e.g. scaling hourly profile to week).
+                                            Defaults to None, only relevant if freq is not none
+            min_cap (float) : Minimum capacity for generating virtual dispatch (power + conversion_factor_power_heat * heat). Has to be greater or equal to 0. Defaults to 0.
+            max_cap (float) : Maximum capacity for generating virtual dispatch (power + conversion_factor_power_heat * heat). Has to be greater or equal to 0. Defaults to 0.
+            min_take (float) : Minimum volume within given period. Defaults to None
+            max_take (float) : Maximum volume within given period. Defaults to None
+                              float: constant value
+                              dict:  dict['start'] = np.array
+                                     dict['end']   = np.array
+                                     dict['values"] = np.array
+            price (str): Name of price vector for buying / selling
+            extra_costs (float, dict, str): extra costs added to price vector (in or out). Defaults to 0.
+                                            float: constant value
+                                            dict:  dict['start'] = array
+                                                   dict['end']   = array
+                                                   dict['values"] = array
+                                            str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
+            periodicity (str, pd freq style): Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)
+            periodicity_duration (str, pd freq style): Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)
+            ramp (float): Maximum increase/decrease of virtual dispatch (power + conversion_factor_power_heat * heat) in one timestep. Defaults to 1.
+            start_costs (float): Costs for starting. Defaults to 0.
+            running_costs (float): Costs when on. Defaults to 0.
+            min_runtime (int): Minimum runtime in timegrids main_time_unit. (start ramp time and shutdown ramp time do not count towards the min runtime.) Defaults to 0.
+            time_already_running (int): The number of timesteps the asset is already running in timegrids main_time_unit. Defaults to 0.
+            min_downtime (int): Minimum downtime in timegrids main_time_unit. Defaults to 0.
+            time_already_off (int): The number of timesteps the asset has already been off in timegrids main_time_unit. Defaults to 0.
+            last_dispatch (float): Previous virtual dispatch (power + conversion_factor_power_heat * heat). Defaults to 0.
+            start_ramp_lower_bounds (Sequence): The i-th element of this sequence specifies a lower bound of the
+                                                virtual dispatch (power + conversion_factor_power_heat * heat) at i timesteps
+                                                of freq ramp_freq after starting.  Defaults to None.
+            start_ramp_upper_bounds (Sequence): The i-th element of this sequence specifies an upper bound of the
+                                                virtual dispatch (power + conversion_factor_power_heat * heat) at i timesteps
+                                                of freq ramp_freq after starting.  Defaults to None.
+            shutdown_ramp_lower_bounds (Sequence): The i-th element of this sequence specifies a lower bound of the
+                                                   virtual dispatch (power + conversion_factor_power_heat * heat) at i timesteps
+                                                   of freq ramp_freq before turning off. Defaults to None.
+            shutdown_ramp_upper_bounds (Sequence): The i-th element of this sequence specifies an upper bound of the
+                                                   virtual dispatch (power + conversion_factor_power_heat * heat) at i timesteps
+                                                   of freq ramp_freq before turning off. If it is None, it is set equal to shutdown_ramp_upper_bounds.
+                                                   Defaults to None.
+            ramp_freq (str): A string specifying the frequency of the start-and shutdown ramp specification.
+                             If this is None, the timegrids main_time_unit is used. Otherwise the start and shutdown ramps are
+                             interpolated to get values in the timegrids freq.
+
+
+            Optional: Explicit fuel consumption (e.g. gas) for multi-commodity simulation
+                 start_fuel (float, dict, str): detaults to  0
+                 fuel_efficiency (float, dict, str): defaults to 1
+                 consumption_if_on (float, dict, str): defaults to 0
+        """
+        super(PowerPlant, self).__init__(name=name,
+                                       nodes=nodes,
+                                       start=start,
+                                       end=end,
+                                       wacc=wacc,
+                                       freq=freq,
+                                       profile=profile,
+                                       price=price,
+                                       extra_costs=extra_costs,
+                                       min_cap=min_cap,
+                                       max_cap=max_cap,
+                                       min_take=min_take,
+                                       max_take=max_take,
+                                       periodicity=periodicity,
+                                       periodicity_duration=periodicity_duration,
+                                       ramp = ramp,
+                                       start_costs = start_costs,
+                                       running_costs = running_costs,
+                                       min_runtime = min_runtime,
+                                       time_already_running = time_already_running,
+                                       min_downtime = min_downtime,
+                                       time_already_off = time_already_off,
+                                       last_dispatch = last_dispatch,
+                                       start_ramp_lower_bounds = start_ramp_lower_bounds,
+                                       start_ramp_upper_bounds = start_ramp_upper_bounds,
+                                       shutdown_ramp_lower_bounds = shutdown_ramp_lower_bounds,
+                                       shutdown_ramp_upper_bounds = shutdown_ramp_upper_bounds,
+                                       ramp_freq = ramp_freq,
+                                       start_fuel = start_fuel,
+                                       fuel_efficiency = fuel_efficiency,
+                                       consumption_if_on = consumption_if_on,
+                                       _no_heat = True     )
+
+    def setup_optim_problem(self, prices: dict, timegrid: Timegrid = None,
+                            costs_only: bool = False) -> OptimProblem:
+        """ Set up optimization problem for asset
+
+        Args:
+            prices (dict): Dictionary of price arrays needed by assets in portfolio
+            timegrid (Timegrid, optional): Discretization grid for asset. Defaults to None,
+                                           in which case it must have been set previously
+            costs_only (bool): Only create costs vector (speed up e.g. for sampling prices). Defaults to False
+
+        Returns:
+            OptimProblem: Optimization problem to be used by optimizer
+        """
+        op = super().setup_optim_problem(prices=prices, timegrid=timegrid, costs_only=costs_only)
+        return op
