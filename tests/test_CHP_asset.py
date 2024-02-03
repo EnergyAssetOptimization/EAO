@@ -984,7 +984,7 @@ class CHPAssetTest_no_heat(unittest.TestCase):
         self.assertAlmostEqual(np.abs(costs[disp>prices['ml_t']]).sum(), 0, 5)
 
 
-class PowerPlant(unittest.TestCase):
+class Plant(unittest.TestCase):
     def test_simple_PP(self):
         """ Unit test. Setting up a CHPAsset with random prices
             and check that it generates full load at negative prices and nothing at positive prices.
@@ -1004,7 +1004,7 @@ class PowerPlant(unittest.TestCase):
         self.assertTrue(all(x_heat==0))
 
         ## new: heat node is None
-        a = eao.assets.PowerPlant(name='CHP', price='rand_price', 
+        a = eao.assets.Plant(name='CHP', price='rand_price', 
                                 nodes = node_power,  # !!!!! heat node not given or None
                                 min_cap=5., max_cap=10.)
         op = a.setup_optim_problem(prices, timegrid=timegrid)
@@ -1057,7 +1057,7 @@ class PowerPlant(unittest.TestCase):
         #############################  test without heat node
         #####################################################
         # simple case, no min run time
-        a = eao.assets.PowerPlant(name='PP',
+        a = eao.assets.Plant(name='PP',
                                 nodes=(node_power, node_gas),
                                 min_cap=1.,
                                 max_cap=10.,
@@ -1081,11 +1081,57 @@ class PowerPlant(unittest.TestCase):
         self.assertAlmostEqual(check, 391.9 , 4)        
 
         # check serialization (new class...)
-        ##   XXX Check and revisit --- there are superfluous parameters since CHP has more than Power Plant
         s = eao.serialization.to_json(a)
         aa = eao.serialization.load_from_json(s)
 
-        pass
+    def test_PP_regression(self):
+        """ Unit test. Predefined data - checking result is same as checked
+        """
+        node_power = eao.assets.Node('node_power')
+        node_heat = eao.assets.Node('node_heat')
+        node_gas = eao.assets.Node('node_gas')
+
+        Start = dt.date(2022, 1, 1)
+        End = dt.date(2022, 1, 3)
+        timegrid = eao.assets.Timegrid(Start, End, freq='15min')
+
+        #############################  test without heat node
+        #####################################################
+        # load test data
+        import os
+        myfile = os.path.join(os.path.join(os.path.dirname(__file__)),'plant_test_data.csv')
+        df = pd.read_csv(myfile)
+        df.set_index('date', inplace = True)
+        df = timegrid.prices_to_grid(df)
+        # simple case, no min run time
+        a = eao.assets.Plant(name='PP',
+                                nodes=(node_power, node_gas),
+                                min_cap         = 'mincap',
+                                max_cap         = 'maxcap',
+                                start_costs     = 1.,
+                                running_costs   = 'runC',
+                                start_fuel      = 10,
+                                fuel_efficiency = .5,
+                                consumption_if_on= .1,
+                                min_downtime=2,
+                                time_already_running=10) 
+        b = eao.assets.SimpleContract(name = 'powerMarket', price='power_price', nodes = node_power, min_cap=-100, max_cap=100)
+        c = eao.assets.SimpleContract(name = 'gasMarket', price='gas_price', nodes = node_gas, min_cap=-100, max_cap=100)
+        portf = eao.portfolio.Portfolio([a, b, c])
+        op = portf.setup_optim_problem(df, timegrid=timegrid)
+        res = op.optimize()
+        out = eao.io.extract_output(portf, op, res, df)
+        eao.io.output_to_file(out, 'results_plant.xlsx')
+        # # check manually checked values
+        check = out['prices']['PP (node_power)'].sum()
+        # self.assertAlmostEqual(check, 190. , 4) 
+        # check = out['dispatch']['gasMarket (node_gas)'].sum()
+        # self.assertAlmostEqual(check, 391.9 , 4)        
+
+        # check serialization (new class...)
+        s = eao.serialization.to_json(a)
+        aa = eao.serialization.load_from_json(s)
+
 
 ###########################################################################################################
 ###########################################################################################################

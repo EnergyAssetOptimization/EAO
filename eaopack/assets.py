@@ -733,7 +733,7 @@ class SimpleContract(Asset):
         elif isinstance(value, (float, int, np.ndarray)):
             vec = value * np.ones(T)
         elif isinstance(value, str):
-            assert (value in prices), 'data for ' + value + 'not found for asset  ' + self.name
+            assert (value in prices), 'data for ' + value + ' not found for asset  ' + self.name
             vec = prices[value].copy()
             vec = vec[I]  # only in asset time window
         else:  # given in form of dict (start/end/values)
@@ -2467,7 +2467,7 @@ class ScaledAsset(Asset):
 
         return op
 
-class PowerPlant(CHPAsset):
+class Plant(CHPAsset):
     def __init__(self,
                  name: str = 'default_name_plant',
                  nodes: List[Node] = [Node(name = 'default_node_power'), Node(name = 'default_node_gas_optional')],
@@ -2500,8 +2500,9 @@ class PowerPlant(CHPAsset):
                  start_fuel: Union[float, StartEndValueDict, str] = 0.,
                  fuel_efficiency: Union[float, StartEndValueDict, str] = 1.,
                  consumption_if_on: Union[float, StartEndValueDict, str] = 0.,
+                 **kwargs
                  ):
-        """ PowerPlant: Generate power from fuel (fuel optional). Derived from more complex CHP, taking out heat
+        """ Plant: Generate power (or another commodity) from fuel (fuel optional). Derived from more complex CHP, taking out heat
             Restrictions
             - time dependent capacity restrictions
             - MinTake & MaxTake for a list of periods
@@ -2568,7 +2569,7 @@ class PowerPlant(CHPAsset):
                  fuel_efficiency (float, dict, str): defaults to 1
                  consumption_if_on (float, dict, str): defaults to 0
         """
-        super(PowerPlant, self).__init__(name=name,
+        super(Plant, self).__init__(name=name,
                                        nodes=nodes,
                                        start=start,
                                        end=end,
@@ -2599,20 +2600,5 @@ class PowerPlant(CHPAsset):
                                        start_fuel = start_fuel,
                                        fuel_efficiency = fuel_efficiency,
                                        consumption_if_on = consumption_if_on,
-                                       _no_heat = True     )
+                                       _no_heat = True)
 
-    def setup_optim_problem(self, prices: dict, timegrid: Timegrid = None,
-                            costs_only: bool = False) -> OptimProblem:
-        """ Set up optimization problem for asset
-
-        Args:
-            prices (dict): Dictionary of price arrays needed by assets in portfolio
-            timegrid (Timegrid, optional): Discretization grid for asset. Defaults to None,
-                                           in which case it must have been set previously
-            costs_only (bool): Only create costs vector (speed up e.g. for sampling prices). Defaults to False
-
-        Returns:
-            OptimProblem: Optimization problem to be used by optimizer
-        """
-        op = super().setup_optim_problem(prices=prices, timegrid=timegrid, costs_only=costs_only)
-        return op
