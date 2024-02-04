@@ -1110,11 +1110,13 @@ class Plant(unittest.TestCase):
                                 max_cap         = 'maxcap',
                                 start_costs     = 1.,
                                 running_costs   = 'runC',
-                                start_fuel      = 10,
                                 fuel_efficiency = .5,
                                 consumption_if_on= .1,
-                                min_downtime=2,
-                                time_already_running=10) 
+                                start_fuel      = 1,
+                                min_downtime    = 2,
+                                ramp            = 10,
+                                time_already_running=0,
+                                time_already_off= 1) 
         b = eao.assets.SimpleContract(name = 'powerMarket', price='power_price', nodes = node_power, min_cap=-100, max_cap=100)
         c = eao.assets.SimpleContract(name = 'gasMarket', price='gas_price', nodes = node_gas, min_cap=-100, max_cap=100)
         portf = eao.portfolio.Portfolio([a, b, c])
@@ -1123,8 +1125,10 @@ class Plant(unittest.TestCase):
         out = eao.io.extract_output(portf, op, res, df)
         eao.io.output_to_file(out, 'results_plant.xlsx')
         # # check manually checked values
-        check = out['prices']['PP (node_power)'].sum()
-        # self.assertAlmostEqual(check, 190. , 4) 
+        # check = out['prices']['PP (node_power)'].sum()
+        self.assertAlmostEqual(res.value,  35926.718225, 2) 
+        self.assertAlmostEqual(out['DCF'].sum().sum(),  35926.718225, 2)         
+        self.assertAlmostEqual(out['dispatch'].sum().sum(),  0, 2)             
         # check = out['dispatch']['gasMarket (node_gas)'].sum()
         # self.assertAlmostEqual(check, 391.9 , 4)        
 
