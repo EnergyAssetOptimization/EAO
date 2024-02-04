@@ -32,7 +32,6 @@ class CHPAssetTest(unittest.TestCase):
         check = check and (tot_dcf == np.around(res.value , decimals = 3))
         self.assertTrue(check)
 
-
     def test_min_cap_vector(self):
         """ Unit test. Setting up a CHPAsset with positive prices and a simple contract with a minimum demand that is
             smaller than the min capacity. Check that it runs at minimum capacity.
@@ -213,7 +212,6 @@ class CHPAssetTest(unittest.TestCase):
         # is 100, otherwise on because price is negative
         # T-9 times full load at price -1
         self.assertAlmostEqual(res.value, (timegrid.T-9)*10, 4)
-
 
     def test_gas_consumption(self):
         """ Unit test. Setting up a CHPAsset with explicit gas (fuel) consumption
@@ -573,7 +571,6 @@ class CHPAssetTest(unittest.TestCase):
         shutdown_variables_true[5 + len(start_ramp_interpolated) + len(shutdown_ramp_interpolated)] = 1
         self.assertAlmostEqual(abs(shutdown_variables_true - shutdown_variables).sum(), 0, 4)
 
-
     def test_start_and_shutdown_ramp_heat_1(self):
         """ Testing heat start ramp
         """
@@ -792,7 +789,7 @@ class CHPAssetTest_with_threshhold(unittest.TestCase):
         self.assertAlmostEqual(np.abs(costs[disp>prices['ml_t']]).sum(), 0, 5)
 
     def test_isrunning(self):
-        """ Unit test. Test simple case with theshhold
+        """ Unit test. Test simple case with threshhold
         """
         node_power = eao.assets.Node('node_power')
         node_heat = eao.assets.Node('node_heat')
@@ -820,7 +817,7 @@ class CHPAssetTest_with_threshhold(unittest.TestCase):
         self.assertAlmostEqual(np.abs(costs[(disp>7*2)]).sum(), 0, 5)
 
     def test_check_indexing(self):
-        """ Unit test. Test simple case with theshhold
+        """ Unit test. Test simple case with threshhold
         """
         # portf = eao.serialization.load_from_json(file_name='out_portf.json')
         # tg = eao.serialization.load_from_json(file_name='out_timegrid.json')
@@ -856,6 +853,342 @@ class CHPAssetTest_with_threshhold(unittest.TestCase):
         self.assertAlmostEqual(np.abs(costs[disp==0]).sum(), 0, 5)
         self.assertAlmostEqual(np.abs(costs[(disp<7)&(disp>0)]+100).sum(), 0, 5)
         self.assertAlmostEqual(np.abs(costs[(disp>7)]).sum(), 0, 5)        
+
+
+class CHPAssetTest_no_heat(unittest.TestCase):
+    def test_simple_no_heat(self):
+        """ Unit test. Setting up a CHPAsset with random prices
+            and check that it generates full load at negative prices and nothing at positive prices.
+        """
+        ## baseline: with heat node, but no heat
+        node_power = eao.assets.Node('node_power')
+        node_heat = eao.assets.Node('node_heat')
+        timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,2,1), freq = 'd')
+        a = eao.assets.CHPAsset(name='CHP', price='rand_price', nodes = (node_power, node_heat),
+                                min_cap=5., max_cap=10.)
+        np.random.seed(2709)
+        prices ={'rand_price': np.random.rand(timegrid.T)-0.5}
+        op_o = a.setup_optim_problem(prices, timegrid=timegrid)
+        res_o = op_o.optimize()
+        x_power_o = np.around(res_o.x[:timegrid.T], decimals = 3) # round
+        x_heat = np.around(res_o.x[timegrid.T:2*timegrid.T], decimals = 3) # round
+        self.assertTrue(all(x_heat==0))
+
+        ## new: heat node is None
+        a = eao.assets.CHPAsset(name='CHP', price='rand_price', 
+                                nodes = node_power,  # !!!!! heat node not given or None
+                                conversion_factor_power_heat = 0,  # use high number to assert I'd see effects if used
+                                min_cap=5., max_cap=10.,
+                                _no_heat = True)
+        op = a.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        x_power = np.around(res.x[:timegrid.T], decimals = 3) # round
+        self.assertTrue(all(x_power==x_power_o))
+
+    def test_gas_consumption_no_heat(self):
+        """ Unit test. Setting up a CHPAsset with explicit gas (fuel) consumption
+        """
+        node_power = eao.assets.Node('node_power')
+        node_heat = eao.assets.Node('node_heat')
+        node_gas = eao.assets.Node('node_gas')
+
+        Start = dt.date(2021, 1, 1)
+        End = dt.date(2021, 1, 2)
+        timegrid = eao.assets.Timegrid(Start, End, freq='h')
+
+        ##################################### original test
+        #####################################################
+
+        # simple case, no min run time
+        a = eao.assets.CHPAsset(name='CHP',
+                                nodes=(node_power, node_heat, node_gas),
+                                min_cap=1.,
+                                max_cap=10.,
+                                start_costs=1.,
+                                running_costs=5.,
+                                conversion_factor_power_heat= 0.2,
+                                max_share_heat= 1,
+                                start_fuel = 10,
+                                fuel_efficiency= .5,
+                                consumption_if_on= .1) 
+        b = eao.assets.SimpleContract(name = 'powerMarket', price='price', nodes = node_power, min_cap=-100, max_cap=100)
+        c = eao.assets.SimpleContract(name = 'gasMarket', price='priceGas', nodes = node_gas, min_cap=-100, max_cap=100)
+        d = eao.assets.SimpleContract(name = 'heatMarket', price='priceGas', nodes = node_heat, min_cap=0, max_cap=0)
+        prices ={'price': 50.*np.ones(timegrid.T), 'priceGas': 0.1*np.ones(timegrid.T)}
+        prices['price'][0:5] = -100.
+        portf = eao.portfolio.Portfolio([a, b, c, d])
+        op = portf.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        out = eao.io.extract_output(portf, op, res, prices)
+        # check manually checked values
+        check = out['dispatch']['CHP (node_power)'].sum()
+        self.assertAlmostEqual(check, 190. , 4) 
+        check = out['dispatch']['CHP (node_heat)'].sum()
+        self.assertAlmostEqual(check, 0. , 4) 
+        check = out['dispatch']['gasMarket (node_gas)'].sum()
+        self.assertAlmostEqual(check, 391.9 , 4)
+        #############################  test without heat node
+        #####################################################
+        # simple case, no min run time
+        a = eao.assets.CHPAsset(name='CHP',
+                                nodes=(node_power, node_gas),
+                                _no_heat = True,
+                                min_cap=1.,
+                                max_cap=10.,
+                                start_costs=1.,
+                                running_costs=5.,
+                                max_share_heat= 1,
+                                start_fuel = 10,
+                                fuel_efficiency= .5,
+                                consumption_if_on= .1) 
+        b = eao.assets.SimpleContract(name = 'powerMarket', price='price', nodes = node_power, min_cap=-100, max_cap=100)
+        c = eao.assets.SimpleContract(name = 'gasMarket', price='priceGas', nodes = node_gas, min_cap=-100, max_cap=100)
+        prices ={'price': 50.*np.ones(timegrid.T), 'priceGas': 0.1*np.ones(timegrid.T)}
+        prices['price'][0:5] = -100.
+        portf = eao.portfolio.Portfolio([a, b, c])
+        op = portf.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        out = eao.io.extract_output(portf, op, res, prices)
+        # check manually checked values
+        check = out['dispatch']['CHP (node_power)'].sum()
+        self.assertAlmostEqual(check, 190. , 4) 
+        check = out['dispatch']['gasMarket (node_gas)'].sum()
+        self.assertAlmostEqual(check, 391.9 , 4)        
+
+    def test_optimization_vectors_no_heat(self):
+        """ Unit test. Same test as above, no heat 
+        """
+        node_power = eao.assets.Node('node_power')
+        timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,1,2), freq = 'h')
+        # define a CHP with extra costs when dispatch is below threshhold of 4
+        a = eao.assets.CHPAsset_with_min_load_costs(name='CHP', price='price', nodes = (node_power),
+                                _no_heat = True,
+                                min_cap=2., max_cap=10.,
+                                min_load_threshhold= 'ml_t',
+                                min_load_costs = 'ml_c')
+        demand = eao.assets.SimpleContract(name = 'demand', 
+                                           nodes = node_power,
+                                           min_cap = 'demand', max_cap = 'demand')
+        prices ={'price':   np.zeros(timegrid.T),
+                 'demand': -np.linspace(2, 10, timegrid.T),
+                 'ml_c':    np.linspace(0, 10, timegrid.T),
+                 'ml_t':    np.linspace(4, 5, timegrid.T)}
+        portf = eao.portfolio.Portfolio([demand, a])
+        op = portf.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        out = eao.io.extract_output(portf, op, res, prices)
+        costs = out['DCF']['CHP'].values
+        disp  = out['dispatch']['CHP'].values
+        # check: costs below threshhold are 1, above 0
+        self.assertAlmostEqual(np.abs(costs[disp<prices['ml_t']]+prices['ml_c'][disp<=prices['ml_t']]).sum(), 0, 5)
+        self.assertAlmostEqual(np.abs(costs[disp>prices['ml_t']]).sum(), 0, 5)
+
+
+class Plant(unittest.TestCase):
+    def test_simple_PP(self):
+        """ Unit test. Setting up a CHPAsset with random prices
+            and check that it generates full load at negative prices and nothing at positive prices.
+        """
+        ## baseline: with heat node, but no heat
+        node_power = eao.assets.Node('node_power')
+        node_heat = eao.assets.Node('node_heat')
+        timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,2,1), freq = 'd')
+        a = eao.assets.CHPAsset(name='CHP', price='rand_price', nodes = (node_power, node_heat),
+                                min_cap=5., max_cap=10.)
+        np.random.seed(2709)
+        prices ={'rand_price': np.random.rand(timegrid.T)-0.5}
+        op_o = a.setup_optim_problem(prices, timegrid=timegrid)
+        res_o = op_o.optimize()
+        x_power_o = np.around(res_o.x[:timegrid.T], decimals = 3) # round
+        x_heat = np.around(res_o.x[timegrid.T:2*timegrid.T], decimals = 3) # round
+        self.assertTrue(all(x_heat==0))
+
+        ## new: heat node is None
+        a = eao.assets.Plant(name='CHP', price='rand_price', 
+                                nodes = node_power,  # !!!!! heat node not given or None
+                                min_cap=5., max_cap=10.)
+        op = a.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        x_power = np.around(res.x[:timegrid.T], decimals = 3) # round
+        self.assertTrue(all(x_power==x_power_o))
+
+    def test_gas_consumption_PP(self):
+        """ Unit test. Setting up a CHPAsset with explicit gas (fuel) consumption
+        """
+        node_power = eao.assets.Node('node_power')
+        node_heat = eao.assets.Node('node_heat')
+        node_gas = eao.assets.Node('node_gas')
+
+        Start = dt.date(2021, 1, 1)
+        End = dt.date(2021, 1, 2)
+        timegrid = eao.assets.Timegrid(Start, End, freq='h')
+
+        ##################################### original test
+        #####################################################
+
+        # simple case, no min run time
+        a = eao.assets.CHPAsset(name='CHP',
+                                nodes=(node_power, node_heat, node_gas),
+                                min_cap=1.,
+                                max_cap=10.,
+                                start_costs=1.,
+                                running_costs=5.,
+                                conversion_factor_power_heat= 0.2,
+                                max_share_heat= 1,
+                                start_fuel = 10,
+                                fuel_efficiency= .5,
+                                consumption_if_on= .1) 
+        b = eao.assets.SimpleContract(name = 'powerMarket', price='price', nodes = node_power, min_cap=-100, max_cap=100)
+        c = eao.assets.SimpleContract(name = 'gasMarket', price='priceGas', nodes = node_gas, min_cap=-100, max_cap=100)
+        d = eao.assets.SimpleContract(name = 'heatMarket', price='priceGas', nodes = node_heat, min_cap=0, max_cap=0)
+        prices ={'price': 50.*np.ones(timegrid.T), 'priceGas': 0.1*np.ones(timegrid.T)}
+        prices['price'][0:5] = -100.
+        portf = eao.portfolio.Portfolio([a, b, c, d])
+        op = portf.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        out = eao.io.extract_output(portf, op, res, prices)
+        # check manually checked values
+        check = out['dispatch']['CHP (node_power)'].sum()
+        self.assertAlmostEqual(check, 190. , 4) 
+        check = out['dispatch']['CHP (node_heat)'].sum()
+        self.assertAlmostEqual(check, 0. , 4) 
+        check = out['dispatch']['gasMarket (node_gas)'].sum()
+        self.assertAlmostEqual(check, 391.9 , 4)
+        #############################  test without heat node
+        #####################################################
+        # simple case, no min run time
+        a = eao.assets.Plant(name='PP',
+                                nodes=(node_power, node_gas),
+                                min_cap=1.,
+                                max_cap=10.,
+                                start_costs=1.,
+                                running_costs=5.,
+                                start_fuel = 10,
+                                fuel_efficiency= .5,
+                                consumption_if_on= .1) 
+        b = eao.assets.SimpleContract(name = 'powerMarket', price='price', nodes = node_power, min_cap=-100, max_cap=100)
+        c = eao.assets.SimpleContract(name = 'gasMarket', price='priceGas', nodes = node_gas, min_cap=-100, max_cap=100)
+        prices ={'price': 50.*np.ones(timegrid.T), 'priceGas': 0.1*np.ones(timegrid.T)}
+        prices['price'][0:5] = -100.
+        portf = eao.portfolio.Portfolio([a, b, c])
+        op = portf.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        out = eao.io.extract_output(portf, op, res, prices)
+        # check manually checked values
+        check = out['dispatch']['PP (node_power)'].sum()
+        self.assertAlmostEqual(check, 190. , 4) 
+        check = out['dispatch']['gasMarket (node_gas)'].sum()
+        self.assertAlmostEqual(check, 391.9 , 4)        
+
+        # check serialization (new class...)
+        s = eao.serialization.to_json(a)
+        aa = eao.serialization.load_from_json(s)
+
+    def test_PP_regression(self):
+        """ Unit test. Predefined data - checking result is same as checked
+        """
+        node_power = eao.assets.Node('node_power')
+        node_heat = eao.assets.Node('node_heat')
+        node_gas = eao.assets.Node('node_gas')
+
+        Start = dt.date(2022, 1, 1)
+        End = dt.date(2022, 1, 3)
+        timegrid = eao.assets.Timegrid(Start, End, freq='15min')
+
+        #############################  test without heat node
+        #####################################################
+        # load test data
+        import os
+        myfile = os.path.join(os.path.join(os.path.dirname(__file__)),'plant_test_data.csv')
+        df = pd.read_csv(myfile)
+        df.set_index('date', inplace = True)
+        df = timegrid.prices_to_grid(df)
+        # simple case, no min run time
+        a = eao.assets.Plant(name='PP',
+                                nodes=(node_power, node_gas),
+                                min_cap         = 'mincap',
+                                max_cap         = 'maxcap',
+                                start_costs     = 1.,
+                                running_costs   = 'runC',
+                                fuel_efficiency = .5,
+                                consumption_if_on= .1,
+                                start_fuel      = 1,
+                                min_downtime    = 2,
+                                ramp            = 10,
+                                time_already_running=0,
+                                time_already_off= 1) 
+        b = eao.assets.SimpleContract(name = 'powerMarket', price='power_price', nodes = node_power, min_cap=-100, max_cap=100)
+        c = eao.assets.SimpleContract(name = 'gasMarket', price='gas_price', nodes = node_gas, min_cap=-100, max_cap=100)
+        portf = eao.portfolio.Portfolio([a, b, c])
+        op = portf.setup_optim_problem(df, timegrid=timegrid)
+        res = op.optimize()
+        out = eao.io.extract_output(portf, op, res, df)
+        ##### for manual check: eao.io.output_to_file(out, 'results_plant.xlsx')
+        # # check manually checked values
+        # check = out['prices']['PP (node_power)'].sum()
+        self.assertAlmostEqual(res.value,  35926.718225, 2) 
+        self.assertAlmostEqual(out['DCF'].sum().sum(),  35926.718225, 2)         
+        self.assertAlmostEqual(out['dispatch'].sum().sum(),  0, 2)             
+        # check = out['dispatch']['gasMarket (node_gas)'].sum()
+        # self.assertAlmostEqual(check, 391.9 , 4)        
+
+        # check serialization (new class...)
+        s = eao.serialization.to_json(a)
+        aa = eao.serialization.load_from_json(s)
+
+
+    def test_PP_check_start_ramp_smaller_mincap(self):
+        """ Unit test. Predefined data - checking result is same as checked
+        """
+        node_power = eao.assets.Node('node_power')
+        node_gas = eao.assets.Node('node_gas')
+
+        Start = dt.date(2022, 1, 1)
+        End = dt.date(2022, 1, 3)
+        timegrid = eao.assets.Timegrid(Start, End, freq='15min')
+
+        #############################  test without heat node
+        #####################################################
+        # load test data
+        import os
+        myfile = os.path.join(os.path.join(os.path.dirname(__file__)),'plant_test_data.csv')
+        df = pd.read_csv(myfile)
+        df.set_index('date', inplace = True)
+        df = timegrid.prices_to_grid(df)
+        # simple case, no min run time
+        a = eao.assets.Plant(name='PP',
+                                nodes=(node_power, node_gas),
+                                min_cap         = 'mincap',
+                                max_cap         = 'maxcap',
+                                start_costs     = 1.,
+                                running_costs   = 'runC',
+                                fuel_efficiency = .5,
+                                consumption_if_on= .1,
+                                start_fuel      = 1,
+                                min_downtime    = 2,
+                                ramp            = 8,
+                                time_already_running=0,
+                                time_already_off= 1,
+                                start_ramp_upper_bounds=[1.1],
+                                start_ramp_lower_bounds=[1.1],
+                                shutdown_ramp_upper_bounds=[2.2],
+                                shutdown_ramp_lower_bounds=[2.2],
+                                ramp_freq='15min') 
+        b = eao.assets.SimpleContract(name = 'powerMarket', price='power_price', nodes = node_power, min_cap=-100, max_cap=100)
+        c = eao.assets.SimpleContract(name = 'gasMarket', price='gas_price', nodes = node_gas, min_cap=-100, max_cap=100)
+        portf = eao.portfolio.Portfolio([a, b, c])
+        op = portf.setup_optim_problem(df, timegrid=timegrid)
+        res = op.optimize()
+        out = eao.io.extract_output(portf, op, res, df)
+        ### for checks: eao.io.output_to_file(out, 'results_plant.xlsx')
+        # # check manually checked values
+        self.assertAlmostEqual(res.value,  34752.9612, 2) 
+        self.assertAlmostEqual(out['DCF'].sum().sum(),  34752.9612, 2)         
+        # self.assertAlmostEqual(out['dispatch'].sum().sum(),  0, 2)             
+
+        # check serialization (new class...)
+        s = eao.serialization.to_json(a)
+        aa = eao.serialization.load_from_json(s)
 
 
 ###########################################################################################################

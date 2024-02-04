@@ -43,6 +43,9 @@ class Asset:
             self.nodes = [nodes]
         else:
             self.nodes = nodes
+        assert isinstance(self.nodes, (tuple, list)), 'nodes must be of type Node or list of nodes in  '+self.name
+        for n in self.nodes:
+            assert isinstance(n, Node), 'noses mus be of type Node or list of nodes in '+self.name
         self.wacc = wacc
 
         self.start = start
@@ -730,7 +733,7 @@ class SimpleContract(Asset):
         elif isinstance(value, (float, int, np.ndarray)):
             vec = value * np.ones(T)
         elif isinstance(value, str):
-            assert (value in prices), 'data for ' + value + 'not found for asset  ' + self.name
+            assert (value in prices), 'data for ' + value + ' not found for asset  ' + self.name
             vec = prices[value].copy()
             vec = vec[I]  # only in asset time window
         else:  # given in form of dict (start/end/values)
@@ -1153,7 +1156,8 @@ class CHPAsset(Contract):
                  ramp_freq: str = None,
                  start_fuel: Union[float, StartEndValueDict, str] = 0.,
                  fuel_efficiency: Union[float, StartEndValueDict, str] = 1.,
-                 consumption_if_on: Union[float, StartEndValueDict, str] = 0.
+                 consumption_if_on: Union[float, StartEndValueDict, str] = 0.,
+                 _no_heat = False
                  ):
         """ CHPContract: Generate heat and power
             Restrictions
@@ -1227,6 +1231,8 @@ class CHPAsset(Contract):
                  start_fuel (float, dict, str): detaults to  0
                  fuel_efficiency (float, dict, str): defaults to 1
                  consumption_if_on (float, dict, str): defaults to 0
+
+            _no_heat (optional):  No heat node given (making CHP a plain power plant). Defaults to False
         """
         super(CHPAsset, self).__init__(name=name,
                                        nodes=nodes,
@@ -1243,6 +1249,24 @@ class CHPAsset(Contract):
                                        max_take=max_take,
                                        periodicity=periodicity,
                                        periodicity_duration=periodicity_duration)
+        self._no_heat = _no_heat
+        # check and record meaning of nodes
+        self.idx_nodes = {}
+        self.idx_nodes['power']        = 0
+        if not _no_heat:
+            assert (len(self.nodes) in (2,3)), 'Length of nodes has to be 2 or 3; power, heat and optionally fuel. Asset: ' + self.name
+            self.idx_nodes['heat']     = 1
+            if len(self.nodes)==3:
+                self.idx_nodes['fuel']  = 2
+            else:
+                self.idx_nodes['fuel']  = None
+        else:
+            self.idx_nodes['heat']     = None
+            if len(self.nodes)==2:
+                self.idx_nodes['fuel']  = 1
+            else:
+                self.idx_nodes['fuel']  = None
+
         self.conversion_factor_power_heat                = conversion_factor_power_heat
         self.max_share_heat                 = max_share_heat
         self.ramp                 = ramp
@@ -1284,16 +1308,13 @@ class CHPAsset(Contract):
 
         self.ramp_freq = ramp_freq
 
-        if len(nodes) >= 3:
+        if (self.idx_nodes['fuel'] is not None):
             self.fuel_efficiency      = fuel_efficiency
             self.consumption_if_on    = consumption_if_on
             self.start_fuel           = start_fuel
 
         if self.min_downtime > 1:
             assert (self.time_already_off == 0) ^ (self.time_already_running == 0), "Either time_already_off or time_already_running has to be 0, but not both. Asset: " + self.name
-
-        if len(nodes) not in (2,3):
-            raise ValueError('Length of nodes has to be 2 or 3; power, heat and optionally fuel. Asset: ' + self.name)
 
     def setup_optim_problem(self, prices: dict, timegrid: Timegrid = None,
                             costs_only: bool = False) -> OptimProblem:
@@ -1375,8 +1396,9 @@ class CHPAsset(Contract):
         running_costs = self.make_vector(self.running_costs, prices, default_value=0., convert=True)
         max_share_heat = self.make_vector(self.max_share_heat, prices, default_value=1.)
         conversion_factor_power_heat = self.make_vector(self.conversion_factor_power_heat, prices, default_value=1.)
-        assert np.all(conversion_factor_power_heat != 0), 'conversion_factor_power_heat must not be zero. Asset: ' + self.name
-        if len(self.nodes) >= 3:
+        if (self.idx_nodes['heat'] is not None): # heat note given
+            assert np.all(conversion_factor_power_heat != 0), 'conversion_factor_power_heat must not be zero. Asset: ' + self.name
+        if (self.idx_nodes['fuel'] is not None):
             start_fuel = self.make_vector(self.start_fuel, prices, default_value=0.)
             fuel_efficiency = self.make_vector(self.fuel_efficiency, prices, default_value=1.)
             consumption_if_on = self.make_vector(self.consumption_if_on, prices, default_value=0., convert=True)
@@ -1387,12 +1409,13 @@ class CHPAsset(Contract):
             c = op
         else:
             c = op.c
-        c = np.hstack([c, conversion_factor_power_heat * c])  # costs for power and heat dispatch
+        if (self.idx_nodes['heat'] is not None): # if heat node given
+            c = np.hstack([c, conversion_factor_power_heat * c])  # costs for power and heat dispatch
 
         include_shutdown_variables = shutdown_ramp_time > 0 or start_ramp_time > 0
         include_start_variables = min_runtime > 1 or np.any(start_costs != 0) or start_ramp_time > 0 or shutdown_ramp_time > 0
         include_on_variables = include_start_variables or min_downtime > 1 or include_shutdown_variables or np.any(self.min_cap != 0.)
-        if len(self.nodes) >= 3:
+        if (self.idx_nodes['fuel'] is not None):
             include_start_variables = include_start_variables or np.any(start_fuel != 0.)
             include_on_variables = include_on_variables or include_start_variables or np.any(consumption_if_on != 0.)
 
@@ -1426,8 +1449,12 @@ class CHPAsset(Contract):
             op.cType = ''
             op.b = np.zeros(0)
 
+        # set lower bound to zero if I have on variables
+        if include_on_variables:
+            op.l = 0.*op.l # now I can be off
         # Define the dispatch variables:
-        op = self._add_dispatch_variables(op, conversion_factor_power_heat, max_cap, max_share_heat)
+        if (self.idx_nodes['heat'] is not None): # heat note given        
+            op = self._add_dispatch_variables(op, conversion_factor_power_heat, max_cap, max_share_heat)
 
         # Add on-, start-, and shutdown-variables:
         op = self._add_bool_variables(op, include_on_variables, include_start_variables, include_shutdown_variables)
@@ -1454,13 +1481,14 @@ class CHPAsset(Contract):
         op = self._add_constraints_for_min_downtime(op, min_downtime, time_already_off)
 
         # Boundaries for the heat variable:
-        op = self._add_constraints_for_heat(op, max_share_heat)
+        if (self.idx_nodes['heat'] is not None): # heat note given        
+            op = self._add_constraints_for_heat(op, max_share_heat)
 
         # Reset mapping index:
         op.mapping.reset_index(inplace=True, drop=True)  # need to reset index (which enumerates variables)
 
         # Model fuel consumption:
-        if len(self.nodes) >= 3:
+        if (self.idx_nodes['fuel'] is not None):
             op = self._add_fuel_consumption(op, fuel_efficiency, consumption_if_on, start_fuel, conversion_factor_power_heat, include_on_variables, include_start_variables)
 
         return op
@@ -1502,8 +1530,8 @@ class CHPAsset(Contract):
             return ramp_new_freq
 
     def _add_dispatch_variables(self, op, conversion_factor_power_heat, max_cap, max_share_heat):
-        """ Divide each dispatch variable in op into a power dispatch that flows into the power node self.nodes[1]
-            and a heat dispatch that flows into self.nodes[2] """
+        """ Divide each dispatch variable in op into a power dispatch that flows into the power node self.nodes[0]
+            and a heat dispatch that flows into self.nodes[1] """
         # Make sure that op.mapping contains only dispatch variables (i.e. with type=='d')
         var_types = op.mapping['type'].unique()
         assert np.all(
@@ -1605,12 +1633,14 @@ class CHPAsset(Contract):
             var = op.mapping.iloc[i]
 
             A_lower_bounds[i, i] = 1
-            A_lower_bounds[i, self.heat_idx + i] = conversion_factor_power_heat[i] 
+            if (self.idx_nodes['heat'] is not None): # heat note given        
+                A_lower_bounds[i, self.heat_idx + i] = conversion_factor_power_heat[i] 
             if include_on_variables:
                 A_lower_bounds[i, self.on_idx + var["time_step"] - starting_timestep] = - min_cap[i]
 
             A_upper_bounds[i, i] = 1
-            A_upper_bounds[i, self.heat_idx + i] = conversion_factor_power_heat[i] 
+            if (self.idx_nodes['heat'] is not None): # heat note given        
+                A_upper_bounds[i, self.heat_idx + i] = conversion_factor_power_heat[i] 
             if include_on_variables:
                 A_upper_bounds[i, self.on_idx + var["time_step"] - starting_timestep] = - max_cap[i]
 
@@ -1636,9 +1666,8 @@ class CHPAsset(Contract):
             op.b = np.hstack((op.b, np.zeros(self.n - start)))
         else:
             op.b = np.hstack((op.b, max_cap[start:]))
-
-        # Minimum and maximum capacity for HEAT during start:
-        if shutdown_ramp_lower_bounds_heat is not None:
+        # Minimum and maximum capacity for HEAT during start  -  an heat node given:
+        if (shutdown_ramp_lower_bounds_heat is not None) and (self.idx_nodes['heat'] is not None):
             start = max(0, start_ramp_time - time_already_running) if time_already_running > 0 else 0
             A_lower_bounds = sp.lil_matrix((self.n, op.A.shape[1]))
             A_upper_bounds = sp.lil_matrix((self.n, op.A.shape[1]))
@@ -1684,7 +1713,8 @@ class CHPAsset(Contract):
                 # Upper Bound:
                 a = sp.lil_matrix((1, op.A.shape[1]))
                 a[0, i] = 1
-                a[0, self.heat_idx + i] = conversion_factor_power_heat[i]
+                if (self.idx_nodes['heat'] is not None): # heat note given        
+                    a[0, self.heat_idx + i] = conversion_factor_power_heat[i]
                 op.A = sp.vstack((op.A, a))
                 op.cType += 'U'
                 op.b = np.hstack((op.b, start_ramp_upper_bounds[time_already_running + i]))
@@ -1692,7 +1722,8 @@ class CHPAsset(Contract):
                 # Lower Bound:
                 a = sp.lil_matrix((1, op.A.shape[1]))
                 a[0, i] = 1
-                a[0, self.heat_idx + i] = conversion_factor_power_heat[i]
+                if (self.idx_nodes['heat'] is not None): # heat note given        
+                    a[0, self.heat_idx + i] = conversion_factor_power_heat[i]
                 op.A = sp.vstack((op.A, a))
                 op.cType += 'L'
                 op.b = np.hstack((op.b, start_ramp_lower_bounds[time_already_running + i]))
@@ -1711,9 +1742,11 @@ class CHPAsset(Contract):
                 # Lower Bound
                 a = sp.lil_matrix((1, op.A.shape[1]))
                 a[0, t] = 1
-                a[0, self.heat_idx + t] = conversion_factor_power_heat[t]
+                if (self.idx_nodes['heat'] is not None): # heat note given        
+                    a[0, self.heat_idx + t] = conversion_factor_power_heat[t]
                 a[0, t - 1] = -1
-                a[0, self.heat_idx + t - 1] = -conversion_factor_power_heat[t]
+                if (self.idx_nodes['heat'] is not None): # heat note given        
+                    a[0, self.heat_idx + t - 1] = -conversion_factor_power_heat[t]
                 if include_on_variables:
                     a[0, self.on_idx + t - 1] = ramp
                 for i in range(shutdown_ramp_time):
@@ -1730,9 +1763,11 @@ class CHPAsset(Contract):
                 # Upper Bound
                 a = sp.lil_matrix((1, op.A.shape[1]))
                 a[0, t] = 1
-                a[0, self.heat_idx + t] = conversion_factor_power_heat[t]
+                if (self.idx_nodes['heat'] is not None): # heat note given        
+                    a[0, self.heat_idx + t] = conversion_factor_power_heat[t]
                 a[0, t - 1] = -1
-                a[0, self.heat_idx + t - 1] = -conversion_factor_power_heat[t]
+                if (self.idx_nodes['heat'] is not None): # heat note given        
+                    a[0, self.heat_idx + t - 1] = -conversion_factor_power_heat[t]
                 if include_on_variables:
                     a[0, self.on_idx + t] = -ramp
                     b_value = 0
@@ -1752,7 +1787,8 @@ class CHPAsset(Contract):
             # Initial ramp constraint
             a = sp.lil_matrix((1, op.A.shape[1]))
             a[0, 0] = 1
-            a[0, self.heat_idx] = conversion_factor_power_heat[0]
+            if (self.idx_nodes['heat'] is not None): # heat note given        
+                a[0, self.heat_idx] = conversion_factor_power_heat[0]
             for i in range(shutdown_ramp_time):
                 a[0, self.shutdown_idx + i] = last_dispatch - ramp
             op.A = sp.vstack([op.A, a])
@@ -1764,7 +1800,8 @@ class CHPAsset(Contract):
 
             a = sp.lil_matrix((1, op.A.shape[1]))
             a[0, 0] = 1
-            a[0, self.heat_idx] = conversion_factor_power_heat[0]
+            if (self.idx_nodes['heat'] is not None): # heat note given        
+                a[0, self.heat_idx] = conversion_factor_power_heat[0]
             if include_on_variables:
                 a[0, self.on_idx] = -ramp
             op.A = sp.vstack([op.A, a])
@@ -1907,19 +1944,21 @@ class CHPAsset(Contract):
         # disp_factor determines the factor with which fuel is consumed
         if 'disp_factor' not in op.mapping: op.mapping['disp_factor'] = np.nan
         new_map = op.mapping.copy()
-        for i in [0, 1]:  # nodes power and heat
+        if self.idx_nodes['heat'] is None: my_node_idx = [0] # do only for power
+        else: my_node_idx = [0,1]  # do fo rheat and power node
+        for i in my_node_idx:  # nodes power and heat
             initial_map = op.mapping[
                 (op.mapping['var_name'] == 'disp') & (op.mapping['node'] == self.node_names[i])].copy()
-            initial_map['node'] = self.node_names[2]  # fuel node
+            initial_map['node'] = self.node_names[self.idx_nodes['fuel']]  # fuel node
             if i == 0:
                 initial_map['disp_factor'] = -1. / fuel_efficiency
-            elif i == 1:
+            elif (i == 1):
                 initial_map['disp_factor'] = -conversion_factor_power_heat / fuel_efficiency
             new_map = pd.concat([new_map, initial_map.copy()])
         # consumption  if on
         if include_on_variables:
             initial_map = op.mapping[op.mapping['var_name'] == 'bool_on'].copy()
-            initial_map['node'] = self.node_names[2]  # fuel node
+            initial_map['node'] = self.node_names[self.idx_nodes['fuel']]  # fuel node
             # initial_map['var_name'] = 'fuel_if_on'
             initial_map['type'] = 'd'
             initial_map['disp_factor'] = -consumption_if_on
@@ -1927,7 +1966,7 @@ class CHPAsset(Contract):
         # consumption on start
         if include_start_variables:
             initial_map = op.mapping[op.mapping['var_name'] == 'bool_start'].copy()
-            initial_map['node'] = self.node_names[2]  # fuel node
+            initial_map['node'] = self.node_names[self.idx_nodes['fuel']]  # fuel node
             # initial_map['var_name'] = 'fuel_start'
             initial_map['type'] = 'd'
             initial_map['disp_factor'] = -start_fuel
@@ -2427,3 +2466,139 @@ class ScaledAsset(Asset):
         op.mapping = pd.concat([op.mapping, pd.DataFrame([mymap])], ignore_index = True)# op.mapping.append(mymap, ignore_index = True)
 
         return op
+
+class Plant(CHPAsset):
+    def __init__(self,
+                 name: str = 'default_name_plant',
+                 nodes: List[Node] = [Node(name = 'default_node_power'), Node(name = 'default_node_gas_optional')],
+                 start: dt.datetime = None,
+                 end:   dt.datetime = None,
+                 wacc: float = 0,
+                 price:str = None,
+                 extra_costs: Union[float, StartEndValueDict, str] = 0.,
+                 min_cap: Union[float, StartEndValueDict, str] = 0.,
+                 max_cap: Union[float, StartEndValueDict, str] = 0.,
+                 min_take:StartEndValueDict = None,
+                 max_take:StartEndValueDict = None,
+                 freq: str = None,
+                 profile: pd.Series = None,
+                 periodicity: str = None,
+                 periodicity_duration: str = None,
+                 ramp: float = None,
+                 start_costs: Union[float, Sequence[float], StartEndValueDict] = 0.,
+                 running_costs: Union[float, StartEndValueDict, str] = 0.,
+                 min_runtime: float = 0,
+                 time_already_running: float = 0,
+                 min_downtime: float = 0,
+                 time_already_off: float = 0,
+                 last_dispatch: float = 0,
+                 start_ramp_lower_bounds: Sequence = None,
+                 start_ramp_upper_bounds: Sequence = None,
+                 shutdown_ramp_lower_bounds: Sequence = None,
+                 shutdown_ramp_upper_bounds: Sequence = None,
+                 ramp_freq: str = None,
+                 start_fuel: Union[float, StartEndValueDict, str] = 0.,
+                 fuel_efficiency: Union[float, StartEndValueDict, str] = 1.,
+                 consumption_if_on: Union[float, StartEndValueDict, str] = 0.,
+                 **kwargs
+                 ):
+        """ Plant: Generate power (or another commodity) from fuel (fuel optional). Derived from more complex CHP, taking out heat
+            Restrictions
+            - time dependent capacity restrictions
+            - MinTake & MaxTake for a list of periods
+            - start costs
+            - minimum runtime
+            - ramps
+        Args:
+            name (str): Unique name of the asset                                              (asset parameter)
+            nodes (Node): One node  for generated power                                       (asset parameter)
+                          optional: node for fuel (e.g. gas)
+            start (dt.datetime) : start of asset being active. defaults to none (-> timegrid start relevant)
+            end (dt.datetime)   : end of asset being active. defaults to none (-> timegrid start relevant)
+            timegrid (Timegrid): Timegrid for discretization                                  (asset parameter)
+            wacc (float): Weighted average cost of capital to discount cash flows in target   (asset parameter)
+            freq (str, optional):   Frequency for optimization - in case different from portfolio (defaults to None, using portfolio's freq)
+                                    The more granular frequency of portf & asset is used
+            profile (pd.Series, optional):  If freq(asset) > freq(portf) assuming this profile for granular dispatch (e.g. scaling hourly profile to week).
+                                            Defaults to None, only relevant if freq is not none
+            min_cap (float) : Minimum capacity for generating virtual dispatch (power + conversion_factor_power_heat * heat). Has to be greater or equal to 0. Defaults to 0.
+            max_cap (float) : Maximum capacity for generating virtual dispatch (power + conversion_factor_power_heat * heat). Has to be greater or equal to 0. Defaults to 0.
+            min_take (float) : Minimum volume within given period. Defaults to None
+            max_take (float) : Maximum volume within given period. Defaults to None
+                              float: constant value
+                              dict:  dict['start'] = np.array
+                                     dict['end']   = np.array
+                                     dict['values"] = np.array
+            price (str): Name of price vector for buying / selling
+            extra_costs (float, dict, str): extra costs added to price vector (in or out). Defaults to 0.
+                                            float: constant value
+                                            dict:  dict['start'] = array
+                                                   dict['end']   = array
+                                                   dict['values"] = array
+                                            str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
+            periodicity (str, pd freq style): Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)
+            periodicity_duration (str, pd freq style): Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)
+            ramp (float): Maximum increase/decrease of virtual dispatch (power + conversion_factor_power_heat * heat) in one timestep. Defaults to 1.
+            start_costs (float): Costs for starting. Defaults to 0.
+            running_costs (float): Costs when on. Defaults to 0.
+            min_runtime (int): Minimum runtime in timegrids main_time_unit. (start ramp time and shutdown ramp time do not count towards the min runtime.) Defaults to 0.
+            time_already_running (int): The number of timesteps the asset is already running in timegrids main_time_unit. Defaults to 0.
+            min_downtime (int): Minimum downtime in timegrids main_time_unit. Defaults to 0.
+            time_already_off (int): The number of timesteps the asset has already been off in timegrids main_time_unit. Defaults to 0.
+            last_dispatch (float): Previous virtual dispatch (power + conversion_factor_power_heat * heat). Defaults to 0.
+            start_ramp_lower_bounds (Sequence): The i-th element of this sequence specifies a lower bound of the
+                                                virtual dispatch (power + conversion_factor_power_heat * heat) at i timesteps
+                                                of freq ramp_freq after starting.  Defaults to None.
+            start_ramp_upper_bounds (Sequence): The i-th element of this sequence specifies an upper bound of the
+                                                virtual dispatch (power + conversion_factor_power_heat * heat) at i timesteps
+                                                of freq ramp_freq after starting.  Defaults to None.
+            shutdown_ramp_lower_bounds (Sequence): The i-th element of this sequence specifies a lower bound of the
+                                                   virtual dispatch (power + conversion_factor_power_heat * heat) at i timesteps
+                                                   of freq ramp_freq before turning off. Defaults to None.
+            shutdown_ramp_upper_bounds (Sequence): The i-th element of this sequence specifies an upper bound of the
+                                                   virtual dispatch (power + conversion_factor_power_heat * heat) at i timesteps
+                                                   of freq ramp_freq before turning off. If it is None, it is set equal to shutdown_ramp_upper_bounds.
+                                                   Defaults to None.
+            ramp_freq (str): A string specifying the frequency of the start-and shutdown ramp specification.
+                             If this is None, the timegrids main_time_unit is used. Otherwise the start and shutdown ramps are
+                             interpolated to get values in the timegrids freq.
+
+
+            Optional: Explicit fuel consumption (e.g. gas) for multi-commodity simulation
+                 start_fuel (float, dict, str): detaults to  0
+                 fuel_efficiency (float, dict, str): defaults to 1
+                 consumption_if_on (float, dict, str): defaults to 0
+        """
+        super(Plant, self).__init__(name=name,
+                                       nodes=nodes,
+                                       start=start,
+                                       end=end,
+                                       wacc=wacc,
+                                       freq=freq,
+                                       profile=profile,
+                                       price=price,
+                                       extra_costs=extra_costs,
+                                       min_cap=min_cap,
+                                       max_cap=max_cap,
+                                       min_take=min_take,
+                                       max_take=max_take,
+                                       periodicity=periodicity,
+                                       periodicity_duration=periodicity_duration,
+                                       ramp = ramp,
+                                       start_costs = start_costs,
+                                       running_costs = running_costs,
+                                       min_runtime = min_runtime,
+                                       time_already_running = time_already_running,
+                                       min_downtime = min_downtime,
+                                       time_already_off = time_already_off,
+                                       last_dispatch = last_dispatch,
+                                       start_ramp_lower_bounds = start_ramp_lower_bounds,
+                                       start_ramp_upper_bounds = start_ramp_upper_bounds,
+                                       shutdown_ramp_lower_bounds = shutdown_ramp_lower_bounds,
+                                       shutdown_ramp_upper_bounds = shutdown_ramp_upper_bounds,
+                                       ramp_freq = ramp_freq,
+                                       start_fuel = start_fuel,
+                                       fuel_efficiency = fuel_efficiency,
+                                       consumption_if_on = consumption_if_on,
+                                       _no_heat = True)
+
