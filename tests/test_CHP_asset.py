@@ -1179,7 +1179,7 @@ class Plant(unittest.TestCase):
         portf = eao.portfolio.Portfolio([a, b, c])
         op = portf.setup_optim_problem(df, timegrid=timegrid)
         res = op.optimize()
-        for checks: out = eao.io.extract_output(portf, op, res, df)
+        out = eao.io.extract_output(portf, op, res, df)
         ### for checks: eao.io.output_to_file(out, 'results_plant.xlsx')
         # # check manually checked values
         self.assertAlmostEqual(res.value,  34752.9612, 2) 
