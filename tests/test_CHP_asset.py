@@ -1123,7 +1123,7 @@ class Plant(unittest.TestCase):
         op = portf.setup_optim_problem(df, timegrid=timegrid)
         res = op.optimize()
         out = eao.io.extract_output(portf, op, res, df)
-        eao.io.output_to_file(out, 'results_plant.xlsx')
+        ##### for manual check: eao.io.output_to_file(out, 'results_plant.xlsx')
         # # check manually checked values
         # check = out['prices']['PP (node_power)'].sum()
         self.assertAlmostEqual(res.value,  35926.718225, 2) 
@@ -1131,6 +1131,60 @@ class Plant(unittest.TestCase):
         self.assertAlmostEqual(out['dispatch'].sum().sum(),  0, 2)             
         # check = out['dispatch']['gasMarket (node_gas)'].sum()
         # self.assertAlmostEqual(check, 391.9 , 4)        
+
+        # check serialization (new class...)
+        s = eao.serialization.to_json(a)
+        aa = eao.serialization.load_from_json(s)
+
+
+    def test_PP_check_start_ramp_smaller_mincap(self):
+        """ Unit test. Predefined data - checking result is same as checked
+        """
+        node_power = eao.assets.Node('node_power')
+        node_gas = eao.assets.Node('node_gas')
+
+        Start = dt.date(2022, 1, 1)
+        End = dt.date(2022, 1, 3)
+        timegrid = eao.assets.Timegrid(Start, End, freq='15min')
+
+        #############################  test without heat node
+        #####################################################
+        # load test data
+        import os
+        myfile = os.path.join(os.path.join(os.path.dirname(__file__)),'plant_test_data.csv')
+        df = pd.read_csv(myfile)
+        df.set_index('date', inplace = True)
+        df = timegrid.prices_to_grid(df)
+        # simple case, no min run time
+        a = eao.assets.Plant(name='PP',
+                                nodes=(node_power, node_gas),
+                                min_cap         = 'mincap',
+                                max_cap         = 'maxcap',
+                                start_costs     = 1.,
+                                running_costs   = 'runC',
+                                fuel_efficiency = .5,
+                                consumption_if_on= .1,
+                                start_fuel      = 1,
+                                min_downtime    = 2,
+                                ramp            = 8,
+                                time_already_running=0,
+                                time_already_off= 1,
+                                start_ramp_upper_bounds=[1.1],
+                                start_ramp_lower_bounds=[1.1],
+                                shutdown_ramp_upper_bounds=[2.2],
+                                shutdown_ramp_lower_bounds=[2.2],
+                                ramp_freq='15min') 
+        b = eao.assets.SimpleContract(name = 'powerMarket', price='power_price', nodes = node_power, min_cap=-100, max_cap=100)
+        c = eao.assets.SimpleContract(name = 'gasMarket', price='gas_price', nodes = node_gas, min_cap=-100, max_cap=100)
+        portf = eao.portfolio.Portfolio([a, b, c])
+        op = portf.setup_optim_problem(df, timegrid=timegrid)
+        res = op.optimize()
+        for checks: out = eao.io.extract_output(portf, op, res, df)
+        ### for checks: eao.io.output_to_file(out, 'results_plant.xlsx')
+        # # check manually checked values
+        self.assertAlmostEqual(res.value,  34752.9612, 2) 
+        self.assertAlmostEqual(out['DCF'].sum().sum(),  34752.9612, 2)         
+        # self.assertAlmostEqual(out['dispatch'].sum().sum(),  0, 2)             
 
         # check serialization (new class...)
         s = eao.serialization.to_json(a)
