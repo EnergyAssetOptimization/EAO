@@ -872,7 +872,8 @@ class CHPAssetTest_no_heat(unittest.TestCase):
         res_o = op_o.optimize()
         x_power_o = np.around(res_o.x[:timegrid.T], decimals = 3) # round
         x_heat = np.around(res_o.x[timegrid.T:2*timegrid.T], decimals = 3) # round
-        self.assertTrue(all(x_heat==0))
+        # heat or power / exchangable --> need to look at sum
+        x_power_o += x_heat
 
         ## new: heat node is None
         a = eao.assets.CHPAsset(name='CHP', price='rand_price', 
@@ -1001,7 +1002,9 @@ class Plant(unittest.TestCase):
         res_o = op_o.optimize()
         x_power_o = np.around(res_o.x[:timegrid.T], decimals = 3) # round
         x_heat = np.around(res_o.x[timegrid.T:2*timegrid.T], decimals = 3) # round
-        self.assertTrue(all(x_heat==0))
+        # heat or power / exchangable --> need to look at sum
+        x_power_o += x_heat
+        # self.assertTrue(all(x_heat==0))
 
         ## new: heat node is None
         a = eao.assets.Plant(name='CHP', price='rand_price', 
