@@ -1,9 +1,9 @@
 # generate from notebook: !conda env export > environment.yml
 name: python_3.9
 
-channel:
-    - conda-forge
-    - defaults
+channels:
+  - conda-forge
+  - defaults
 
 dependencies:
   - python=3.9.18
