@@ -8,16 +8,15 @@ channels:
 dependencies:
   - python
   - pip
-#  - ipywidgets
-  - matplotlib
-  - numpy
-  - pandas
-  - scipy
-  - networkx
-  - sphinx
-  - cvxpy  
   - pip:
 #    - python-dateutil
+    - matplotlib
+    - numpy
+    - pandas
+    - scipy
+    - networkx
+    - sphinx
+    - cvxpy  
     - cvxpy
     - cvxopt
     - openpyxl
