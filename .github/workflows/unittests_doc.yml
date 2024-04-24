@@ -70,7 +70,8 @@ jobs:
         with:
           pandoc-version: 2.9.1
       - name: Build docs with sphinx
-        run: $CONDA/bin/sphinx-build -b html doc/source/ doc/build
+        # run: $CONDA/bin/sphinx-build -b html doc/source/ doc/build
+        run: sphinx-build -b html doc/source/ doc/build
       - name: Store doc as artifact
         uses: actions/upload-artifact@v1
         with:
