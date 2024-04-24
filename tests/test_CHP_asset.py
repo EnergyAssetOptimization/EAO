@@ -872,7 +872,8 @@ class CHPAssetTest_no_heat(unittest.TestCase):
         res_o = op_o.optimize()
         x_power_o = np.around(res_o.x[:timegrid.T], decimals = 3) # round
         x_heat = np.around(res_o.x[timegrid.T:2*timegrid.T], decimals = 3) # round
-        self.assertTrue(all(x_heat==0))
+        # heat or power / exchangable --> need to look at sum
+        x_power_o += x_heat
 
         ## new: heat node is None
         a = eao.assets.CHPAsset(name='CHP', price='rand_price', 
@@ -1001,7 +1002,9 @@ class Plant(unittest.TestCase):
         res_o = op_o.optimize()
         x_power_o = np.around(res_o.x[:timegrid.T], decimals = 3) # round
         x_heat = np.around(res_o.x[timegrid.T:2*timegrid.T], decimals = 3) # round
-        self.assertTrue(all(x_heat==0))
+        # heat or power / exchangable --> need to look at sum
+        x_power_o += x_heat
+        # self.assertTrue(all(x_heat==0))
 
         ## new: heat node is None
         a = eao.assets.Plant(name='CHP', price='rand_price', 
@@ -1191,6 +1194,61 @@ class Plant(unittest.TestCase):
         aa = eao.serialization.load_from_json(s)
 
 
+
+    def test_PP_check_start_ramp_vs_ramp(self):
+        """ What happens with ramp smaller / not equal start ramp? should be ignored
+        """
+        node_power = eao.assets.Node('node_power')
+        node_gas = eao.assets.Node('node_gas')
+
+        Start = dt.date(2022, 1, 1)
+        End = dt.date(2022, 1, 2)
+        timegrid = eao.assets.Timegrid(Start, End, freq='h')
+
+        #############################  test without heat node
+        #####################################################
+        # load test data
+        import os
+        myfile = os.path.join(os.path.join(os.path.dirname(__file__)),'plant_test_data.csv')
+        df = pd.read_csv(myfile)
+        df.set_index('date', inplace = True)
+        df = timegrid.prices_to_grid(df)
+        df['power_price'] = 1000
+        df['mincap'] = 6
+        # simple case, no min run time
+        a = eao.assets.Plant(name='PP',
+                                nodes=(node_power, node_gas),
+                                min_cap         = 'mincap',
+                                max_cap         = 'maxcap',
+                                start_costs     = 1.,
+                                running_costs   = 'runC',
+                                fuel_efficiency = 1,
+                                consumption_if_on= .1,
+                                start_fuel      = 1,
+                                min_downtime    = 2,
+                                ramp            = 1.1,
+                                time_already_running=0,
+                                time_already_off= 1,
+                                start_ramp_upper_bounds=[1,2,4,6,10],
+                                start_ramp_lower_bounds=[1,2,4,6,10],
+                                shutdown_ramp_upper_bounds=[1.1],
+                                shutdown_ramp_lower_bounds=[1.1],
+                                ramp_freq='h') 
+        b = eao.assets.SimpleContract(name = 'powerMarket', price='power_price', nodes = node_power, min_cap=-100, max_cap=100)
+        c = eao.assets.SimpleContract(name = 'gasMarket', price='gas_price', nodes = node_gas, min_cap=-100, max_cap=100)
+        portf = eao.portfolio.Portfolio([a, b, c])
+        op = portf.setup_optim_problem(df, timegrid=timegrid)
+        res = op.optimize()
+        out = eao.io.extract_output(portf, op, res, df)
+        # dispatch should follow start ramp and then add ramp
+        self.assertAlmostEqual(out['dispatch'].iloc[0,0],  0, 4) 
+        self.assertAlmostEqual(out['dispatch'].iloc[1,0],  1, 4) 
+        self.assertAlmostEqual(out['dispatch'].iloc[2,0],  2, 4) 
+        self.assertAlmostEqual(out['dispatch'].iloc[3,0],  4, 4) 
+        self.assertAlmostEqual(out['dispatch'].iloc[4,0],  6, 4) 
+        self.assertAlmostEqual(out['dispatch'].iloc[5,0],  10, 4) 
+        self.assertAlmostEqual(out['dispatch'].iloc[6,0],  11.1, 4) 
+        self.assertAlmostEqual(out['dispatch'].iloc[7,0],  12.2, 4) 
 ###########################################################################################################
 ###########################################################################################################
 ###########################################################################################################
