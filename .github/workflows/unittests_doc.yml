@@ -1,5 +1,4 @@
 # This is a basic workflow to help you get started with Actions
-
 name: CI
 
 # Controls when the action will run. 
@@ -59,7 +58,8 @@ jobs:
           $CONDA/bin/flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
           
       - name: Test with unittest
-        run: $CONDA/bin/python -m unittest discover tests
+        # run: $CONDA/bin/python -m unittest discover tests
+        run: python -m unittest discover tests
         shell: bash
 
       - name: Install rtd theme for sphinx doc from pypi
