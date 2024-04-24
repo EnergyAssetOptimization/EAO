@@ -39,7 +39,10 @@ jobs:
       - name: Install dependencies
         run: |
           $CONDA/bin/conda env update --file environment.yml --name base
-          
+
+      - name: Show packages
+        run: conda list
+        
       - name: Lint with flake8
         run: |
           $CONDA/bin/conda install flake8
