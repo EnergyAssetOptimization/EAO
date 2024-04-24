@@ -1,8 +1,8 @@
+matplotlib
 numpy
 pandas
-datetime
-cvxpy >= 1.17
-scipy >= 1.5.4
-json
+scipy
 networkx
-matplotlib
+cvxpy  
+cvxopt
+openpyxl
