@@ -46,6 +46,7 @@ jobs:
             pip install -r requirements.txt
             pip install nbsphinx
             pip install sphinx
+            pip install sphinx_rtd_theme myst_parser
         
       - name: Show packages
         run: conda list
