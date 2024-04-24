@@ -37,9 +37,14 @@ jobs:
         run: python -c "import sys; print(sys.version)"
         
       - name: Install dependencies
+        ## CONDA
+        # run: |
+        # $CONDA/bin/conda env update --file environment.yml --name base
+        ## PIP
         run: |
-          $CONDA/bin/conda env update --file environment.yml --name base
-
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+        
       - name: Show packages
         run: conda list
         
