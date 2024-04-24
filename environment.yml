@@ -12,9 +12,9 @@ dependencies:
   - matplotlib
   - numpy
   - pandas
-#  - scipy
-#  - networkx
-#  - sphinx
+  - scipy
+  - networkx
+  - sphinx
 #  - pip:
 #    - python-dateutil
 #    - cvxpy
