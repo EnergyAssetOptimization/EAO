@@ -9,7 +9,6 @@ dependencies:
   - python
   - pip
   - pip:
-#    - python-dateutil
     - matplotlib
     - numpy
     - pandas
@@ -21,4 +20,3 @@ dependencies:
     - cvxopt
     - openpyxl
     - nbsphinx
-    #- jupyter-contrib-nbextensions==0.5.1
