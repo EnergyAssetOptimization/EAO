@@ -128,7 +128,8 @@ class Portfolio:
         # only up to a factor (example transport; higher efficiency in setting up the problem)
         if 'disp_factor' not in mapping.columns:
             mapping['disp_factor'] = 1.
-        mapping['disp_factor'].fillna(1., inplace = True)
+        # mapping['disp_factor'].fillna(1., inplace = True)   ### depricated 
+        mapping.fillna({col: 'disp_factor'}, inplace=True)
         # mapping['nodal_restr'] = None
 
         def create_nodal_restr(nodes, map_nodes, map_types, map_idx, map_dispf, map_times, timegrid_I, skip_nodes, n_vars):
