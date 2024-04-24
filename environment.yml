@@ -15,11 +15,10 @@ dependencies:
   - scipy
   - networkx
   - sphinx
-  - cvxpy
-  
-#  - pip:
+  - cvxpy  
+  - pip:
 #    - python-dateutil
-#    - cvxpy
+    - cvxpy
 #    - cvxopt
 #    - openpyxl
 #    - nbsphinx
