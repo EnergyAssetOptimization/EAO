@@ -10,7 +10,7 @@ class StartEndValueDict(TypedDict):
             end:   array of datetime (optional)
             values: array of floats """
     start:  Sequence[dt.datetime]
-    end:    Sequence[float]
+    end:    Sequence[dt.datetime]
     values: Sequence[float]
 
 class Unit:
