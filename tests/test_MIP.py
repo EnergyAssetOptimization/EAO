@@ -24,6 +24,7 @@ class MIP(unittest.TestCase):
         ### create booleans in mapping
         op.mapping['bool'] = False
         op.mapping.loc[0:4,'bool'] = True
+        op.u[0:5] = 1.6  # Account for different optim interfaces that would treat this either as a bool or as an int variable
         res = op.optimize()
         self.assertAlmostEqual(res.value, 5*1 + 1.1*24*5, 5) 
 
