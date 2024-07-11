@@ -90,8 +90,8 @@ class OptimProblem:
         #      periods are leading. However - best choice are frequencies that don't create this problem
 
         # disp factor column needed to assign same dispatch to all related time steps
-        if 'disp_factor' not in self.mapping.columns: self.mapping['disp_factor'] = 1.
-        self.mapping['disp_factor'].fillna(1., inplace = True) # ensure there's a one where not assigned yet
+        if 'disp_factor' not in self.mapping.columns: self.mapping['disp_factor'] = 1.0
+        self.mapping['disp_factor'].fillna(1.0, inplace = True) # ensure there's a one where not assigned yet
         tp = timegrid.timepoints
         T  = timegrid.T
         try: periods = pd.date_range(tp[0]-pd.Timedelta(1, freq_period),    tp[-1]+pd.Timedelta(1, freq_period), freq = freq_period, tz = timegrid.tz)
@@ -197,8 +197,7 @@ class OptimProblem:
                        interface:str = 'cvxpy', 
                        solver = None,
                        make_soft_problem=False,
-                       rel_tol:float = 1e-3, 
-                       iterations:int = 5000)->Results:
+                       solver_params=None)->Results:
         """ optimize the optimization problem
 
         Args:
@@ -209,9 +208,6 @@ class OptimProblem:
             interface (str, optional): Chosen interface architecture. Defaults to 'cvxpy'.
             solver (str, optional): Solver for interface. Defaults to None
             make_soft_problem (bool, optional): If true, relax the boolean variables and allow float values instead. Defaults to False
-            INACTIVE   rel_tol (float): relative tolerance for solver
-            INACTIVE   iterations (int): max number of iterations for solver
-            INACTIVE   decimals_res (int): rounding results to ... decimals. Defaults to 5
         """
         map = self.mapping.copy()  # abbreviation
 
@@ -351,21 +347,23 @@ class OptimProblem:
         elif interface == "ortools":
             from ortools.linear_solver import pywraplp
 
-            solver = pywraplp.Solver.CreateSolver("SCIP")
-            if not solver:
+            if solver is None:
+                solver = "SCIP"
+            solver_ = pywraplp.Solver.CreateSolver(solver)
+            if not solver_:
                 raise Exception("Something went wrong when creating the solver.")
 
             # Create variables:
-            infinity = solver.infinity()
+            infinity = solver_.infinity()
             x = {}
             for j in range(len(self.l)):
                 if isMIP and any(map.loc[[j]]["bool"]==True):
                     if self.u[j] != 1 or self.l[j] != 0:
-                        x[j] = solver.IntVar(self.l[j], self.u[j], "x[%i]" % j)
+                        x[j] = solver_.IntVar(self.l[j], self.u[j], "x[%i]" % j)
                     else:
-                        x[j] = solver.BoolVar("x[%i]" % j)
+                        x[j] = solver_.BoolVar("x[%i]" % j)
                 else:
-                    x[j] = solver.NumVar(self.l[j], self.u[j], "x[%i]" % j)
+                    x[j] = solver_.NumVar(self.l[j], self.u[j], "x[%i]" % j)
 
             if not self.A is None:
                 assert (len(self.b) == len(self.cType)) and (len(self.b) == self.A.shape[0]) and (len(self.u) == self.A.shape[1])
@@ -373,34 +371,38 @@ class OptimProblem:
 
                 for i in range(len(self.A.rows)):
                     if self.cType[i] == "U":
-                        constraint = solver.RowConstraint(-infinity, self.b[i], "")
+                        constraint = solver_.RowConstraint(-infinity, self.b[i], "")
                     elif self.cType[i] == "L":
-                        constraint = solver.RowConstraint(self.b[i], infinity, "")
+                        constraint = solver_.RowConstraint(self.b[i], infinity, "")
                     elif self.cType[i] == "S" or self.cType[i] == "N":
-                        constraint = solver.RowConstraint(self.b[i], self.b[i], "")
+                        constraint = solver_.RowConstraint(self.b[i], self.b[i], "")
                     else:
                         raise ValueError("Unknown ctype " + self.cType[i] +  "at position " + str(i))
                     for j in range(len(self.A.rows[i])):
                         constraint.SetCoefficient(x[self.A.rows[i][j]], self.A.data[i][j])
 
             # Set objective
-            objective = solver.Objective()
+            objective = solver_.Objective()
             for j in range(len(self.c)):
                 objective.SetCoefficient(x[j], -self.c[j])
             objective.SetMaximization()
 
-            print(f"Solving with {solver.SolverVersion()}")
-            status = solver.Solve()
+            print(f"Solving with {solver_.SolverVersion()}")
+
+            # solver_.set_solver_specific_parameters({})
+            if solver_params is not None:
+                solver_.SetSolverSpecificParametersAsString(solver_params)
+            status = solver_.Solve()
             if status == pywraplp.Solver.OPTIMAL:
                 print("Optimal solution found.")
                 x_value = np.array([x[j].solution_value() for j in range(len(self.l))])
-                results = Results(value=solver.Objective().Value(),
+                results = Results(value=solver_.Objective().Value(),
                                   x=x_value,
                                   duals=None)
             elif status == pywraplp.Solver.FEASIBLE:
                 print("A feasible solution was found, but we don't know if it's optimal.")
                 x_value = np.array([x[j].solution_value() for j in range(len(self.l))])
-                results = Results(value=solver.Objective().Value(),
+                results = Results(value=solver_.Objective().Value(),
                                   x=x_value,
                                   duals=None)
             elif status == pywraplp.Solver.INFEASIBLE:
@@ -410,7 +412,7 @@ class OptimProblem:
                 print('Optimization not successful: ' + str(status))
                 results = 'not successful'
         else:
-            raise NotImplementedError('Solver - '+str(solver)+ ' -not implemented')
+            raise NotImplementedError('Interface - '+str(interface)+ ' -not implemented')
 
         return results
 
