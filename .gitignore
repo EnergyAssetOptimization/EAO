@@ -27,3 +27,6 @@ xxx.csv
 .~lock.test_XXX.xlsx#
 *_stats.txt
 tests/.~lock.plant_test_data.csv\#
+doc/source/samples/benchmark_problems/res_cross_commodity_benchmark.xlsx
+doc/source/samples/benchmark_problems/DK1_input_data.xlsx
+.vscode/launch.json
