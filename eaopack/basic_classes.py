@@ -192,7 +192,7 @@ class Timegrid:
         if not isinstance(prices, pd.DataFrame):
             prices = pd.DataFrame.from_dict(prices)
         if not isinstance(prices.index, pd.DatetimeIndex):
-            if prices.index.is_numeric():
+            if pd.api.types.is_any_real_numeric_dtype(prices.index):
                 prices.index = self.timepoints
             else:
                 prices.index = pd.to_datetime(prices.index)

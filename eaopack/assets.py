@@ -413,6 +413,7 @@ class Storage(Asset):
         if sep_needed:
             mapping['time_step'] = np.hstack((self.timegrid.restricted.I, self.timegrid.restricted.I))
             mapping['var_name']  = np.nan # name variables for use e.g. in RI
+            mapping['var_name'] = mapping['var_name'].astype(str)
             # mapping['var_name'].iloc[0:n] = 'disp_in'
             # mapping['var_name'].iloc[n:] = 'disp_out'
             ind_var_name = mapping.columns.get_indexer(['var_name'])[0]
@@ -422,6 +423,7 @@ class Storage(Asset):
                 mapping['node']      = self.nodes[0].name
             else: # separate nodes in / out.
                 mapping['node']  = np.nan
+                mapping['node'] = mapping['node'].astype(str)
                 my_ind = mapping.columns.get_indexer(['node'])[0]
                 # mapping['node'].iloc[0:n]      = self.nodes[0].name
                 # mapping['node'].iloc[n:2*n]    = self.nodes[1].name
@@ -616,6 +618,7 @@ class SimpleContract(Asset):
             price = prices[self.price].copy()
             # convert to array
             if isinstance(price, list): price = np.asarray(price)
+            if isinstance(price, pd.Series): price = price.values
         else:
             price = np.zeros(timegrid.T)
 
@@ -735,6 +738,7 @@ class SimpleContract(Asset):
         elif isinstance(value, str):
             assert (value in prices), 'data for ' + value + ' not found for asset  ' + self.name
             vec = prices[value].copy()
+            if isinstance(vec, pd.Series): vec = vec.values # may be given as Series (prices as DataFrame) (nor preferred, but sometimes handy)
             vec = vec[I]  # only in asset time window
         else:  # given in form of dict (start/end/values)
             vec = self.timegrid.restricted.values_to_grid(value)

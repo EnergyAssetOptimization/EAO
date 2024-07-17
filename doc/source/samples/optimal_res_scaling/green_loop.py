@@ -48,7 +48,8 @@ node_load  = Node('client', commodity= 'power', unit = Unit('MWh', 'MW',  1.))
 ###############################################   import data
 print('import load profiles and prices')
 df_profiles = pd.read_csv(file_profiles)
-df_profiles.index = pd.to_datetime(df_profiles['HourUTC'], format='%Y-%m-%dT%H')
+#df_profiles.index = pd.to_datetime(df_profiles['HourUTC'], format='%Y-%m-%dT%H')
+df_profiles.index = pd.to_datetime(df_profiles['HourUTC'], format='%Y-%m-%dT%H:00:00+00:00')
 df_profiles.sort_index(inplace = True)
 # filter for only DK1 price area and time grid
 df_profiles = df_profiles.loc[df_profiles['PriceArea'] == 'DK1', ['OnshoreWindPower', 'OffshoreWindPower', 'SolarPower', 'TotalLoad']]
@@ -57,7 +58,8 @@ df_profiles = df_profiles.loc[Start:End]
 df_profiles = df_profiles.iloc[:-1]
 # import prices
 df_prices = pd.read_csv(file_spot_prices)
-df_prices.index = pd.to_datetime(df_prices['HourUTC'], format='%Y-%m-%dT%H')
+#df_prices.index = pd.to_datetime(df_prices['HourUTC'], format='%Y-%m-%dT%H')
+df_prices.index = pd.to_datetime(df_prices['HourUTC'], format='%Y-%m-%dT%H:00:00+00:00')
 df_prices.sort_index(inplace = True)
 df_prices = df_prices.loc[df_prices['PriceArea']=='DK1', ['SpotPriceEUR']]
 df_prices = df_prices.loc[Start:End]
