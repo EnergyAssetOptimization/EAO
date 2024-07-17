@@ -177,7 +177,7 @@ class MIP(unittest.TestCase):
         out['dispatch']['fill_level'] = -(out['dispatch']['a1 (N2)']+out['dispatch']['a1 (N1)']*0.7).cumsum()
         out['dispatch'] = out['dispatch'].round(5)
         # basic checks
-        self.assertAlmostEqual(out['dispatch']['fill_level'][0],0,5)
+        self.assertAlmostEqual(out['dispatch']['fill_level'].iloc[0],0,5)
         assert out['dispatch']['fill_level'].max()<=10
         assert out['dispatch']['fill_level'].min()>=0
         # no simultaneaous

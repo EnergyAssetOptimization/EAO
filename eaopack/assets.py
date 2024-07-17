@@ -423,6 +423,7 @@ class Storage(Asset):
                 mapping['node']      = self.nodes[0].name
             else: # separate nodes in / out.
                 mapping['node']  = np.nan
+                mapping['node'] = mapping['node'].astype(str)
                 my_ind = mapping.columns.get_indexer(['node'])[0]
                 # mapping['node'].iloc[0:n]      = self.nodes[0].name
                 # mapping['node'].iloc[n:2*n]    = self.nodes[1].name
@@ -617,6 +618,7 @@ class SimpleContract(Asset):
             price = prices[self.price].copy()
             # convert to array
             if isinstance(price, list): price = np.asarray(price)
+            if isinstance(price, pd.Series): price = price.values
         else:
             price = np.zeros(timegrid.T)
 
