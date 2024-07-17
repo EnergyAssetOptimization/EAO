@@ -31,7 +31,7 @@ df_profiles.index = pd.to_datetime(df_profiles['HourUTC'], format='%Y-%m-%dT%H:0
 df_profiles.sort_index(inplace = True)
 # filter for only DK1 price area and time grid
 df_profiles = df_profiles.loc[df_profiles['PriceArea'] == 'DK1', ['OnshoreWindPower', 'OffshoreWindPower', 'SolarPower', 'TotalLoad']]
-df_profiles = df_profiles.loc[Start:End]
+df_profiles = df_profiles.loc[Start-dt.timedelta(days = 10):End]
 # omit last
 df_profiles = df_profiles.iloc[:-1]
 
