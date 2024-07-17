@@ -128,7 +128,7 @@ class Portfolio:
         # only up to a factor (example transport; higher efficiency in setting up the problem)
         if 'disp_factor' not in mapping.columns:
             mapping['disp_factor'] = 1.
-        # mapping['disp_factor'].fillna(1., inplace = True)   ### depricated in pandas
+        # mapping['disp_factor'].fillna(1., inplace = True)   ### deprecated in pandas
         mapping['disp_factor'] = mapping['disp_factor'].fillna(1.)
         # mapping['nodal_restr'] = None
 
