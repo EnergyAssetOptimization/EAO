@@ -4,7 +4,7 @@ import datetime as dt
 from typing import Union, List, Dict
 import scipy.sparse as sp
 
-from eaopack.assets import Timegrid
+from eaopack.basic_classes import Timegrid
 
 class Results:
     def __init__(self, value:float, x: np.array, duals: dict):
@@ -198,8 +198,7 @@ class OptimProblem:
                        interface:str = 'cvxpy', 
                        solver = None,
                        make_soft_problem=False,
-                       rel_tol:float = 1e-3, 
-                       iterations:int = 5000)->Results:
+                       solver_params=None)->Results:
         """ optimize the optimization problem
 
         Args:
@@ -210,34 +209,32 @@ class OptimProblem:
             interface (str, optional): Chosen interface architecture. Defaults to 'cvxpy'.
             solver (str, optional): Solver for interface. Defaults to None
             make_soft_problem (bool, optional): If true, relax the boolean variables and allow float values instead. Defaults to False
-            INACTIVE   rel_tol (float): relative tolerance for solver
-            INACTIVE   iterations (int): max number of iterations for solver
-            INACTIVE   decimals_res (int): rounding results to ... decimals. Defaults to 5
         """
-        # check optim problem
+        map = self.mapping.copy()  # abbreviation
+
+        if make_soft_problem:
+            map['bool'] = False
+
+        isMIP = False
+        if 'bool' in map:
+            my_bools = map.loc[(~map.index.duplicated(keep='first')) & (map['bool'])].index.values.tolist()
+            my_bools = [(bb,) for bb in my_bools]
+            if len(my_bools) == 0:
+                my_bools = False
+            else:
+                isMIP = True  ### !!! Need to change solver
+                # print('...MIP problem configured. Beware of potentially long optimization and other issues inherent to MIP')
+        else:
+            map['bool'] = False
+            my_bools = False
+
+        assert np.all(self.l <= self.u), 'Error. Lower bounds must be smaller or equal to upper bounds'
+
         if interface == 'cvxpy':
             import cvxpy as CVX
 
             # Construct the problem
-
-            # variable to optimize. Note: may add differentiation of variables and constants in case lower and upper bounds are equal
-            map = self.mapping.copy()  # abbreviation
-
-            if make_soft_problem:
-                map['bool'] = False
-
-            isMIP = False
-            if 'bool' in map:
-                my_bools = map.loc[(~map.index.duplicated(keep='first'))&(map['bool'])].index.values.tolist()
-                my_bools = [(bb,) for bb in my_bools]
-                if len(my_bools)==0: 
-                    my_bools = False
-                else:
-                    isMIP = True ### !!! Need to change solver
-                    # print('...MIP problem configured. Beware of potentially long optimization and other issues inherent to MIP')
-            else:
-                my_bools = False
-            x = CVX.Variable(self.c.size, boolean = my_bools)
+            x = CVX.Variable(self.c.size, boolean=my_bools)
             ##### put together constraints
             constr_types = {}   # dict to remember constraint type and numbering to extract duals
             # lower and upper bound  constraints # 0 & 1
@@ -317,11 +314,12 @@ class OptimProblem:
             prob = CVX.Problem(CVX.Maximize(objective), constraints)
 
             if solver is None:
-                prob.solve() # no rel_tol parameter here
-            else:
-                prob.solve(solver = getattr(CVX, solver)) 
-                #                if isMIP: solver = 'GLPK_MI'
-                #                else:     solver = 'ECOS'
+                if isMIP: solver = 'GLPK_MI'
+                else:     solver = "CLARABEL"
+
+            prob.solve(solver = getattr(CVX, solver))
+            #                if isMIP: solver = 'GLPK_MI'
+            #                else:     solver = 'ECOS'
                 
 
             if prob.status == 'optimal':
@@ -347,8 +345,75 @@ class OptimProblem:
             else:
                 print('Optimization not successful: ' + prob.status)       
                 results = 'not successful'
+        elif interface == "ortools":
+            from ortools.linear_solver import pywraplp
+
+            if solver is None:
+                solver = "SCIP"
+            solver_ = pywraplp.Solver.CreateSolver(solver)
+            if not solver_:
+                raise Exception("Something went wrong when creating the solver.")
+
+            # Create variables:
+            infinity = solver_.infinity()
+            x = {}
+            for j in range(len(self.l)):
+                if isMIP and any(map.loc[[j]]["bool"]==True):
+                    if self.u[j] != 1 or self.l[j] != 0:
+                        x[j] = solver_.IntVar(self.l[j], self.u[j], "x[%i]" % j)
+                    else:
+                        x[j] = solver_.BoolVar("x[%i]" % j)
+                else:
+                    x[j] = solver_.NumVar(self.l[j], self.u[j], "x[%i]" % j)
+
+            if not self.A is None:
+                assert (len(self.b) == len(self.cType)) and (len(self.b) == self.A.shape[0]) and (len(self.u) == self.A.shape[1])
+                self.A = self.A.tolil()
+
+                for i in range(len(self.A.rows)):
+                    if self.cType[i] == "U":
+                        constraint = solver_.RowConstraint(-infinity, self.b[i], "")
+                    elif self.cType[i] == "L":
+                        constraint = solver_.RowConstraint(self.b[i], infinity, "")
+                    elif self.cType[i] == "S" or self.cType[i] == "N":
+                        constraint = solver_.RowConstraint(self.b[i], self.b[i], "")
+                    else:
+                        raise ValueError("Unknown ctype " + self.cType[i] +  "at position " + str(i))
+                    for j in range(len(self.A.rows[i])):
+                        constraint.SetCoefficient(x[self.A.rows[i][j]], self.A.data[i][j])
+
+            # Set objective
+            objective = solver_.Objective()
+            for j in range(len(self.c)):
+                objective.SetCoefficient(x[j], -self.c[j])
+            objective.SetMaximization()
+
+            print(f"Solving with {solver_.SolverVersion()}")
+
+            # solver_.set_solver_specific_parameters({})
+            if solver_params is not None:
+                solver_.SetSolverSpecificParametersAsString(solver_params)
+            status = solver_.Solve()
+            if status == pywraplp.Solver.OPTIMAL:
+                print("Optimal solution found.")
+                x_value = np.array([x[j].solution_value() for j in range(len(self.l))])
+                results = Results(value=solver_.Objective().Value(),
+                                  x=x_value,
+                                  duals=None)
+            elif status == pywraplp.Solver.FEASIBLE:
+                print("A feasible solution was found, but we don't know if it's optimal.")
+                x_value = np.array([x[j].solution_value() for j in range(len(self.l))])
+                results = Results(value=solver_.Objective().Value(),
+                                  x=x_value,
+                                  duals=None)
+            elif status == pywraplp.Solver.INFEASIBLE:
+                print("The problem is infeasible.")
+                results = 'infeasible'
+            else:
+                print('Optimization not successful: ' + str(status))
+                results = 'not successful'
         else:
-            raise NotImplementedError('Solver - '+str(solver)+ ' -not implemented')
+            raise NotImplementedError('Interface - '+str(interface)+ ' -not implemented')
 
         return results
 
