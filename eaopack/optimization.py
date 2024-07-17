@@ -91,7 +91,8 @@ class OptimProblem:
 
         # disp factor column needed to assign same dispatch to all related time steps
         if 'disp_factor' not in self.mapping.columns: self.mapping['disp_factor'] = 1.
-        self.mapping['disp_factor'].fillna(1., inplace = True) # ensure there's a one where not assigned yet
+        #self.mapping['disp_factor'].fillna(1., inplace = True) # ensure there's a one where not assigned yet  --> warning & deprecation pandas 3.0
+        self.mapping['disp_factor'] = self.mapping['disp_factor'].fillna(1.) # ensure there's a one where not assigned yet
         tp = timegrid.timepoints
         T  = timegrid.T
         try: periods = pd.date_range(tp[0]-pd.Timedelta(1, freq_period),    tp[-1]+pd.Timedelta(1, freq_period), freq = freq_period, tz = timegrid.tz)

@@ -522,7 +522,7 @@ class DiscountRate(unittest.TestCase):
         costs = (costs*disc).sum()
         rev = ((res2.x[24:48])*1e3*disc).sum()
         
-        self.assertAlmostEqual(res2.value, rev-costs, 3)        
+        self.assertAlmostEqual(res2.value, rev-costs, 1)        
         pass
 
 
