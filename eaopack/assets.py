@@ -684,6 +684,7 @@ class SimpleContract(Asset):
             # infos:             'asset', 'node', 'type'
             mapping['time_step'] = np.hstack((I, I))
             mapping['var_name']  = np.nan # name variables for use e.g. in RI
+            mapping['var_name'] = mapping['var_name'].astype(str)
             ind_var_name = mapping.columns.get_indexer(['var_name'])[0]
             # mapping['var_name'].iloc[0:T] = 'disp_in'
             # mapping['var_name'].iloc[T:] = 'disp_out'
