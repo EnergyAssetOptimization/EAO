@@ -2622,11 +2622,11 @@ class OrderBook(Asset):
             node (Node): Node, the constract is located in                                    (asset parameter)
             timegrid (Timegrid): Timegrid for discretization                                  (asset parameter)
             wacc (float): Weighted average cost of capital to discount cash flows in target   (asset parameter)
-            orders (dict or pd.DF) :  Available orders for execution
-                                      dict:  dict['start'] = array
-                                             dict['end']   = array
-                                             dict['capa']  = array
-                                             dict['price'] = array                                           
+            orders (dict or pd.DataFrame) :  Available orders for execution
+                                      dict:  dict['start'] = array of np.TimeStamps
+                                             dict['end']   = array of np.TimeStamps
+                                             dict['capa']  = array of float
+                                             dict['price'] = array of float                                  
             full_exec (bool, optional): Enforce full execution of orders (defaults to False - partial execution allowed)
 
         """

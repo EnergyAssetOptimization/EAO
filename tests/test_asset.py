@@ -456,7 +456,7 @@ class ScaledAsset(unittest.TestCase):
         portf = eao.portfolio.Portfolio([a,scaled_b])
         op  = portf.setup_optim_problem(prices, timegrid=timegrid)
         res = op.optimize()
-        # out = eao.io.extract_output(portf=portf, op = op, res = res)
+        out = eao.io.extract_output(portf=portf, op = op, res = res)
         # zero costs and limit at original size -- same result
         self.assertAlmostEqual(res_std.value, res.value, 4)
 
@@ -668,6 +668,49 @@ class TestOrderOrderBooks(unittest.TestCase):
         out = eao.io.extract_output(portf= portf, op=op, res=res)
         self.assertAlmostEqual(out['dispatch'].sum()[1], 2004, 3)
         self.assertAlmostEqual(out['dispatch'].max()[1], 7, 3) # given by market, orders partly executed
+
+    def test_order_book_battery(self):
+        """ Test enforcing full execution of orders """
+
+        node = eao.assets.Node('power')
+        timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,1,3), freq = 'h')
+        # create larger number of orders
+        ## some time steps, buy & sell
+        ob = pd.DataFrame(columns = ['start', 'end', 'capa', 'price']) # alternative to dict is DataFrame ... converted in asset
+        r = dict() # row
+        ### orders
+        # orders with bid/ask spread on base signal
+        # base signal
+        bs = (20*np.sin(timegrid.I/4)+20).round(0)
+        # BUY
+        for ii in timegrid.I:
+            tp = timegrid.timepoints[ii]
+            for i in range(0,5):
+                r['start']   = tp
+                r['end']     = tp + pd.Timedelta(np.random.randint(1, 4), 'h')
+                r['capa']    = np.random.randint(1, 5)
+                r['price']   = bs[ii] + np.random.randint(10, 20)
+                ob.loc[len(ob)] = r
+            # SELL
+            for i in range(0,5):
+                r['start']   = tp
+                r['end']     = tp + pd.Timedelta(np.random.randint(1, 4), 'h')
+                r['capa']    = -np.random.randint(1, 5)
+                r['price']   = bs[ii] + np.random.randint(1, 9)
+                ob.loc[len(ob)] = r            
+        # battery
+        b = eao.assets.Storage('battery', node, cap_in  = 10, 
+                                                cap_out = 10,
+                                                size    = 40)
+        order_book = eao.assets.OrderBook('orders', node, 
+                                          orders=ob, 
+                                          full_exec = False)  # not exactly required to relax problem
+        portf = eao.portfolio.Portfolio([b, order_book])
+        op = portf.setup_optim_problem(None, timegrid=timegrid)
+        res = op.optimize()
+        out = eao.io.extract_output(portf= portf, op=op, res=res)
+        pass        
+
 
 ###########################################################################################################
 ###########################################################################################################

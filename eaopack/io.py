@@ -47,7 +47,7 @@ def extract_output(portf: Portfolio, op: OptimProblem, res:Results, prices: dict
         disp    = pd.DataFrame(index = times) # dispatch
         internal_variables = pd.DataFrame(index = times)
         duals   = pd.DataFrame(index = times) # duals of problem -  correspond to nodal prices
-        special = pd.DataFrame(columns=['asset', 'variable', 'value', 'costs']) # one line per asset / parameter
+        special = pd.DataFrame(columns=['asset', 'variable', 'name', 'value', 'costs']) # one line per asset / parameter
         # extract dcf for all assets and set together
         for a in portf.assets:
             dcfs[a.name] = a.dcf(optim_problem = op, results = res)
@@ -102,10 +102,26 @@ def extract_output(portf: Portfolio, op: OptimProblem, res:Results, prices: dict
             for i, r in op.mapping[I].iterrows():
                 myrow = {'asset'      : r.asset,
                          'variable'   : r.type,
+                         'name'       : r.var_name,
                          'value'      : res.x[i],
                          'costs'      : res.x[i]*op.c[i]
                            }
-                special = special.append(myrow, ignore_index = True)
+                # special = special.append(myrow, ignore_index = True)
+                special.loc[len(special)] = myrow
+            # extract orders as special case of ORDER BOOK asset
+            if isinstance(a, serialization.OrderBook):
+                # extract order information
+                my_mapping =  op.mapping.loc[op.mapping['asset']==a.name].copy()
+                # drop duplicate index - since mapping may contain several rows per varaible (indexes enumerate variables)
+                my_mapping = pd.DataFrame(my_mapping[~my_mapping.index.duplicated(keep = 'first')])                
+                for i, r in my_mapping.iterrows(): # only orders, only unique
+                    myrow = {'asset'     : r.asset,
+                            'variable'   : r.type,
+                            'name'       : r.var_name,
+                            'value'      : res.x[i],
+                            'costs'      : res.x[i]*op.c[i]
+                            }
+                    special.loc[len(special)] = myrow
         # add given prices to duals in output (relevant reference)
         if not prices is None:
             for myc in prices:
