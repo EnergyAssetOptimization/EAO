@@ -184,7 +184,41 @@ class Asset:
             time_value_converted = int(time_value_converted)
         return time_value_converted
 
+    def make_vector(self, value:  Union[float, StartEndValueDict, str], prices:dict, default_value: float = None, convert=False):
+        """
+        Make a vector out of value
+        Args:
+            value (float, dict, str): The value to be converted to a vector
+                                      float: constant value
+                                      dict:  dict['start'] = array
+                                             dict['end']   = array
+                                             dict['values'] = array
+                                      str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
+            prices (dict): Dictionary of price arrays needed by assets in portfolio
+            default_value (float): The value that is used if any of the entries of the resulting vector are not specified
 
+        Returns: vector in time grid
+
+        """
+        I = self.timegrid.restricted.I  # indices of restricted time grid
+        T = self.timegrid.restricted.T
+        if value is None:
+            return value
+        elif isinstance(value, (float, int, np.ndarray)):
+            vec = value * np.ones(T)
+        elif isinstance(value, str):
+            assert (value in prices), 'data for ' + value + ' not found for asset  ' + self.name
+            vec = prices[value].copy()
+            if isinstance(vec, pd.Series): vec = vec.values # may be given as Series (prices as DataFrame) (not prefered, but sometimes handy)
+            vec = vec[I]  # only in asset time window
+        else:  # given in form of dict (start/end/values)
+            vec = self.timegrid.restricted.values_to_grid(value)
+            if default_value is not None:
+                vec[np.isnan(vec)] = default_value
+
+        if convert:
+            vec = vec * self.timegrid.restricted.dt
+        return vec
 
 ##########################
 
@@ -567,7 +601,7 @@ class SimpleContract(Asset):
                                             str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
 
             periodicity (str, pd freq style): Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)
-            periodicity_duration (str, pd freq style): Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)
+            periodicity_duration (str, pd freq style): Intervals in which periods repeat (e.g. repeat days over whole weeks)  (defaults to None)
         """
         super(SimpleContract, self).__init__(name=name,
                                              nodes=nodes,
@@ -607,8 +641,8 @@ class SimpleContract(Asset):
         # set timegrid if given as optional argument
         if not timegrid is None:
             self.set_timegrid(timegrid)
-        else:
-            timegrid = self.timegrid
+        # else:
+        #     timegrid = self.timegrid
         # check: timegrid set?
         if not hasattr(self, 'timegrid'):
             raise ValueError('Set timegrid of asset before creating optim problem. Asset: '+ self.name)
@@ -714,41 +748,6 @@ class SimpleContract(Asset):
             return OptimProblem(c = c, l = l, u = u,
                                 mapping = mapping)
 
-    def make_vector(self, value:  Union[float, StartEndValueDict, str], prices:dict, default_value: float = None, convert=False):
-        """
-        Make a vector out of value
-        Args:
-            value (float, dict, str): The value to be converted to a vector
-                                      float: constant value
-                                      dict:  dict['start'] = array
-                                             dict['end']   = array
-                                             dict['values'] = array
-                                      str:   refers to column in "prices" data that provides time series to set up OptimProblem (as for "price" below)
-            prices (dict): Dictionary of price arrays needed by assets in portfolio
-            default_value (float): The value that is used if any of the entries of the resulting vector are not specified
-
-        Returns:
-
-        """
-        I = self.timegrid.restricted.I  # indices of restricted time grid
-        T = self.timegrid.restricted.T
-        if value is None:
-            return value
-        elif isinstance(value, (float, int, np.ndarray)):
-            vec = value * np.ones(T)
-        elif isinstance(value, str):
-            assert (value in prices), 'data for ' + value + ' not found for asset  ' + self.name
-            vec = prices[value].copy()
-            if isinstance(vec, pd.Series): vec = vec.values # may be given as Series (prices as DataFrame) (nor preferred, but sometimes handy)
-            vec = vec[I]  # only in asset time window
-        else:  # given in form of dict (start/end/values)
-            vec = self.timegrid.restricted.values_to_grid(value)
-            if default_value is not None:
-                vec[np.isnan(vec)] = default_value
-
-        if convert:
-            vec = vec * self.timegrid.restricted.dt
-        return vec
 
 class Transport(Asset):
     """ Contract Class """
@@ -2607,3 +2606,143 @@ class Plant(CHPAsset):
                                        consumption_if_on = consumption_if_on,
                                        _no_heat = True)
 
+
+class OrderBook(Asset):
+    """ Contract Class """
+    def __init__(self,
+                name:   str  = 'default_name_order_book',
+                nodes:  Node = Node(name = 'default_node'),
+                wacc:   float = 0,
+                orders: Dict = None,
+                full_exec: bool = False):
+        """ Order book: Provide a list of orders that are available for execution. Orders come with start, end (of delivery), capacity & price
+
+        Args:
+            name (str): Unique name of the asset                                              (asset parameter)
+            node (Node): Node, the constract is located in                                    (asset parameter)
+            timegrid (Timegrid): Timegrid for discretization                                  (asset parameter)
+            wacc (float): Weighted average cost of capital to discount cash flows in target   (asset parameter)
+            orders (dict or pd.DF) :  Available orders for execution
+                                      dict:  dict['start'] = array
+                                             dict['end']   = array
+                                             dict['capa']  = array
+                                             dict['price'] = array                                           
+            full_exec (bool, optional): Enforce full execution of orders (defaults to False - partial execution allowed)
+
+        """
+        super(OrderBook, self).__init__(name    = name,
+                                             nodes   = nodes,
+                                             start   = None,
+                                             end     = None,
+                                             wacc    = wacc,
+                                             freq    = None,
+                                             profile = None)
+        if isinstance(orders, pd.DataFrame):
+            myorders = dict()
+            for col in orders.columns:
+                myorders[col] = orders[col].values
+            orders = myorders
+        if isinstance(orders, Dict):
+            assert 'start' in orders.keys(), '"start" dates must be given for orders'
+            assert 'end'   in orders.keys(), '"end"   dates must be given for orders'
+            assert 'capa'  in orders.keys(), '"capa"  values must be given for orders'
+            assert 'price' in orders.keys(), '"price" values must be given for orders'
+            assert len(orders['start']) == len(orders['end']), 'order must have same number of start and end values   ' + str(name)
+            assert len(orders['start']) == len(orders['end']), 'order must have same number of start and end values   ' + str(name)            
+            assert len(orders['start']) == len(orders['capa']), 'order must have same number of start and capa values   ' + str(name)
+            assert len(orders['start']) == len(orders['price']), 'order must have same number of start and price values   ' + str(name)                        
+        else:
+            raise ValueError('Order Book bust be Dictionary (start, end, capa, price) or pd.Dataframe   -  '+str(name))
+
+        self.orders = orders
+        self.full_exec = full_exec
+
+
+    @abc.abstractmethod
+    def setup_optim_problem(self, prices: dict = None, timegrid:Timegrid = None, costs_only:bool = False) -> OptimProblem:
+        """ Set up optimization problem for asset
+
+        Args:
+            prices (dict): Dictionary of price arrays needed by assets in portfolio --> not required here, for compatibility
+            timegrid (Timegrid, optional): Discretization grid for asset. Defaults to None,
+                                           in which case it must have been set previously
+            costs_only (bool): Only create costs vector (speed up e.g. for sampling prices). Defaults to False
+
+        Returns:
+            OptimProblem: Optimization problem to be used by optimizer
+        """
+        # set timegrid if given as optional argument
+        if not timegrid is None:
+            self.set_timegrid(timegrid)
+        else:
+            pass # timegrid = self.timegrid
+        # check: timegrid set?
+        if not hasattr(self, 'timegrid'):
+            raise ValueError('Set timegrid of asset before creating optim problem. Asset: '+ self.name)
+
+        ##### using restricted timegrid for asset lifetime (save resources)
+        I                = self.timegrid.restricted.I # indices of restricted time grid
+        T                = self.timegrid.restricted.T # length of restr. grid
+        tp               = self.timegrid.restricted.timepoints
+        dt               = self.timegrid.restricted.dt
+        discount_factors = self.timegrid.restricted.discount_factors # disc fctrs of restr. grid
+
+        # # Make vector of single min/max capacities.
+        # max_cap = self.make_vector(self.max_cap, prices, convert=True)
+        # min_cap = self.make_vector(self.min_cap, prices, convert=True)
+
+        # # check integrity
+        # if any(min_cap>max_cap):
+        #     raise ValueError('Asset --' + self.name+'--: Contract with min_cap > max_cap leads to ill-posed optimization problem')
+
+        # # Make vector of extra_costs:
+        # extra_costs = self.make_vector(self.extra_costs, prices, default_value=0)
+
+        mapping = pd.DataFrame(columns=['time_step',
+                                        'var_name',
+                                        'asset',
+                                        'node',
+                                        'type',
+                                        'disp_factor']) 
+        
+        # loop over orders. each order has one variable "execute" from [0,1], forced bool if chosen
+        # mapping will enconde which time steps are affected
+        n = len(self.orders['start']) # number of orders
+        l = np.zeros(n)
+        u = np.ones(n)
+        c = np.zeros(n) # filled in loop
+        for iO in range(0, len(self.orders['start'])):
+            mys = self.orders['start'][iO]
+            mye = self.orders['end'][iO]
+            myc = self.orders['capa'][iO] 
+            myp = self.orders['price'][iO]                        
+            # number of timesteps affected
+            myI = (tp>=mys) & (tp<mye)
+            # price for whole duration! discounting as if paid each time step
+            c[iO] = myc * sum(dt[myI] * discount_factors[myI]) *myp # sign (buy/sell in price as exec [0,1])
+            mymap = pd.DataFrame() 
+            mymap['time_step']   = I[myI]    # order valid here
+            mymap['disp_factor'] = myc * dt[myI]  # order exec [0,1], effect capa incl. sign buy/sell
+            mymap['var_name']    = iO
+            mymap.index = mymap['var_name'].values
+            mapping = pd.concat([mapping, mymap.copy()])
+
+        # shortcut if only costs required
+        if costs_only:
+            return c
+        # common entries
+        mapping['asset'] = self.name
+        mapping['type']  = 'd' # dispatch variable
+        mapping['node']  = self.node_names[0]
+        # if full exec, our variables are boolean (0,1)
+        if self.full_exec: mapping['bool']  = self.full_exec
+
+        # if we're using a less granular asset timegrid, add dispatch for every minor grid point
+        # Effectively we concat the mapping for each minor point (one row each)
+        if hasattr(self.timegrid.restricted, 'I_minor_in_major'):
+            # mapping = self.__extend_mapping_to_minor_grid__(mapping)
+            raise ValueError('should not happen')
+
+        return OptimProblem(c = c, l = l, u = u,
+                            mapping = mapping,
+                            timegrid = self.timegrid)
