@@ -658,16 +658,16 @@ class TestOrderOrderBooks(unittest.TestCase):
         res = op.optimize()
         out = eao.io.extract_output(portf= portf, op=op, res=res)
         # check all is dispatched
-        self.assertAlmostEqual(out['dispatch'].sum()[1], 2372, 3)
-        self.assertAlmostEqual(out['dispatch'].max()[1], 10, 3) # given by market, orders partly executed
+        self.assertAlmostEqual(out['dispatch'].sum().iloc[1], 2372, 3)
+        self.assertAlmostEqual(out['dispatch'].max().iloc[1], 10, 3) # given by market, orders partly executed
         # now enforce ecex all
         order_book = eao.assets.OrderBook(orders=ob, nodes = node, full_exec=True)
         portf = eao.portfolio.Portfolio([a,order_book])
         op = portf.setup_optim_problem(prices, timegrid=timegrid)
         res = op.optimize()
         out = eao.io.extract_output(portf= portf, op=op, res=res)
-        self.assertAlmostEqual(out['dispatch'].sum()[1], 2004, 3)
-        self.assertAlmostEqual(out['dispatch'].max()[1], 7, 3) # given by market, orders partly executed
+        self.assertAlmostEqual(out['dispatch'].sum().iloc[1], 2004, 3)
+        self.assertAlmostEqual(out['dispatch'].max().iloc[1], 7, 3) # given by market, orders partly executed
 
     def test_order_book_battery(self):
         """ Test enforcing full execution of orders """
