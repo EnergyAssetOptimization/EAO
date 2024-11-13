@@ -30,12 +30,12 @@ Combined Heat and Power
 
    samples/combined_heat_power/chp_sample
 
-Optimization against a discrete order book
+Battery optimization against an order book
 ---------------------------------------------------
 
 .. toctree:: 
 
-   samples/order_book/order_book_battery.ipynb
+   samples/order_book/order_book_battery
 
 
 Stochastic Linear Programs
