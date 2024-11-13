@@ -234,7 +234,7 @@ class OptimProblem:
             import cvxpy as CVX
 
             # Construct the problem
-            x = CVX.Variable(self.c.size, boolean=my_bools)
+            x = CVX.Variable(self.c.shape, boolean=my_bools)
             ##### put together constraints
             constr_types = {}   # dict to remember constraint type and numbering to extract duals
             # lower and upper bound  constraints # 0 & 1
@@ -314,12 +314,9 @@ class OptimProblem:
             prob = CVX.Problem(CVX.Maximize(objective), constraints)
 
             if solver is None:
-                if isMIP: solver = 'GLPK_MI'
-                else:     solver = "CLARABEL"
-
-            prob.solve(solver = getattr(CVX, solver))
-            #                if isMIP: solver = 'GLPK_MI'
-            #                else:     solver = 'ECOS'
+                prob.solve()
+            else:
+                prob.solve(solver = getattr(CVX, solver))
                 
 
             if prob.status == 'optimal':
