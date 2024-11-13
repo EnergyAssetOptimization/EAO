@@ -68,7 +68,7 @@ jobs:
       - name: Install rtd theme for sphinx doc from pypi
         run: $CONDA/bin/python -m pip install sphinx_rtd_theme 
       - name: Install Pandoc
-        uses: r-lib/actions/setup-pandoc@v1
+        uses: r-lib/actions/setup-pandoc@v2
         with:
           pandoc-version: 2.9.1
       - name: Build docs with sphinx
