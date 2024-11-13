@@ -456,7 +456,7 @@ class ScaledAsset(unittest.TestCase):
         portf = eao.portfolio.Portfolio([a,scaled_b])
         op  = portf.setup_optim_problem(prices, timegrid=timegrid)
         res = op.optimize()
-        # out = eao.io.extract_output(portf=portf, op = op, res = res)
+        out = eao.io.extract_output(portf=portf, op = op, res = res)
         # zero costs and limit at original size -- same result
         self.assertAlmostEqual(res_std.value, res.value, 4)
 
@@ -524,6 +524,203 @@ class DiscountRate(unittest.TestCase):
         
         self.assertAlmostEqual(res2.value, rev-costs, 1)        
         pass
+
+class TestOrderOrderBooks(unittest.TestCase):
+    def test_order(self):
+        """ Unit test. Basic functioning
+        """
+        node = eao.assets.Node('testNode')
+        timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,2,1), freq = 'd')
+        tg2 = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,2,1), freq = 'h')
+
+        ## define order book
+        ob = dict( start = [pd.Timestamp(2021,1,1),
+                            pd.Timestamp(2021,1,2),
+                            pd.Timestamp(2021,1,3),
+                            pd.Timestamp(2021,1,7)],
+                   end   = [pd.Timestamp(2021,1,2),
+                            pd.Timestamp(2021,1,5),
+                            pd.Timestamp(2021,1,5),
+                            pd.Timestamp(2021,1,15)],
+                    capa = [-1.1,
+                            -2.2,
+                            3.3,
+                            4.4],
+                    price =[ 8,
+                            12,
+                            13,
+                             9])
+
+
+        a = eao.assets.SimpleContract(name = 'SC', 
+                                      nodes = node,
+                                      price = 'market',
+                                      min_cap= -100., max_cap=100.)
+        order_book = eao.assets.OrderBook(orders=ob, nodes = node)
+        portf = eao.portfolio.Portfolio([a, order_book])
+
+        # test with orderbook being a dataframe and missing key
+        ob_df = pd.DataFrame(ob)
+        ob2   = eao.assets.OrderBook(orders=ob_df)
+        ob_missing = ob.copy()
+        ob_missing.pop('start')
+        try: ob3   = eao.assets.OrderBook(orders=ob_missing)
+        except: pass # should fail
+        else: raise ValueError('Should have raised an arror')
+        prices ={'market': 10*np.ones(timegrid.T)}
+
+        c1 = order_book.setup_optim_problem(prices, timegrid=timegrid, costs_only=True)
+        c2 = order_book.setup_optim_problem(prices, timegrid=tg2, costs_only=True)
+        np.testing.assert_almost_equal(c1, c2, 3)
+
+        # hourly or daily - costs should be the same
+        op = portf.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        out = eao.io.extract_output(portf= portf, op=op, res=res)
+        self.assertAlmostEqual(out['dispatch'].sum()[1], 4.4*24*8 - 2.2*3*24 , 3)   
+        self.assertAlmostEqual(res.value, 1161.6, 3)   
+
+    def test_order_serialize(self):
+        """ Unit test. serialization
+        """
+        node = eao.assets.Node('testNode')
+        timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,2,1), freq = 'd')
+
+        ## define order book
+        ob = dict( start = [pd.Timestamp(2021,1,1),
+                            pd.Timestamp(2021,1,2),
+                            pd.Timestamp(2021,1,3),
+                            pd.Timestamp(2021,1,7)],
+                   end   = [pd.Timestamp(2021,1,2),
+                            pd.Timestamp(2021,1,5),
+                            pd.Timestamp(2021,1,5),
+                            pd.Timestamp(2021,1,15)],
+                   capa  = [-1.1,
+                            -2.2,
+                            3.3,
+                            4.4],
+                   price = [ 8,
+                            12,
+                            13,
+                             9])
+        a = eao.assets.SimpleContract(name = 'SC', 
+                                      nodes = node,
+                                      price = 'market',
+                                      min_cap= -100., max_cap=100.)
+        
+        order_book = eao.assets.OrderBook(orders=ob, nodes = node)
+
+        portf = eao.portfolio.Portfolio([a,order_book])
+        s = eao.serialization.to_json(order_book)
+        ob = eao.serialization.load_from_json(s)
+        portf2 = eao.portfolio.Portfolio([a,ob])
+        
+        prices ={'market': 10*np.ones(timegrid.T)}
+        op = portf.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        op2 = portf2.setup_optim_problem(prices, timegrid=timegrid)
+        res2 = op2.optimize()
+        self.assertAlmostEqual(res.value, res2.value, 3)
+
+    def test_order_enforce_allatonce(self):
+        """ Test enforcing full execution of orders """
+        node = eao.assets.Node('testNode')
+        timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,2,1), freq = 'h')
+
+        ## define order book
+        ob = dict( start = [pd.Timestamp(2021,1,1, 10),
+                            pd.Timestamp(2021,1,2),
+                            pd.Timestamp(2021,1,3),
+                            pd.Timestamp(2021,1,7)],
+                   end   = [pd.Timestamp(2021,1,6),
+                            pd.Timestamp(2021,1,5, 20),
+                            pd.Timestamp(2021,1,5),
+                            pd.Timestamp(2021,1,15)],
+                    capa = [6,
+                            8,
+                            6,
+                            7],
+                    price =[ 1,
+                             2,
+                             3,
+                             2])
+        a = eao.assets.SimpleContract(name = 'SC', 
+                                      nodes = node,
+                                      price = 'market',
+                                      min_cap= -10., max_cap=0) # restricted sale
+        
+        order_book = eao.assets.OrderBook(orders=ob, nodes = node)
+
+        portf = eao.portfolio.Portfolio([a,order_book])
+        
+        prices ={'market': 10*np.ones(timegrid.T)} # prices above buy prices, so will want to sell
+        op = portf.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        out = eao.io.extract_output(portf= portf, op=op, res=res)
+        # check all is dispatched
+        self.assertAlmostEqual(out['dispatch'].sum().iloc[1], 2372, 3)
+        self.assertAlmostEqual(out['dispatch'].max().iloc[1], 10, 3) # given by market, orders partly executed
+        # now enforce ecex all
+        order_book = eao.assets.OrderBook(orders=ob, nodes = node, full_exec=True)
+        portf = eao.portfolio.Portfolio([a,order_book])
+        op = portf.setup_optim_problem(prices, timegrid=timegrid)
+        res = op.optimize()
+        out = eao.io.extract_output(portf= portf, op=op, res=res)
+        self.assertAlmostEqual(out['dispatch'].sum().iloc[1], 2004, 3)
+        self.assertAlmostEqual(out['dispatch'].max().iloc[1], 7, 3) # given by market, orders partly executed
+
+    def test_order_book_battery(self):
+        """ Test enforcing full execution of orders """
+        node = eao.assets.Node('power')
+        S = dt.date(2021,1,1)
+        E = dt.date(2021,1,3)
+        timegrid = eao.assets.Timegrid(S, E, freq = 'h')
+        # create larger number of orders
+        ## some time steps, buy & sell
+        ob = pd.DataFrame(columns = ['start', 'end', 'capa', 'price']) # alternative to dict is DataFrame ... converted in asset
+        r = dict() # row
+        ### orders
+        # orders with bid/ask spread on base signal
+        # base signal
+        bs = (20*np.sin(timegrid.I/4)+20).round(0)
+        prices = {'av': bs}
+        for ii in timegrid.I:
+            tp = timegrid.timepoints[ii]
+            # SELL
+            for i in range(0,2):
+                r['start']   = tp
+                r['end']     = tp + pd.Timedelta(3, 'h')
+                r['capa']    = float(i)
+                r['price']   = bs[ii] + float(i)
+                ob.loc[len(ob)] = r
+            # BUY
+            for i in range(0,2):
+                r['start']   = tp
+                r['end']     = tp + pd.Timedelta(4, 'h')
+                r['capa']    = -float(i)
+                r['price']   = bs[ii] + float(i) + 5
+                ob.loc[len(ob)] = r            
+        # battery
+        b = eao.assets.Storage('battery', node, cap_in  = 10, 
+                                                cap_out = 10,
+                                                size    = 40)
+        # last resort - battery end level. May allow battery not to be completely full, "borrowing" in last hours
+        a = eao.assets.SimpleContract('fill_level_adjust', node,
+                                      max_cap=10,
+                                      min_cap=0,
+                                      start=timegrid.timepoints[-2],
+                                      end=E,
+                                      price = 'av',
+                                      extra_costs = 10
+                                      )
+        order_book = eao.assets.OrderBook('orders', node, 
+                                          orders=ob, 
+                                          full_exec = True)  # not exactly required to relax problem
+        portf = eao.portfolio.Portfolio([b, order_book,a])
+        op = portf.setup_optim_problem(prices=prices, timegrid=timegrid)
+        res = op.optimize()
+        out = eao.io.extract_output(portf= portf, op=op, res=res)
+        self.assertAlmostEqual(out['dispatch'].abs().sum().sum(), 192, 3) # recursion test
 
 
 ###########################################################################################################

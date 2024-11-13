@@ -56,6 +56,11 @@ def json_serialize_objects(obj) -> dict:
         # res.pop('timegrid', None) # not to be serialized
         res['__class__']  = 'Asset' # super class Asset
         res['asset_type'] = obj.__class__.__name__ # store child class
+        if res['asset_type'] == 'OrderBook': # some parameters not relevant
+            res.pop('start', None)
+            res.pop('end', None)
+            res.pop('freq', None)
+            res.pop('profile', None)
     elif isinstance(obj, Portfolio):
         res = {'assets': obj.assets}
         if hasattr(obj, 'timegrid'):

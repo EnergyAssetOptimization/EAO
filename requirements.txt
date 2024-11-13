@@ -1,8 +1,8 @@
-matplotlib
-numpy
-pandas
-scipy
-networkx
-cvxpy  
-cvxopt
-openpyxl
+matplotlib == 3.9.2
+numpy == 2.1.3
+pandas == 2.2.3
+scipy == 1.14.1
+networkx == 3.3
+cvxpy == 1.5.3
+cvxopt == 1.3.2
+openpyxl == 3.1.5
