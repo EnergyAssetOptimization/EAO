@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="./">
 <head>
@@ -6,21 +8,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Samples &mdash; EAO  documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="_static/jquery.js?v=5d32c60e"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="_static/documentation_options.js?v=5929fcd5"></script>
-        <script src="_static/doctools.js?v=9a2dae69"></script>
-        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
-        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -79,11 +77,10 @@
 <li class="toctree-l3"><a class="reference internal" href="samples/combined_heat_power/chp_sample.html">Combined Heat and Power</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#efficient-optimization-across-different-time-scales">Efficient optimization across different time scales</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="samples/mixing_long_and_short_term/mixing_long_and_short_term.html">Mixing long-term and short-term optimization targets</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/mixing_long_and_short_term/mixing_long_and_short_term.html#Some-prerequisites">Some prerequisites</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/mixing_long_and_short_term/mixing_long_and_short_term.html#Perform-the-optimization">Perform the optimization</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/mixing_long_and_short_term/mixing_long_and_short_term.html#Create-charts-and-interpret-the-results">Create charts and interpret the results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#optimization-against-a-discrete-order-book">Optimization against a discrete order book</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samples/order_book/order_book_battery.html">Discrete supply decisions - example battery in continuous intraday markets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/order_book/order_book_battery.html#Perform-the-optimization">Perform the optimization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/order_book/order_book_battery.html#Create-charts-and-interpret-the-results">Create charts and interpret the results</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#stochastic-linear-programs">Stochastic Linear Programs</a><ul>
@@ -105,6 +102,9 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#split-optimization">Split optimization</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="samples/split_optimization/split_optimization.html">Split Optimization</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#special-case-order-books">Special case: order books</a><ul class="simple">
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#parameter-handling">Parameter handling</a><ul>
@@ -234,18 +234,20 @@
 </ul>
 </div>
 </section>
-<section id="efficient-optimization-across-different-time-scales">
-<h2>Efficient optimization across different time scales<a class="headerlink" href="#efficient-optimization-across-different-time-scales" title="Link to this heading"></a></h2>
+<section id="optimization-against-a-discrete-order-book">
+<h2>Optimization against a discrete order book<a class="headerlink" href="#optimization-against-a-discrete-order-book" title="Link to this heading"></a></h2>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="samples/mixing_long_and_short_term/mixing_long_and_short_term.html">Mixing long-term and short-term optimization targets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="samples/mixing_long_and_short_term/mixing_long_and_short_term.html#Some-prerequisites">Some prerequisites</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="samples/mixing_long_and_short_term/mixing_long_and_short_term.html#Basics">Basics</a></li>
-<li class="toctree-l2"><a class="reference internal" href="samples/mixing_long_and_short_term/mixing_long_and_short_term.html#Define-portfolio">Define portfolio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="samples/order_book/order_book_battery.html">Discrete supply decisions - example battery in continuous intraday markets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="samples/order_book/order_book_battery.html#Some-prerequisites">Some prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="samples/order_book/order_book_battery.html#Setup-(1)-Basics">Setup (1) Basics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="samples/order_book/order_book_battery.html#(2)-Order-book">(2) Order book</a></li>
+<li class="toctree-l2"><a class="reference internal" href="samples/order_book/order_book_battery.html#(3)-Assets">(3) Assets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="samples/order_book/order_book_battery.html#(4)-Setting-up-the-portfolio">(4) Setting up the portfolio</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="samples/mixing_long_and_short_term/mixing_long_and_short_term.html#Perform-the-optimization">Perform the optimization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="samples/mixing_long_and_short_term/mixing_long_and_short_term.html#Create-charts-and-interpret-the-results">Create charts and interpret the results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="samples/order_book/order_book_battery.html#Perform-the-optimization">Perform the optimization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="samples/order_book/order_book_battery.html#Create-charts-and-interpret-the-results">Create charts and interpret the results</a></li>
 </ul>
 </div>
 </section>
@@ -304,6 +306,11 @@
 </ul>
 </li>
 </ul>
+</div>
+</section>
+<section id="special-case-order-books">
+<h2>Special case: order books<a class="headerlink" href="#special-case-order-books" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
 </div>
 </section>
 <section id="parameter-handling">

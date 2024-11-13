@@ -30,12 +30,12 @@ Combined Heat and Power
 
    samples/combined_heat_power/chp_sample
 
-Efficient optimization across different time scales
+Optimization against a discrete order book
 ---------------------------------------------------
 
 .. toctree:: 
 
-   samples/mixing_long_and_short_term/mixing_long_and_short_term.ipynb
+   samples/order_book/order_book_battery.ipynb
 
 
 Stochastic Linear Programs
@@ -60,6 +60,13 @@ Split optimization
 .. toctree:: 
 
    samples/split_optimization/split_optimization
+
+Special case: order books
+------------------
+
+.. toctree:: 
+
+   samples/split_optimization/order_book
 
 
 

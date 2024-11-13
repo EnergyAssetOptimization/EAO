@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="./">
 <head>
@@ -6,21 +8,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Welcome to the Energy Asset Optimization (EAO) documentation! &mdash; EAO  documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="_static/jquery.js?v=5d32c60e"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="_static/documentation_options.js?v=5929fcd5"></script>
-        <script src="_static/doctools.js?v=9a2dae69"></script>
-        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
-        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -105,6 +103,7 @@ generation, green power supply and PPAs and sector coupling in ad-hoc analysis, 
 <li class="toctree-l3"><a class="reference internal" href="eao.html#eaopack.assets.Contract"><code class="docutils literal notranslate"><span class="pre">Contract</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="eao.html#eaopack.assets.ExtendedTransport"><code class="docutils literal notranslate"><span class="pre">ExtendedTransport</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="eao.html#eaopack.assets.MultiCommodityContract"><code class="docutils literal notranslate"><span class="pre">MultiCommodityContract</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="eao.html#eaopack.assets.OrderBook"><code class="docutils literal notranslate"><span class="pre">OrderBook</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="eao.html#eaopack.assets.Plant"><code class="docutils literal notranslate"><span class="pre">Plant</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="eao.html#eaopack.assets.ScaledAsset"><code class="docutils literal notranslate"><span class="pre">ScaledAsset</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="eao.html#eaopack.assets.SimpleContract"><code class="docutils literal notranslate"><span class="pre">SimpleContract</span></code></a></li>
@@ -188,11 +187,10 @@ generation, green power supply and PPAs and sector coupling in ad-hoc analysis, 
 <li class="toctree-l3"><a class="reference internal" href="samples/combined_heat_power/chp_sample.html">Combined Heat and Power</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="samples.html#efficient-optimization-across-different-time-scales">Efficient optimization across different time scales</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="samples/mixing_long_and_short_term/mixing_long_and_short_term.html">Mixing long-term and short-term optimization targets</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/mixing_long_and_short_term/mixing_long_and_short_term.html#Some-prerequisites">Some prerequisites</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/mixing_long_and_short_term/mixing_long_and_short_term.html#Perform-the-optimization">Perform the optimization</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/mixing_long_and_short_term/mixing_long_and_short_term.html#Create-charts-and-interpret-the-results">Create charts and interpret the results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="samples.html#optimization-against-a-discrete-order-book">Optimization against a discrete order book</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samples/order_book/order_book_battery.html">Discrete supply decisions - example battery in continuous intraday markets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/order_book/order_book_battery.html#Perform-the-optimization">Perform the optimization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/order_book/order_book_battery.html#Create-charts-and-interpret-the-results">Create charts and interpret the results</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="samples.html#stochastic-linear-programs">Stochastic Linear Programs</a><ul>
@@ -214,6 +212,9 @@ generation, green power supply and PPAs and sector coupling in ad-hoc analysis, 
 </li>
 <li class="toctree-l2"><a class="reference internal" href="samples.html#split-optimization">Split optimization</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="samples/split_optimization/split_optimization.html">Split Optimization</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="samples.html#special-case-order-books">Special case: order books</a><ul class="simple">
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="samples.html#parameter-handling">Parameter handling</a><ul>

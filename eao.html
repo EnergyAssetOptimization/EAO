@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="./">
 <head>
@@ -6,19 +8,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EAO package &mdash; EAO  documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="_static/jquery.js?v=5d32c60e"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="_static/documentation_options.js?v=5929fcd5"></script>
-        <script src="_static/doctools.js?v=9a2dae69"></script>
-        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
-        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -52,6 +50,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#eaopack.assets.Asset"><code class="docutils literal notranslate"><span class="pre">Asset</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#eaopack.assets.Asset.convert_to_timegrid_freq"><code class="docutils literal notranslate"><span class="pre">Asset.convert_to_timegrid_freq()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#eaopack.assets.Asset.dcf"><code class="docutils literal notranslate"><span class="pre">Asset.dcf()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#eaopack.assets.Asset.make_vector"><code class="docutils literal notranslate"><span class="pre">Asset.make_vector()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#eaopack.assets.Asset.node_names"><code class="docutils literal notranslate"><span class="pre">Asset.node_names</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#eaopack.assets.Asset.set_timegrid"><code class="docutils literal notranslate"><span class="pre">Asset.set_timegrid()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#eaopack.assets.Asset.setup_optim_problem"><code class="docutils literal notranslate"><span class="pre">Asset.setup_optim_problem()</span></code></a></li>
@@ -77,13 +76,16 @@
 <li class="toctree-l4"><a class="reference internal" href="#eaopack.assets.MultiCommodityContract.setup_optim_problem"><code class="docutils literal notranslate"><span class="pre">MultiCommodityContract.setup_optim_problem()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#eaopack.assets.OrderBook"><code class="docutils literal notranslate"><span class="pre">OrderBook</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#eaopack.assets.OrderBook.setup_optim_problem"><code class="docutils literal notranslate"><span class="pre">OrderBook.setup_optim_problem()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="#eaopack.assets.Plant"><code class="docutils literal notranslate"><span class="pre">Plant</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#eaopack.assets.ScaledAsset"><code class="docutils literal notranslate"><span class="pre">ScaledAsset</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#eaopack.assets.ScaledAsset.setup_optim_problem"><code class="docutils literal notranslate"><span class="pre">ScaledAsset.setup_optim_problem()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#eaopack.assets.SimpleContract"><code class="docutils literal notranslate"><span class="pre">SimpleContract</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#eaopack.assets.SimpleContract.make_vector"><code class="docutils literal notranslate"><span class="pre">SimpleContract.make_vector()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#eaopack.assets.SimpleContract.setup_optim_problem"><code class="docutils literal notranslate"><span class="pre">SimpleContract.setup_optim_problem()</span></code></a></li>
 </ul>
 </li>
@@ -271,6 +273,31 @@ the asset’s own timegrid self.timegrid is taken instead. Defaults to None.</p>
 <dd class="field-odd"><p>np.array</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="eaopack.assets.Asset.make_vector">
+<span class="sig-name descname"><span class="pre">make_vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#eaopack.basic_classes.StartEndValueDict" title="eaopack.basic_classes.StartEndValueDict"><span class="pre">StartEndValueDict</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default_value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convert</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.assets.Asset.make_vector" title="Link to this definition"></a></dt>
+<dd><p>Make a vector out of value
+:param value: The value to be converted to a vector</p>
+<blockquote>
+<div><p>float: constant value
+dict:  dict[‘start’] = array</p>
+<blockquote>
+<div><p>dict[‘end’]   = array
+dict[‘values’] = array</p>
+</div></blockquote>
+<p>str:   refers to column in “prices” data that provides time series to set up OptimProblem (as for “price” below)</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>prices</strong> (<em>dict</em>) – Dictionary of price arrays needed by assets in portfolio</p></li>
+<li><p><strong>default_value</strong> (<em>float</em>) – The value that is used if any of the entries of the resulting vector are not specified</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: vector in time grid</p>
 </dd></dl>
 
 <dl class="py property">
@@ -710,6 +737,55 @@ in which case it must have been set previously</p></li>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="eaopack.assets.OrderBook">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">OrderBook</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'default_name_order_book'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes:</span> <span class="pre">~eaopack.basic_classes.Node</span> <span class="pre">=</span> <span class="pre">&lt;eaopack.basic_classes.Node</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wacc:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">orders:</span> <span class="pre">~typing.Dict</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_exec:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.assets.OrderBook" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#eaopack.assets.Asset" title="eaopack.assets.Asset"><code class="xref py py-class docutils literal notranslate"><span class="pre">Asset</span></code></a></p>
+<p>Contract Class</p>
+<p>Order book: Provide a list of orders that are available for execution. Orders come with start, end (of delivery), capacity &amp; price</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – Unique name of the asset                                              (asset parameter)</p></li>
+<li><p><strong>node</strong> (<a class="reference internal" href="#eaopack.basic_classes.Node" title="eaopack.basic_classes.Node"><em>Node</em></a>) – Node, the constract is located in                                    (asset parameter)</p></li>
+<li><p><strong>timegrid</strong> (<a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><em>Timegrid</em></a>) – Timegrid for discretization                                  (asset parameter)</p></li>
+<li><p><strong>wacc</strong> (<em>float</em>) – Weighted average cost of capital to discount cash flows in target   (asset parameter)</p></li>
+<li><p><strong>orders</strong> (<em>dict</em><em> or </em><em>pd.DataFrame</em>) – <p>Available orders for execution
+dict:  dict[‘start’] = array of np.TimeStamps</p>
+<blockquote>
+<div><p>dict[‘end’]   = array of np.TimeStamps
+dict[‘capa’]  = array of float
+dict[‘price’] = array of float</p>
+</div></blockquote>
+</p></li>
+<li><p><strong>full_exec</strong> (<em>bool</em><em>, </em><em>optional</em>) – Enforce full execution of orders (defaults to False - partial execution allowed)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="eaopack.assets.OrderBook.setup_optim_problem">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">setup_optim_problem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><span class="pre">Timegrid</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">costs_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">OptimProblem</span></a></span></span><a class="headerlink" href="#eaopack.assets.OrderBook.setup_optim_problem" title="Link to this definition"></a></dt>
+<dd><p>Set up optimization problem for asset</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>prices</strong> (<em>dict</em>) – Dictionary of price arrays needed by assets in portfolio –&gt; not required here, for compatibility</p></li>
+<li><p><strong>timegrid</strong> (<a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><em>Timegrid</em></a><em>, </em><em>optional</em>) – Discretization grid for asset. Defaults to None,
+in which case it must have been set previously</p></li>
+<li><p><strong>costs_only</strong> (<em>bool</em>) – Only create costs vector (speed up e.g. for sampling prices). Defaults to False</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Optimization problem to be used by optimizer</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem">OptimProblem</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="eaopack.assets.Plant">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Plant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">name:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'default_name_plant',</span> <span class="pre">nodes:</span> <span class="pre">~typing.List[~eaopack.basic_classes.Node]</span> <span class="pre">=</span> <span class="pre">[&lt;eaopack.basic_classes.Node</span> <span class="pre">object&gt;,</span> <span class="pre">&lt;eaopack.basic_classes.Node</span> <span class="pre">object&gt;],</span> <span class="pre">start:</span> <span class="pre">~datetime.datetime</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">end:</span> <span class="pre">~datetime.datetime</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">wacc:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0,</span> <span class="pre">price:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">extra_costs:</span> <span class="pre">float</span> <span class="pre">|</span> <span class="pre">~eaopack.basic_classes.StartEndValueDict</span> <span class="pre">|</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">0.0,</span> <span class="pre">min_cap:</span> <span class="pre">float</span> <span class="pre">|</span> <span class="pre">~eaopack.basic_classes.StartEndValueDict</span> <span class="pre">|</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">0.0,</span> <span class="pre">max_cap:</span> <span class="pre">float</span> <span class="pre">|</span> <span class="pre">~eaopack.basic_classes.StartEndValueDict</span> <span class="pre">|</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">0.0,</span> <span class="pre">min_take:</span> <span class="pre">~eaopack.basic_classes.StartEndValueDict</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">max_take:</span> <span class="pre">~eaopack.basic_classes.StartEndValueDict</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">freq:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">profile:</span> <span class="pre">~pandas.core.series.Series</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">periodicity:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">periodicity_duration:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">ramp:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">start_costs:</span> <span class="pre">float</span> <span class="pre">|</span> <span class="pre">~typing.Sequence[float]</span> <span class="pre">|</span> <span class="pre">~eaopack.basic_classes.StartEndValueDict</span> <span class="pre">=</span> <span class="pre">0.0,</span> <span class="pre">running_costs:</span> <span class="pre">float</span> <span class="pre">|</span> <span class="pre">~eaopack.basic_classes.StartEndValueDict</span> <span class="pre">|</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">0.0,</span> <span class="pre">min_runtime:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0,</span> <span class="pre">time_already_running:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0,</span> <span class="pre">min_downtime:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0,</span> <span class="pre">time_already_off:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0,</span> <span class="pre">last_dispatch:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0,</span> <span class="pre">start_ramp_lower_bounds:</span> <span class="pre">~typing.Sequence</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">start_ramp_upper_bounds:</span> <span class="pre">~typing.Sequence</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">shutdown_ramp_lower_bounds:</span> <span class="pre">~typing.Sequence</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">shutdown_ramp_upper_bounds:</span> <span class="pre">~typing.Sequence</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">ramp_freq:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">start_fuel:</span> <span class="pre">float</span> <span class="pre">|</span> <span class="pre">~eaopack.basic_classes.StartEndValueDict</span> <span class="pre">|</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">0.0,</span> <span class="pre">fuel_efficiency:</span> <span class="pre">float</span> <span class="pre">|</span> <span class="pre">~eaopack.basic_classes.StartEndValueDict</span> <span class="pre">|</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">1.0,</span> <span class="pre">consumption_if_on:</span> <span class="pre">float</span> <span class="pre">|</span> <span class="pre">~eaopack.basic_classes.StartEndValueDict</span> <span class="pre">|</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">0.0,</span> <span class="pre">**kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.assets.Plant" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#eaopack.assets.CHPAsset" title="eaopack.assets.CHPAsset"><code class="xref py py-class docutils literal notranslate"><span class="pre">CHPAsset</span></code></a></p>
@@ -888,35 +964,10 @@ dict[‘values’] = array</p>
 <p>str:   refers to column in “prices” data that provides time series to set up OptimProblem (as for “price” below)</p>
 </p></li>
 <li><p><strong>periodicity</strong> (<em>str</em><em>, </em><em>pd freq style</em>) – Makes assets behave periodicly with given frequency. Periods are repeated up to freq intervals (defaults to None)</p></li>
-<li><p><strong>periodicity_duration</strong> (<em>str</em><em>, </em><em>pd freq style</em>) – Intervals in which periods repeat (e.g. repeat days ofer whole weeks)  (defaults to None)</p></li>
+<li><p><strong>periodicity_duration</strong> (<em>str</em><em>, </em><em>pd freq style</em>) – Intervals in which periods repeat (e.g. repeat days over whole weeks)  (defaults to None)</p></li>
 </ul>
 </dd>
 </dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="eaopack.assets.SimpleContract.make_vector">
-<span class="sig-name descname"><span class="pre">make_vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#eaopack.basic_classes.StartEndValueDict" title="eaopack.basic_classes.StartEndValueDict"><span class="pre">StartEndValueDict</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default_value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convert</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.assets.SimpleContract.make_vector" title="Link to this definition"></a></dt>
-<dd><p>Make a vector out of value
-:param value: The value to be converted to a vector</p>
-<blockquote>
-<div><p>float: constant value
-dict:  dict[‘start’] = array</p>
-<blockquote>
-<div><p>dict[‘end’]   = array
-dict[‘values’] = array</p>
-</div></blockquote>
-<p>str:   refers to column in “prices” data that provides time series to set up OptimProblem (as for “price” below)</p>
-</div></blockquote>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>prices</strong> (<em>dict</em>) – Dictionary of price arrays needed by assets in portfolio</p></li>
-<li><p><strong>default_value</strong> (<em>float</em>) – The value that is used if any of the entries of the resulting vector are not specified</p></li>
-</ul>
-</dd>
-</dl>
-<p>Returns:</p>
-</dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="eaopack.assets.SimpleContract.setup_optim_problem">
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">setup_optim_problem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><span class="pre">Timegrid</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">costs_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">OptimProblem</span></a></span></span><a class="headerlink" href="#eaopack.assets.SimpleContract.setup_optim_problem" title="Link to this definition"></a></dt>
@@ -1353,7 +1404,7 @@ here specific types may be defined:</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="eaopack.optimization.OptimProblem.optimize">
-<span class="sig-name descname"><span class="pre">optimize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'value'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interface</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'cvxpy'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">make_soft_problem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iterations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5000</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#eaopack.optimization.Results" title="eaopack.optimization.Results"><span class="pre">Results</span></a></span></span><a class="headerlink" href="#eaopack.optimization.OptimProblem.optimize" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">optimize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'value'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interface</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'cvxpy'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">make_soft_problem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#eaopack.optimization.Results" title="eaopack.optimization.Results"><span class="pre">Results</span></a></span></span><a class="headerlink" href="#eaopack.optimization.OptimProblem.optimize" title="Link to this definition"></a></dt>
 <dd><p>optimize the optimization problem</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1365,9 +1416,6 @@ Alternative: ‘robust’, maximizing the minimum DCF across given price samples
 <li><p><strong>interface</strong> (<em>str</em><em>, </em><em>optional</em>) – Chosen interface architecture. Defaults to ‘cvxpy’.</p></li>
 <li><p><strong>solver</strong> (<em>str</em><em>, </em><em>optional</em>) – Solver for interface. Defaults to None</p></li>
 <li><p><strong>make_soft_problem</strong> (<em>bool</em><em>, </em><em>optional</em>) – If true, relax the boolean variables and allow float values instead. Defaults to False</p></li>
-<li><p><strong>rel_tol</strong> (<em>INACTIVE</em>) – relative tolerance for solver</p></li>
-<li><p><strong>iterations</strong> (<em>INACTIVE</em>) – max number of iterations for solver</p></li>
-<li><p><strong>decimals_res</strong> (<em>INACTIVE</em>) – rounding results to … decimals. Defaults to 5</p></li>
 </ul>
 </dd>
 </dl>
