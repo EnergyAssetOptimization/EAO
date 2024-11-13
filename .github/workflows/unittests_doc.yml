@@ -75,7 +75,7 @@ jobs:
         # run: $CONDA/bin/sphinx-build -b html doc/source/ doc/build
         run: sphinx-build -b html doc/source/ doc/build
       - name: Store doc as artifact
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: DocumentationHTML
           path: doc/build/
