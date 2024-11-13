@@ -61,14 +61,6 @@ Split optimization
 
    samples/split_optimization/split_optimization
 
-Special case: order books
-------------------
-
-.. toctree:: 
-
-   samples/split_optimization/order_book
-
-
 
 Parameter handling
 ------------------
