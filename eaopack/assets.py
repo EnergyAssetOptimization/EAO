@@ -2700,9 +2700,6 @@ class OrderBook(Asset):
 
         mapping = pd.DataFrame(columns=['time_step',
                                         'var_name',
-                                        'asset',
-                                        'node',
-                                        'type',
                                         'disp_factor']) 
         
         # loop over orders. each order has one variable "execute" from [0,1], forced bool if chosen
@@ -2725,8 +2722,9 @@ class OrderBook(Asset):
             mymap['disp_factor'] = myc * dt[myI]  # order exec [0,1], effect capa incl. sign buy/sell
             mymap['var_name']    = iO
             mymap.index = mymap['var_name'].values
-            mapping = pd.concat([mapping, mymap.copy()])
-
+            if len(mapping)==0: mapping = mymap.copy()
+            else: mapping = pd.concat([mapping, mymap.copy()])
+            pass
         # shortcut if only costs required
         if costs_only:
             return c

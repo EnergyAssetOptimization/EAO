@@ -595,11 +595,11 @@ class TestOrderOrderBooks(unittest.TestCase):
                             pd.Timestamp(2021,1,5),
                             pd.Timestamp(2021,1,5),
                             pd.Timestamp(2021,1,15)],
-                    capa = [-1.1,
+                   capa  = [-1.1,
                             -2.2,
                             3.3,
                             4.4],
-                    price =[ 8,
+                   price = [ 8,
                             12,
                             13,
                              9])
@@ -671,9 +671,10 @@ class TestOrderOrderBooks(unittest.TestCase):
 
     def test_order_book_battery(self):
         """ Test enforcing full execution of orders """
-
         node = eao.assets.Node('power')
-        timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,1,3), freq = 'h')
+        S = dt.date(2021,1,1)
+        E = dt.date(2021,1,3)
+        timegrid = eao.assets.Timegrid(S, E, freq = 'h')
         # create larger number of orders
         ## some time steps, buy & sell
         ob = pd.DataFrame(columns = ['start', 'end', 'capa', 'price']) # alternative to dict is DataFrame ... converted in asset
@@ -682,34 +683,44 @@ class TestOrderOrderBooks(unittest.TestCase):
         # orders with bid/ask spread on base signal
         # base signal
         bs = (20*np.sin(timegrid.I/4)+20).round(0)
-        # BUY
+        prices = {'av': bs}
         for ii in timegrid.I:
             tp = timegrid.timepoints[ii]
-            for i in range(0,5):
-                r['start']   = tp
-                r['end']     = tp + pd.Timedelta(np.random.randint(1, 4), 'h')
-                r['capa']    = np.random.randint(1, 5)
-                r['price']   = bs[ii] + np.random.randint(10, 20)
-                ob.loc[len(ob)] = r
             # SELL
-            for i in range(0,5):
+            for i in range(0,2):
                 r['start']   = tp
-                r['end']     = tp + pd.Timedelta(np.random.randint(1, 4), 'h')
-                r['capa']    = -np.random.randint(1, 5)
-                r['price']   = bs[ii] + np.random.randint(1, 9)
+                r['end']     = tp + pd.Timedelta(3, 'h')
+                r['capa']    = float(i)
+                r['price']   = bs[ii] + float(i)
+                ob.loc[len(ob)] = r
+            # BUY
+            for i in range(0,2):
+                r['start']   = tp
+                r['end']     = tp + pd.Timedelta(4, 'h')
+                r['capa']    = -float(i)
+                r['price']   = bs[ii] + float(i) + 5
                 ob.loc[len(ob)] = r            
         # battery
         b = eao.assets.Storage('battery', node, cap_in  = 10, 
                                                 cap_out = 10,
                                                 size    = 40)
+        # last resort - battery end level. May allow battery not to be completely full, "borrowing" in last hours
+        a = eao.assets.SimpleContract('fill_level_adjust', node,
+                                      max_cap=10,
+                                      min_cap=0,
+                                      start=timegrid.timepoints[-2],
+                                      end=E,
+                                      price = 'av',
+                                      extra_costs = 10
+                                      )
         order_book = eao.assets.OrderBook('orders', node, 
                                           orders=ob, 
-                                          full_exec = False)  # not exactly required to relax problem
-        portf = eao.portfolio.Portfolio([b, order_book])
-        op = portf.setup_optim_problem(None, timegrid=timegrid)
+                                          full_exec = True)  # not exactly required to relax problem
+        portf = eao.portfolio.Portfolio([b, order_book,a])
+        op = portf.setup_optim_problem(prices=prices, timegrid=timegrid)
         res = op.optimize()
         out = eao.io.extract_output(portf= portf, op=op, res=res)
-        pass        
+        self.assertAlmostEqual(out['dispatch'].abs().sum().sum(), 192, 3) # recursion test
 
 
 ###########################################################################################################
