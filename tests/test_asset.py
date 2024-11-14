@@ -460,6 +460,47 @@ class ScaledAsset(unittest.TestCase):
         # zero costs and limit at original size -- same result
         self.assertAlmostEqual(res_std.value, res.value, 4)
 
+    def test_scaled_transport(self):
+        """ test from a n actual analysis with a more complex portfolio """
+        np.random.seed(2709)
+        S = dt.date(2023,1,1)
+        E = dt.date(2023,1,2)
+        timegrid = eao.assets.Timegrid(S, E, freq = 'h')
+        input_ts = {'price': np.random.randn(timegrid.T), 'cons': -2*np.random.rand(timegrid.T)}
+        behind_meter = eao.assets.Node('behind meter')
+        front_of_meter = eao.assets.Node('front of meter')
+
+        consumption = eao.assets.SimpleContract(name       = 'consumption', 
+                                                nodes      = behind_meter,
+                                                min_cap    = 'cons',
+                                                max_cap    = 'cons')
+
+        supply  = eao.assets.SimpleContract(    name = 'supply', 
+                                                nodes       = front_of_meter, 
+                                                price       = 'price',
+                                                min_cap     = 0,
+                                                max_cap     = 100)
+        grid_consumption_normed = eao.assets.Transport(name   = 'grid_in_normed',  # 
+                                                    nodes  = [front_of_meter, behind_meter],
+                                                    #costs_const = grid_fees['var'], # variable grid fees
+                                                    min_cap= 0,
+                                                    max_cap= 1) # normed capacity (to 1 MW)
+        grid_consumption      = eao.assets.ScaledAsset(name       = 'grid_in',
+                                                    base_asset = grid_consumption_normed,
+                                                    max_scale  = 1000,
+                                                    fix_costs  = 100) # yearly fix capacity costs (here scaled to hourly as main time unit)
+        battery     = eao.assets.Storage(       name       = 'battery',
+                                                nodes      = behind_meter,
+                                                cap_in     = 1,
+                                                cap_out    = 1,                                        
+                                                size       = 2)
+        portf = eao.portfolio.Portfolio([supply, consumption,  grid_consumption, battery])
+
+        op  = portf.setup_optim_problem(prices = input_ts, timegrid = timegrid)
+        res = op.optimize()
+        out = eao.io.extract_output(portf, op, res, input_ts)
+        self.assertAlmostEqual(out['special'].loc[0,'costs'], 4686.75, 1) # simply functional test
+
 class DiscountRate(unittest.TestCase):
     def test_discount_simple_contract(self):
         """ Unit test. Simple contract with discount rate

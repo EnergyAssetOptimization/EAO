@@ -2439,6 +2439,8 @@ class ScaledAsset(Asset):
         ###  however, since we scale down the restriction (b's in Ax<b), there is no need
         ###  to scale down the l/u for the other variables
         Idisp = (op.mapping['type']=='d').values
+        # For transport or some other assets there may be >1 entries for one variable. Take only first index
+        Idisp = op.mapping.index[(op.mapping['type']=='d')].unique()
         nD = len(Idisp)
         l = op.l.copy() # retain old value
         u = op.u.copy() # retain old value
@@ -2467,7 +2469,9 @@ class ScaledAsset(Asset):
                  'var_name' : 'scale',
                  'type'     : 'size'}
         op.mapping['asset'] = self.name # in case scaled asset has a different name than the base asset
-        op.mapping = pd.concat([op.mapping, pd.DataFrame([mymap])], ignore_index = True)# op.mapping.append(mymap, ignore_index = True)
+        ### this was a bug --- resetting the index (in case of several rows per variable)
+        # op.mapping = pd.concat([op.mapping, pd.DataFrame([mymap])], ignore_index = True)# op.mapping.append(mymap, ignore_index = True)
+        op.mapping.loc[op.mapping.index.max()+1] = mymap
 
         return op
 
