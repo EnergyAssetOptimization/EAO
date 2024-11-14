@@ -462,11 +462,10 @@ class ScaledAsset(unittest.TestCase):
 
     def test_scaled_transport(self):
         """ test from a n actual analysis with a more complex portfolio """
-        np.random.seed(2709)
         S = dt.date(2023,1,1)
         E = dt.date(2023,1,2)
         timegrid = eao.assets.Timegrid(S, E, freq = 'h')
-        input_ts = {'price': np.random.randn(timegrid.T), 'cons': -2*np.random.rand(timegrid.T)}
+        input_ts = {'price': np.asanyarray([1,2,-1,2,1,4,2,4,5,115,7,3,1,2,-1,2,1,4,2,4,5,115,7,3]), 'cons': -2*np.asanyarray([0,0,1,1,1,1,1,4,1,2,1,1,1,1,2,1,2,1,2,2,2,5,7,3])}
         behind_meter = eao.assets.Node('behind meter')
         front_of_meter = eao.assets.Node('front of meter')
 
@@ -499,7 +498,7 @@ class ScaledAsset(unittest.TestCase):
         op  = portf.setup_optim_problem(prices = input_ts, timegrid = timegrid)
         res = op.optimize()
         out = eao.io.extract_output(portf, op, res, input_ts)
-        self.assertAlmostEqual(out['special'].loc[0,'costs'], 4686.75, 1) # simply functional test
+        self.assertAlmostEqual(out['special'].loc[0,'costs'], 31200, 1) # simply functional test
 
 class DiscountRate(unittest.TestCase):
     def test_discount_simple_contract(self):

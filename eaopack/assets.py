@@ -2469,8 +2469,6 @@ class ScaledAsset(Asset):
                  'var_name' : 'scale',
                  'type'     : 'size'}
         op.mapping['asset'] = self.name # in case scaled asset has a different name than the base asset
-        ### this was a bug --- resetting the index (in case of several rows per variable)
-        # op.mapping = pd.concat([op.mapping, pd.DataFrame([mymap])], ignore_index = True)# op.mapping.append(mymap, ignore_index = True)
         op.mapping.loc[op.mapping.index.max()+1] = mymap
 
         return op
