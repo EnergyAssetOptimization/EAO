@@ -1,6 +1,13 @@
 Samples
 ================================
 
+Simple start: Optimizing power consumption with battery & PV
+------------------
+
+.. toctree:: 
+
+   samples/grid and battery/battery_own_consumption
+
 
 Green PPA and structured downstream contract
 --------------------------------------------
