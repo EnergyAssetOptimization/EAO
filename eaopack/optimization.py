@@ -210,6 +210,7 @@ class OptimProblem:
             solver (str, optional): Solver for interface. Defaults to None
             make_soft_problem (bool, optional): If true, relax the boolean variables and allow float values instead. Defaults to False
         """
+        assert np.all(self.l <= self.u), 'Error. Lower bounds must be smaller or equal to upper bounds'
         map = self.mapping.copy()  # abbreviation
 
         if make_soft_problem:
@@ -218,20 +219,21 @@ class OptimProblem:
         isMIP = False
         if 'bool' in map:
             my_bools = map.loc[(~map.index.duplicated(keep='first')) & (map['bool'])].index.values.tolist()
-            my_bools = [(bb,) for bb in my_bools]
             if len(my_bools) == 0:
                 my_bools = False
             else:
                 isMIP = True  ### !!! Need to change solver
-                # print('...MIP problem configured. Beware of potentially long optimization and other issues inherent to MIP')
         else:
             map['bool'] = False
             my_bools = False
 
-        assert np.all(self.l <= self.u), 'Error. Lower bounds must be smaller or equal to upper bounds'
 
         if interface == 'cvxpy':
             import cvxpy as CVX
+            # reformulate boolean var list - backwards compatibility
+            if isMIP:
+                if (CVX.__version__>='1.6'): my_bools = (my_bools,)
+                else: my_bools = [(bb,) for bb in my_bools]
 
             # Construct the problem
             x = CVX.Variable(self.c.shape, boolean=my_bools)
