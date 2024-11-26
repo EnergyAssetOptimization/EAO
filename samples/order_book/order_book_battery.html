@@ -224,7 +224,7 @@ executed fully (6.6s).</p>
 <p>Target fill level flex: The target fill level requires some additional thoughts. Left unpenalized, an optimizer will completely drain a battery at the end of the day (in case power prices are positive). In order to avoid this we need to define the value battery power has for us towards the end of the day. We do this by forcing the battery to be left at 50% fill level and adding an “extra source” for power with a market price above the order book. Power drawn from this “extra source” represents
 battery usage from this 50% target fill level.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># order book asset
@@ -233,11 +233,12 @@ order_book = eao.assets.OrderBook(&#39;orders&#39;, node,
                                     full_exec = True)  # switch to enforce (or not) full order execution
 
 # battery
+efficiency = 0.95
 battery = eao.assets.Storage(&#39;battery&#39;, node, cap_in      = 10,
                                         cap_out     = 10,
                                         start_level = 20,
                                         end_level   = 20,
-                                        eff_in      = 0.95,
+                                        eff_in      = efficiency,
                                         size        = 40)
 # last resort - battery end level. May allow battery not to be completely full, &quot;borrowing&quot; in last hours
 extra_power = eao.assets.SimpleContract(&#39;fill_level_adjust&#39;, node,
@@ -282,7 +283,7 @@ out = eao.io.extract_output(portf= portf, op=op, res=res)
 <section id="Create-charts-and-interpret-the-results">
 <h1>Create charts and interpret the results<a class="headerlink" href="#Create-charts-and-interpret-the-results" title="Link to this heading"></a></h1>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>plt.rcdefaults()
@@ -298,8 +299,10 @@ ax.plot([S, S], [0,0],&#39;b-&#39;,linewidth = 5, alpha = 1, label = &#39;execut
 ax.plot([S, S], [0,0],&#39;r-&#39;,linewidth = 5, alpha = 1, label = &#39;executed buy - we sell&#39;)
 ax.set_xlim(S, E)
 ax2 = ax.twinx()
-fill_level = (-out[&#39;dispatch&#39;].loc[:,&#39;battery&#39;]).cumsum()+20
-# fill_level.plot(ax = ax, color = &#39;k&#39;, linestyle = &#39;-&#39;, marker = &#39;.&#39;, label = &#39;battery fill level&#39;)
+# calculate fill level from dispatch
+fill_level = -out[&#39;dispatch&#39;].loc[:,&#39;battery&#39;]
+fill_level[fill_level&gt;0] *= efficiency
+fill_level = fill_level.cumsum()+20
 ax2.plot(fill_level, label = &#39;battery fill level&#39;)
 ax2.set_ylabel(&#39;fill level battery in MWh&#39;)
 ax.legend(loc = &#39;upper left&#39;)
