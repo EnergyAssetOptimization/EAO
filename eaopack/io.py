@@ -2,10 +2,12 @@ import numpy as np
 import pandas as pd
 import datetime as dt
 import copy
+from typing import Union, List, Dict
 
 from eaopack.portfolio import Portfolio
 from eaopack.optimization import Results, OptimProblem
 from eaopack import serialization 
+from eaopack.assets import Storage
 
 
 def extract_output(portf: Portfolio, op: OptimProblem, res:Results, prices: dict = None) -> dict:
@@ -58,6 +60,7 @@ def extract_output(portf: Portfolio, op: OptimProblem, res:Results, prices: dict
         # in case an asset links nodes, dispatch should be separate per node
         for a in portf.assets:
             for i_n, n in enumerate(a.nodes):
+                # sum up dispatch
                 I =   (op.mapping['asset'] == a.name) \
                     & (op.mapping['type'] == 'd')      \
                     & (op.mapping['node'] == n.name)
@@ -68,10 +71,10 @@ def extract_output(portf: Portfolio, op: OptimProblem, res:Results, prices: dict
                     myCol = (a.name +' ('+  n.name + ')')
                 disp[myCol] = 0.
                 for i,r in my_mapping.iterrows():
-                    disp.loc[times[r.time_step], myCol] += res.x[i]*r.disp_factor
+                    disp.loc[times[r.time_step], myCol] += res.x[i]*r.disp_factor                 
         # extract internal variables per asset
         for a in portf.assets:
-            variable_names = op.mapping[(op.mapping['asset'] == a.name)& (op.mapping['type'] == 'i')]['var_name'].unique()
+            variable_names = op.mapping[(op.mapping['asset'] == a.name) & (op.mapping['type'] == 'i')]['var_name'].unique()
             for v in variable_names:
                 I =   (op.mapping['asset'] == a.name) \
                     & (op.mapping['type'] == 'i')      \
@@ -80,8 +83,35 @@ def extract_output(portf: Portfolio, op: OptimProblem, res:Results, prices: dict
                 myCol = (a.name +' ('+  v + ')')
                 internal_variables[myCol] = None
                 for i,r in my_mapping.iterrows():
-                    pass
                     internal_variables.loc[times[r.time_step], myCol] = res.x[i]
+            # specific case: Storage; also extract disp_in,  disp_out and fill level separately
+            if isinstance(a, Storage): 
+                I =   (op.mapping['asset'] == a.name) \
+                    & (op.mapping['type'] == 'd')      \
+                    & (op.mapping['node'] == n.name)
+                my_mapping = op.mapping.loc[I,:]
+                ### extract ... disp in 
+                what = 'charge'
+                if len(portf.nodes)==1:
+                    myCol = a.name+'_'+what
+                else: # add node information
+                    myCol = (a.name +' ('+  n.name +'_'+ what + ')')
+                internal_variables[myCol] = 0.
+                for i,r in my_mapping.iterrows():
+                    internal_variables.loc[times[r.time_step], myCol] += max(0,-res.x[i])*r.disp_factor
+                ### extract ... disp out
+                what = 'discharge'
+                if len(portf.nodes)==1:
+                    myCol = a.name+'_'+what
+                else: # add node information
+                    myCol = (a.name +' ('+  n.name +'_'+ what + ')')
+                internal_variables[myCol] = 0.
+                for i,r in my_mapping.iterrows():
+                    internal_variables.loc[times[r.time_step], myCol] += min(0,-res.x[i])*r.disp_factor                                                                           
+                ### extract ... fill level 
+                myCol = a.name+'_fill_level'
+                internal_variables[myCol] = 0.
+                internal_variables.loc[:, myCol] = a.fill_level(op, res)
         # extract duals from nodal restrictions
         # looping through nodes and their recorded nodal restrictions and extract dual
         if not res.duals is None and not res.duals['N'] is None:
@@ -181,7 +211,7 @@ def output_to_file(output, file_name:str, format_output:str = 'xlsx',csv_ger:boo
 
 #### easy access to object parameters e.g. for assets & portfolio
 ## get tree, get parameter, set parameter
-def get_params_tree(obj) -> (list, dict):
+def get_params_tree(obj) -> Union[List, Dict]:
     """ get parameters of object - typically asset or portfolio
 
     Args:
@@ -191,7 +221,7 @@ def get_params_tree(obj) -> (list, dict):
         list of parameter names (nested)
     """
 
-    def make_dict(dd) -> (list, dict):
+    def make_dict(dd) -> Union[List, Dict]:
         if isinstance(dd, list): dd_keys = range(0,len(dd))
         elif isinstance(dd, dict): dd_keys = list(dd)
         else: 
