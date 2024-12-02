@@ -90,6 +90,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#eaopack.assets.Storage"><code class="docutils literal notranslate"><span class="pre">Storage</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#eaopack.assets.Storage.fill_level"><code class="docutils literal notranslate"><span class="pre">Storage.fill_level()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#eaopack.assets.Storage.setup_optim_problem"><code class="docutils literal notranslate"><span class="pre">Storage.setup_optim_problem()</span></code></a></li>
 </ul>
 </li>
@@ -1038,6 +1039,26 @@ Using pandas type frequency strings (e.g. ‘d’ to have a block each day)</p><
 </dd>
 </dl>
 <dl class="py method">
+<dt class="sig sig-object py" id="eaopack.assets.Storage.fill_level">
+<span class="sig-name descname"><span class="pre">fill_level</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optim_problem</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">OptimProblem</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">results</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#eaopack.optimization.Results" title="eaopack.optimization.Results"><span class="pre">Results</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">array</span></span></span><a class="headerlink" href="#eaopack.assets.Storage.fill_level" title="Link to this definition"></a></dt>
+<dd><p>Calculate discounted cash flow for the asset given the optimization results</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>optim_problem</strong> (<a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><em>OptimProblem</em></a>) – optimization problem created by this asset</p></li>
+<li><p><strong>results</strong> (<a class="reference internal" href="#eaopack.optimization.Results" title="eaopack.optimization.Results"><em>Results</em></a>) – Results given by optimizer</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>array with DCF per time step as per timegrid of asset</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="eaopack.assets.Storage.setup_optim_problem">
 <span class="sig-name descname"><span class="pre">setup_optim_problem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><span class="pre">Timegrid</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">costs_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#eaopack.optimization.OptimProblem" title="eaopack.optimization.OptimProblem"><span class="pre">OptimProblem</span></a></span></span><a class="headerlink" href="#eaopack.assets.Storage.setup_optim_problem" title="Link to this definition"></a></dt>
 <dd><p>Set up optimization problem for asset</p>
@@ -1685,7 +1706,7 @@ special: dataframe with specific asset parameters (such as size in scaled assets
 
 <dl class="py function">
 <dt class="sig sig-object py" id="eaopack.io.get_params_tree">
-<span class="sig-name descname"><span class="pre">get_params_tree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj)</span> <span class="pre">-&gt;</span> <span class="pre">(&lt;class</span> <span class="pre">'list'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'dict'&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#eaopack.io.get_params_tree" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_params_tree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Dict</span></span></span><a class="headerlink" href="#eaopack.io.get_params_tree" title="Link to this definition"></a></dt>
 <dd><p>get parameters of object - typically asset or portfolio</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>

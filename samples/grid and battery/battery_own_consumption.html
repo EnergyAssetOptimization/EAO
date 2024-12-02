@@ -122,7 +122,7 @@ import matplotlib.pyplot as plt
 <p>In this case we load a year of hourly power market data for Germany. Downloaded from smard.de (Bundesnetzagentur | SMARD.de); 01/11/2023 - 01/11/2024. We will use day ahead prices as well as PV production profiles. In addition we will use a standard load profile of German commercial consumers.</p>
 <p>We make some basic assumptions on grid fees for commercial consumers (actual example for 2025 in the medium voltage grid) and define the characteristics on site: yearly consumption, own PV and battery.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>data = pd.read_excel(&#39;DE_dataset.xlsx&#39;)
@@ -145,7 +145,7 @@ battery_data[&#39;eff&#39;]  = 0.9 # 90% cycle efficiency
 </div>
 <p>For the actual optimization we need to do some settings: Defining the time grid for optimization and defining which data to use in our assets.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>######## prepare everything
@@ -167,7 +167,7 @@ input_ts = timegrid.prices_to_grid(input_ts)
 </div>
 <p>Now we define the structure of our optimization problem – our portfolio. The assets may be physical assets such as the battery or contracts such as supply via the grid.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>### Structural setup, distinguishing own assets and supply from the grid
@@ -193,7 +193,9 @@ battery     = eao.assets.Storage(       name       = &#39;battery&#39;,
                                         size       = battery_data[&#39;size&#39;],
                                         start_level= 0.5 * battery_data[&#39;size&#39;],
                                         end_level  = 0.5 * battery_data[&#39;size&#39;],
-                                        block_size = &#39;d&#39;)   # daily optimization of battery (leaving it 1/2 full every day)
+                                        block_size = &#39;d&#39;,   # daily optimization of battery (leaving it 1/2 full every day)
+                                        no_simult_in_out = False) # Important: The battery may now charge and discharge at the same time and
+                                                                  # &quot;burn&quot; power due to efficiency &lt; 100%. This makes computation much faster (no MIP)
 
 ### Supply via the grid. Note that we enabling scaling the grid connection -- since grid fees
 #   apply on a yearly basis for the maximum load (which we will minimize utilizing our battery)
@@ -247,7 +249,7 @@ portf = eao.portfolio.Portfolio([supply, consumption, grid_feedin, grid_consumpt
 <h2>Optimization<a class="headerlink" href="#Optimization" title="Link to this heading"></a></h2>
 <p>The actual optimization is very simple. We collect all assets in the portfolio object and go. “extract_output” will generate straight-forward tables that can also be exported to Excel. Note that we are optimizing a full year on an hourly basis including a battery. This takes ~1 min.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>op  = portf.setup_optim_problem(prices = input_ts, timegrid = timegrid)
@@ -271,7 +273,7 @@ value     -29974.687926
 </div>
 <p>Defining the benchmark to calculate the value of the battery: The same portfolio without the battery</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>portf_benchmark = eao.portfolio.Portfolio([supply, consumption, grid_feedin, grid_consumption, pv, feedin])
@@ -286,7 +288,7 @@ out_benchmark = eao.io.extract_output(portf_benchmark, op_benchmark, res_benchma
 <h2>Interpretation of the results<a class="headerlink" href="#Interpretation-of-the-results" title="Link to this heading"></a></h2>
 <p>Let us analyze the overall costs with and without battery and look into the dispatch behaviour</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(&#39;Overall costs with battery:    &#39;+ str(round(-res.value)))
@@ -307,7 +309,7 @@ So the battery saved us:       19519
 </div>
 <p>There is a significant saving. But where does the saving come from? Let us look into the details, starting with the overall quantities. See below. Note how quantities are always balanced at nodes. Transport always balances as well – transporting from one node to the other.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(&#39;Quantities (MWh) with battery:\n.................................... \n&#39;+str(round(out[&#39;dispatch&#39;].sum())))
@@ -348,7 +350,7 @@ dtype: float64
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(&#39;Costs (EUR) with battery:\n.................................... \n&#39;+str(round(out[&#39;DCF&#39;].sum())))
@@ -436,7 +438,7 @@ out_start = eao.io.extract_output(portf_start, op_start, res_start, input_ts)
 <h2>Putting everything together<a class="headerlink" href="#Putting-everything-together" title="Link to this heading"></a></h2>
 <p>Let us now put all the data together to analyze the effects of our PV and battery assets. Naturally, we could also do this in Excel, using the output generated by the optimization. This may feel more natural to many users.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>## bookkeeping - looking at cost components in different scenarios. Attention - costs are negative numbers
@@ -448,7 +450,7 @@ saving_grid   = -(out_benchmark[&#39;DCF&#39;][&#39;grid_in&#39;].sum() - out[&#
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>## create a waterfall chart. Thanks for the great module provided by the waterfall_ax team! Very handy
