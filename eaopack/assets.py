@@ -109,7 +109,7 @@ class Asset:
         dcf = np.zeros(self.timegrid.T)
         # filter for right asset in case larger problem is given
         my_mapping =  optim_problem.mapping.loc[optim_problem.mapping['asset']==self.name].copy()
-        # drop duplicate index - since mapping may contain several rows per varaible (indexes enumerate variables)
+        # drop duplicate index - since mapping may contain several rows per variable (indexes enumerate variables)
         my_mapping = pd.DataFrame(my_mapping[~my_mapping.index.duplicated(keep = 'first')])
 
         for i, r in my_mapping.iterrows():
@@ -355,7 +355,9 @@ class Storage(Asset):
                 price = np.asarray(myprice)
             else: # simply restrict prices to  asset time window
                 price           = price[self.timegrid.restricted.I]
-
+            # warning if there are neg. prices and no_simult_in_out is not True
+            if (not self.no_simult_in_out) and (self.eff_in <= 1) and (not (price >= 0).all()):
+                print('Storage --'+self.name+'--: no_simult_in_out is set to False, but there are neg. prices. Likely storage will load & unload simultaneously. You want that?')
         # separation into in/out needed?  Only one or two dispatch variables per time step
         # new separation reason: separate nodes in and out
         sep_needed =  (self.eff_in != 1) or (self.cost_in !=0) or (self.cost_out !=0) or (len(self.nodes)==2)
@@ -553,7 +555,46 @@ class Storage(Asset):
                                 periodic_period_length = self.periodicity,
                                 periodic_duration      = self.periodicity_duration,
                                 timegrid               = self.timegrid)
+    
+    def fill_level(self, optim_problem:OptimProblem, results:Results) -> np.array:
+        """ Calculate discounted cash flow for the asset given the optimization results
 
+        Args:
+            optim_problem (OptimProblem): optimization problem created by this asset
+            results (Results): Results given by optimizer
+
+        Returns:
+            np.array: array with DCF per time step as per timegrid of asset
+        """
+        # for this asset simply from cost vector and optimal dispatch
+        # mapped to the full timegrid
+
+        ######### missing: mapping in optim problem
+        fill_level = np.zeros(self.timegrid.T)
+        # filter for right asset in case larger problem is given
+        my_mapping =  optim_problem.mapping.loc[(optim_problem.mapping['asset']==self.name) & (optim_problem.mapping['type']=='d')].copy()
+        # drop duplicate index - since mapping may contain several rows per variable (indexes enumerate variables)
+        my_mapping = pd.DataFrame(my_mapping[~my_mapping.index.duplicated(keep = 'first')])
+
+        # # for only one variable
+        # I_d  = my_mapping['var_name']=="disp"
+        # if sum(I_d) != 0:
+        #     fill_level =   np.maximum(0,-results.x[my_mapping.loc[I_d].index]*self.eff_in) \
+        #                  + np.minimum(0,-results.x[my_mapping.loc[I_d].index])
+        # else:
+        #     I_in  = my_mapping['var_name']=="disp_in"
+        #     I_out = my_mapping['var_name']=="disp_out"
+        #     fill_level = -results.x[my_mapping.loc[I_in].index]*self.eff_in \
+        #                 - results.x[my_mapping.loc[I_out].index]
+        # fill_level = fill_level.cumsum() + self.start_level
+
+        fill_level = np.zeros(self.timegrid.T)
+        for i, r in my_mapping.iterrows():
+            fill_level[r['time_step']] +=  max(0,-results.x[i])*self.eff_in \
+                                         + min(0,-results.x[i])
+        fill_level = fill_level.cumsum() + self.start_level            
+        return fill_level
+    
 class SimpleContract(Asset):
     """ Contract Class """
     def __init__(self,
