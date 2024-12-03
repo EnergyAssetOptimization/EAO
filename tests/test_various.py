@@ -97,7 +97,7 @@ class various(unittest.TestCase):
         prices ={ 'price': np.sin(np.linspace(0,40,tg.T))}
         op = portf.setup_optim_problem(timegrid = tg, prices = prices)
         res = op.optimize()
-        out = eao.io.extract_output(portf = portf, op = op, res = res)
+        out = eao.io.extract_output(portf = portf, op = op, res = res, prices=prices)
         # eao.io.output_to_file(out, 'test.xlsx')
         # get fill level from asset
         bat = portf.assets[0]
@@ -112,6 +112,9 @@ class various(unittest.TestCase):
         # get fill level from output and check
         fl_out = out['internal_variables'].loc[:,'battery_fill_level'].values
         self.assertAlmostEqual(abs(fill_level-fl_out).sum(), 0,4)
+        self.assertAlmostEqual(res.value, 1137.69104689219,3) # reversion test
+        self.assertAlmostEqual(out['dispatch'].loc[:,'battery'].sum(), -71.66666667,3) # reversion test
+        self.assertAlmostEqual(fill_level[-1], bat.end_level,3)
 
     def test_battery_efficiency_100(self):
         """ test specific setup of a battery to show the importance of no_simult_in_out.
