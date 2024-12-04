@@ -297,3 +297,21 @@ def set_param(obj, path, value):
         raise ValueError('Error. Object could not be created. Parameter issue? Object: '+n+' | parameter '+str(path))
     return res
 
+def do_optimization(portf, timegrid, data = None):
+    """ Shortcut: Do the optimization and extract the results in one go
+
+    Args:
+        portf (Portfolio): The portfolio to be optimized
+        timegrid (Timegrid): Timegrid for optimization
+        data (StartEndValueDict, DataFrame): input time series (optional)
+
+    Returns:
+        Output dictionary
+    """
+    if data is not None:
+        my_data = timegrid.prices_to_grid(data)
+    else: my_data = None
+    op  = portf.setup_optim_problem(prices = my_data, timegrid = timegrid)
+    res = op.optimize()
+    out = extract_output(portf, op, res, my_data)
+    return out

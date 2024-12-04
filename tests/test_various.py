@@ -315,6 +315,38 @@ class various(unittest.TestCase):
         self.assertGreaterEqual(100, fill_level.max())
         self.assertAlmostEqual(abs(fill_level_asset-fill_level).sum(), 0,4)
 
+    def test_opt_shortcut(self):
+        """ test opt shortcut
+        """
+        ### manual benchmark
+        node1 = eao.assets.Node('node_1')
+        node2 = eao.assets.Node('node_2')
+        timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,2,1), freq = 'd')
+        a1 = eao.assets.SimpleContract(name = 'SC_1', price = 'rand_price_1', nodes = node1 ,
+                        min_cap= -20., max_cap=20., start = dt.date(2021,1,10), end = dt.date(2021,1,20))
+        #a1.set_timegrid(timegrid)
+        a2 = eao.assets.SimpleContract(name = 'SC_2', price = 'rand_price_1', nodes = node1 ,
+                        min_cap= -5., max_cap=10.)#, extra_costs= 1.)
+        #a2.set_timegrid(timegrid)
+        a3 = eao.assets.SimpleContract(name = 'SC_3', price = 'rand_price_2', nodes = node2 ,
+                        min_cap= -10., max_cap=10., extra_costs= 1., start = dt.date(2021,1,10), end = dt.date(2021,1,25))
+        a4 = eao.assets.Transport(name = 'Tr', costs_const= 5., nodes = [node1, node2],
+                        min_cap= 0., max_cap=1.)
+
+        #a3.set_timegrid(timegrid)
+        prices ={'rand_price_1': np.ones(timegrid.T)*1.,
+                'rand_price_2': np.ones(timegrid.T)*10.,
+                }
+        portf = eao.portfolio.Portfolio([a1, a2, a3, a4])
+        op    = portf.setup_optim_problem(prices, timegrid)
+        res = op.optimize()        
+        out = eao.io.extract_output(portf, op, res, prices)
+        # shortcut
+        out2 = eao.io.do_optimization(portf, timegrid, prices)
+        self.assertAlmostEqual(out['summary'].loc['value','Values'], out2['summary'].loc['value','Values'], 2)
+        self.assertAlmostEqual(out['dispatch'].abs().sum().sum(), out2['dispatch'].abs().sum().sum(), 2)
+
+
 ###########################################################################################################
 ###########################################################################################################
 ###########################################################################################################
