@@ -346,6 +346,98 @@ class various(unittest.TestCase):
         self.assertAlmostEqual(out['summary'].loc['value','Values'], out2['summary'].loc['value','Values'], 2)
         self.assertAlmostEqual(out['dispatch'].abs().sum().sum(), out2['dispatch'].abs().sum().sum(), 2)
 
+    def test_opt_shortcut_split(self):
+        """ test opt shortcut
+        """
+        ### manual benchmark
+        s = """{
+            "__class__": "Portfolio",
+            "assets": [
+                {
+                    "__class__": "Asset",
+                    "asset_type": "Storage",
+                    "block_size": null,
+                    "cap_in": 50,
+                    "cap_out": 50,
+                    "cost_in": 0.0,
+                    "cost_out": 0.0,
+                    "cost_store": 0.0,
+                    "eff_in": 0.9,
+                    "end": null,
+                    "end_level": 50.0,
+                    "freq": null,
+                    "inflow": 0.0,
+                    "max_store_duration": null,
+                    "name": "battery",
+                    "no_simult_in_out": false,
+                    "nodes": [
+                        {
+                            "__class__": "Node",
+                            "commodity": null,
+                            "name": "power",
+                            "unit": {
+                                "__class__": "Unit",
+                                "factor": 1.0,
+                                "flow": "MW",
+                                "volume": "MWh"
+                            }
+                        }
+                    ],
+                    "periodicity": null,
+                    "periodicity_duration": null,
+                    "price": null,
+                    "profile": null,
+                    "size": 100.0,
+                    "start": null,
+                    "start_level": 50.0,
+                    "wacc": 0.0
+                },
+                {
+                    "__class__": "Asset",
+                    "asset_type": "SimpleContract",
+                    "end": null,
+                    "extra_costs": 0,
+                    "freq": null,
+                    "max_cap": 500,
+                    "min_cap": -500,
+                    "name": "supply",
+                    "nodes": [
+                        {
+                            "__class__": "Node",
+                            "commodity": null,
+                            "name": "power",
+                            "unit": {
+                                "__class__": "Unit",
+                                "factor": 1.0,
+                                "flow": "MW",
+                                "volume": "MWh"
+                            }
+                        }
+                    ],
+                    "periodicity": null,
+                    "periodicity_duration": null,
+                    "price": "price",
+                    "profile": null,
+                    "start": null,
+                    "wacc": 0
+                }
+            ]
+        }"""
+        size = 100 # battery size
+        eff = 1
+        portf = eao.serialization.load_from_json(s)
+        portf.assets[0].eff_in = eff
+        portf.assets[0].size = size
+        portf.assets[0].no_simult_in_out = False
+        tg = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,1,3), freq = 'h')
+        prices ={ 'price': np.sin(np.linspace(0,40,tg.T))}
+        op = portf.setup_split_optim_problem(timegrid = tg, prices = prices, interval_size='d')
+        res = op.optimize()
+        out = eao.io.extract_output(portf = portf, op = op, res = res)
+        # shortcut
+        out2 = eao.io.do_optimization(portf, tg, prices, split_interval_size='d')
+        self.assertAlmostEqual(out['summary'].loc['value','Values'], out2['summary'].loc['value','Values'], 2)
+        self.assertAlmostEqual(out['dispatch'].abs().sum().sum(), out2['dispatch'].abs().sum().sum(), 2)
 
 ###########################################################################################################
 ###########################################################################################################

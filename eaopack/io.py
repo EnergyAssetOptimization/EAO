@@ -297,13 +297,17 @@ def set_param(obj, path, value):
         raise ValueError('Error. Object could not be created. Parameter issue? Object: '+n+' | parameter '+str(path))
     return res
 
-def do_optimization(portf, timegrid, data = None):
+def do_optimization(portf, timegrid, data = None, split_interval_size = None):
     """ Shortcut: Do the optimization and extract the results in one go
 
     Args:
         portf (Portfolio): The portfolio to be optimized
         timegrid (Timegrid): Timegrid for optimization
-        data (StartEndValueDict, DataFrame): input time series (optional)
+        data (StartEndValueDict, DataFrame, optional): input time series (optional)
+        split_interval_size (str, optional): Interval size for split optimization 
+                                             Hard cut of optimization into time split for faster calculation.
+                                             Pandas convention 'd', 'h', 'W', ...
+                                             (none for no split)
 
     Returns:
         Output dictionary
@@ -311,7 +315,11 @@ def do_optimization(portf, timegrid, data = None):
     if data is not None:
         my_data = timegrid.prices_to_grid(data)
     else: my_data = None
-    op  = portf.setup_optim_problem(prices = my_data, timegrid = timegrid)
+    if split_interval_size is None:
+        op  = portf.setup_optim_problem(prices = my_data, timegrid = timegrid)
+    else:
+        if not isinstance(split_interval_size, str): raise ValueError('split_interval_size must be a string')
+        op  = portf.setup_split_optim_problem(prices = my_data, timegrid = timegrid, interval_size = split_interval_size)
     res = op.optimize()
     out = extract_output(portf, op, res, my_data)
     return out
