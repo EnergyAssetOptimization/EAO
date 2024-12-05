@@ -400,7 +400,6 @@ class StructuredAsset(Asset):
                 op.mapping.loc[In, 'type'] = 'i'
         return op
 
-
 class LinkedAsset(StructuredAsset):
     """
     Linked asset that wraps a portfolio in one asset and poses additional constraints on variables.

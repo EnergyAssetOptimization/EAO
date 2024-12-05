@@ -416,7 +416,6 @@ class OptimProblem:
 
         return results
 
-
 class SplitOptimProblem(OptimProblem):
     def __init__(self, ops, mapping):
         """ Collection of consecutive OptimProblems
@@ -454,5 +453,4 @@ class SplitOptimProblem(OptimProblem):
                 else:
                     res.duals = res_tmp.duals
         return res
-
 

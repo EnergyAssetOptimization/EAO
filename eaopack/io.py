@@ -8,6 +8,7 @@ from eaopack.portfolio import Portfolio
 from eaopack.optimization import Results, OptimProblem
 from eaopack import serialization 
 from eaopack.assets import Storage
+from eaopack.basic_classes import Timegrid
 
 
 def extract_output(portf: Portfolio, op: OptimProblem, res:Results, prices: dict = None) -> dict:
@@ -92,19 +93,13 @@ def extract_output(portf: Portfolio, op: OptimProblem, res:Results, prices: dict
                 my_mapping = op.mapping.loc[I,:]
                 ### extract ... disp in 
                 what = 'charge'
-                if len(portf.nodes)==1:
-                    myCol = a.name+'_'+what
-                else: # add node information
-                    myCol = (a.name +' ('+  n.name +'_'+ what + ')')
+                myCol = a.name+'_'+what
                 internal_variables[myCol] = 0.
                 for i,r in my_mapping.iterrows():
                     internal_variables.loc[times[r.time_step], myCol] += max(0,-res.x[i])*r.disp_factor
                 ### extract ... disp out
                 what = 'discharge'
-                if len(portf.nodes)==1:
-                    myCol = a.name+'_'+what
-                else: # add node information
-                    myCol = (a.name +' ('+  n.name +'_'+ what + ')')
+                myCol = a.name+'_'+what
                 internal_variables[myCol] = 0.
                 for i,r in my_mapping.iterrows():
                     internal_variables.loc[times[r.time_step], myCol] += min(0,-res.x[i])*r.disp_factor                                                                           
@@ -266,7 +261,6 @@ def get_param(obj, path):
     if not isinstance(path, list): path = [path]
     return get(o, path)
     
-
 def set_param(obj, path, value):
     """ Set parameters of EAO objects. Limited checks, but facilitating managing nested objects such as portfolios or assets
 
@@ -297,3 +291,33 @@ def set_param(obj, path, value):
         raise ValueError('Error. Object could not be created. Parameter issue? Object: '+n+' | parameter '+str(path))
     return res
 
+def optimize(portf:Portfolio, timegrid:Timegrid, data = None, split_interval_size = None) -> Dict:
+    """ Optimization shortcut: Cast data into timegrid, do the optimization and extract the results in one go
+
+    Args:
+        portf (Portfolio): The portfolio to be optimized
+        timegrid (Timegrid): Timegrid for optimization
+        data (StartEndValueDict, DataFrame, optional): input time series. Defaults to None (optional). Will be cast into timegrid
+        split_interval_size (str, optional, default to None): Interval size for split optimization 
+                                             Hard cut of optimization into time split for faster calculation.
+                                             Pandas convention 'd', 'h', 'W', ...
+                                             (none for no split)
+    Returns: Output dictionary with keys (if optimization feasible):
+               - summary
+               - dispatch
+               - DCF (discounted cash flows)
+               - prices
+               - asset internal variables
+               - special variables
+    """
+    if data is not None:
+        my_data = timegrid.prices_to_grid(data)
+    else: my_data = None
+    if split_interval_size is None:
+        op  = portf.setup_optim_problem(prices = my_data, timegrid = timegrid)
+    else:
+        if not isinstance(split_interval_size, str): raise ValueError('split_interval_size must be a string')
+        op  = portf.setup_split_optim_problem(prices = my_data, timegrid = timegrid, interval_size = split_interval_size)
+    res = op.optimize()
+    out = extract_output(portf, op, res, my_data)
+    return out
