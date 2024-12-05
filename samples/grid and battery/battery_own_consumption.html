@@ -108,7 +108,13 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import eaopack as eao
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import os, sys
+# in case eao is not installed, set path
+myDir = os.path.join(os.getcwd(), &#39;../..&#39;)
+sys.path.append(myDir)
+addDir = os.path.join(os.getcwd(), &#39;../../../..&#39;)
+sys.path.append(addDir)
+import eaopack as eao
 import pandas as pd
 import datetime as dt
 import matplotlib.pyplot as plt
@@ -152,7 +158,7 @@ battery_data[&#39;eff&#39;]  = 0.9 # 90% cycle efficiency
 ## basics
 S = dt.date(2023,11,1)
 E = dt.date(2024,11,1)
-timegrid = eao.assets.Timegrid(S, E, freq = &#39;h&#39;) # hourly
+timegrid = eao.Timegrid(S, E, freq = &#39;h&#39;) # hourly
 
 ## settings
 input_ts = pd.DataFrame()
@@ -171,8 +177,8 @@ input_ts = timegrid.prices_to_grid(input_ts)
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>### Structural setup, distinguishing own assets and supply from the grid
-behind_meter = eao.assets.Node(&#39;behind meter&#39;)
-front_of_meter = eao.assets.Node(&#39;front of meter&#39;)
+behind_meter = eao.Node(&#39;behind meter&#39;)
+front_of_meter = eao.Node(&#39;front of meter&#39;)
 
 ### Here: No flexibility in our consumption. Easily changed by adjusting min_cap/max_cap
 consumption = eao.assets.SimpleContract(name       = &#39;consumption&#39;,
@@ -224,7 +230,7 @@ feedin     = eao.assets.SimpleContract(name        = &#39;feedin&#39;,
                                        price       = &#39;price&#39;, # assuming no feed in tariff
                                        min_cap     = -1000,
                                        max_cap     = 0)
-portf = eao.portfolio.Portfolio([supply, consumption, grid_feedin, grid_consumption, pv, feedin, battery])
+portf = eao.Portfolio([supply, consumption, grid_feedin, grid_consumption, pv, feedin, battery])
 </pre></div>
 </div>
 </div>
@@ -252,11 +258,9 @@ portf = eao.portfolio.Portfolio([supply, consumption, grid_feedin, grid_consumpt
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>op  = portf.setup_optim_problem(prices = input_ts, timegrid = timegrid)
-res = op.optimize()
-out = eao.io.extract_output(portf, op, res, input_ts)
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>out = eao.optimize(portf=portf, timegrid=timegrid, data=input_ts)
 print(out[&#39;summary&#39;])
-eao.io.output_to_file(output=out, file_name=&#39;test.xlsx&#39;) ### Commented out. Try it out
+eao.io.output_to_file(output=out, file_name=&#39;test.xlsx&#39;) ### All details. Have look into the file
 </pre></div>
 </div>
 </div>
@@ -277,9 +281,7 @@ value     -29974.687926
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>portf_benchmark = eao.portfolio.Portfolio([supply, consumption, grid_feedin, grid_consumption, pv, feedin])
-op_benchmark  = portf_benchmark.setup_optim_problem(prices = input_ts, timegrid = timegrid)
-res_benchmark = op_benchmark.optimize()
-out_benchmark = eao.io.extract_output(portf_benchmark, op_benchmark, res_benchmark, input_ts)
+out_benchmark   = eao.optimize(portf=portf_benchmark, timegrid=timegrid, data=input_ts)
 </pre></div>
 </div>
 </div>
@@ -291,9 +293,9 @@ out_benchmark = eao.io.extract_output(portf_benchmark, op_benchmark, res_benchma
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(&#39;Overall costs with battery:    &#39;+ str(round(-res.value)))
-print(&#39;Overall costs without battery: &#39;+ str(round(-res_benchmark.value)))
-print(&#39;So the battery saved us:       &#39;+ str(round(res.value - res_benchmark.value)))
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(&#39;Overall costs with battery:    &#39;+ str(round(-out[&#39;summary&#39;].loc[&#39;value&#39;, &#39;Values&#39;])))
+print(&#39;Overall costs without battery: &#39;+ str(round(-out_benchmark[&#39;summary&#39;].loc[&#39;value&#39;, &#39;Values&#39;])))
+print(&#39;So the battery saved us:       &#39;+ str(round(out[&#39;summary&#39;].loc[&#39;value&#39;, &#39;Values&#39;] - out_benchmark[&#39;summary&#39;].loc[&#39;value&#39;, &#39;Values&#39;])))
 </pre></div>
 </div>
 </div>
@@ -308,6 +310,7 @@ So the battery saved us:       19519
 </pre></div></div>
 </div>
 <p>There is a significant saving. But where does the saving come from? Let us look into the details, starting with the overall quantities. See below. Note how quantities are always balanced at nodes. Transport always balances as well – transporting from one node to the other.</p>
+<p>Check out the output “out” in detail. It contains detailed dispatch, cash flows and internal variables such as battery fill levels.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
@@ -427,9 +430,7 @@ Grid fixed costs (EUR) without battery:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>portf_start = eao.portfolio.Portfolio([supply, consumption, grid_feedin, grid_consumption, feedin])
-op_start  = portf_start.setup_optim_problem(prices = input_ts, timegrid = timegrid)
-res_start = op_start.optimize()
-out_start = eao.io.extract_output(portf_start, op_start, res_start, input_ts)
+out_start   = eao.optimize(portf=portf_start, timegrid=timegrid, data=input_ts)
 </pre></div>
 </div>
 </div>
@@ -442,8 +443,8 @@ out_start = eao.io.extract_output(portf_start, op_start, res_start, input_ts)
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>## bookkeeping - looking at cost components in different scenarios. Attention - costs are negative numbers
-start  = -res_start.value # no assets
-with_pv = -res_benchmark.value  # PV, no battery
+start  = -out_start[&#39;summary&#39;].loc[&#39;value&#39;, &#39;Values&#39;] # no assets
+with_pv = -out_benchmark[&#39;summary&#39;].loc[&#39;value&#39;, &#39;Values&#39;]  # PV, no battery
 saving_supply = -((out_benchmark[&#39;DCF&#39;][&#39;supply&#39;].sum() + out_benchmark[&#39;DCF&#39;][&#39;feedin&#39;].sum())- (out[&#39;DCF&#39;][&#39;supply&#39;].sum() + out[&#39;DCF&#39;][&#39;feedin&#39;].sum()))
 saving_grid   = -(out_benchmark[&#39;DCF&#39;][&#39;grid_in&#39;].sum() - out[&#39;DCF&#39;][&#39;grid_in&#39;].sum())
 </pre></div>

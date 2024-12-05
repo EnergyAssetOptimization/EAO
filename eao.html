@@ -156,6 +156,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#eaopack.io.extract_output"><code class="docutils literal notranslate"><span class="pre">extract_output()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#eaopack.io.get_param"><code class="docutils literal notranslate"><span class="pre">get_param()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#eaopack.io.get_params_tree"><code class="docutils literal notranslate"><span class="pre">get_params_tree()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eaopack.io.optimize"><code class="docutils literal notranslate"><span class="pre">optimize()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#eaopack.io.output_to_file"><code class="docutils literal notranslate"><span class="pre">output_to_file()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#eaopack.io.set_param"><code class="docutils literal notranslate"><span class="pre">set_param()</span></code></a></li>
 </ul>
@@ -1716,6 +1717,36 @@ special: dataframe with specific asset parameters (such as size in scaled assets
 <dl class="simple">
 <dt>Returns</dt><dd><p>dict of parameters (nested)
 list of parameter names (nested)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="eaopack.io.optimize">
+<span class="sig-name descname"><span class="pre">optimize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">portf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#eaopack.portfolio.Portfolio" title="eaopack.portfolio.Portfolio"><span class="pre">Portfolio</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">timegrid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><span class="pre">Timegrid</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">split_interval_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="headerlink" href="#eaopack.io.optimize" title="Link to this definition"></a></dt>
+<dd><p>Optimization shortcut: Cast data into timegrid, do the optimization and extract the results in one go</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>portf</strong> (<a class="reference internal" href="#eaopack.portfolio.Portfolio" title="eaopack.portfolio.Portfolio"><em>Portfolio</em></a>) – The portfolio to be optimized</p></li>
+<li><p><strong>timegrid</strong> (<a class="reference internal" href="#eaopack.basic_classes.Timegrid" title="eaopack.basic_classes.Timegrid"><em>Timegrid</em></a>) – Timegrid for optimization</p></li>
+<li><p><strong>data</strong> (<a class="reference internal" href="#eaopack.basic_classes.StartEndValueDict" title="eaopack.basic_classes.StartEndValueDict"><em>StartEndValueDict</em></a><em>, </em><em>DataFrame</em><em>, </em><em>optional</em>) – input time series. Defaults to None (optional). Will be cast into timegrid</p></li>
+<li><p><strong>split_interval_size</strong> (<em>str</em><em>, </em><em>optional</em><em>, </em><em>default to None</em>) – Interval size for split optimization
+Hard cut of optimization into time split for faster calculation.
+Pandas convention ‘d’, ‘h’, ‘W’, …
+(none for no split)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Returns: Output dictionary with keys (if optimization feasible):</dt><dd><ul class="simple">
+<li><p>summary</p></li>
+<li><p>dispatch</p></li>
+<li><p>DCF (discounted cash flows)</p></li>
+<li><p>prices</p></li>
+<li><p>asset internal variables</p></li>
+<li><p>special variables</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
