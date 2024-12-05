@@ -2649,7 +2649,6 @@ class Plant(CHPAsset):
                                        consumption_if_on = consumption_if_on,
                                        _no_heat = True)
 
-
 class OrderBook(Asset):
     """ Contract Class """
     def __init__(self,

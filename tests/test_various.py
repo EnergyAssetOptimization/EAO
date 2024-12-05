@@ -319,9 +319,9 @@ class various(unittest.TestCase):
         """ test opt shortcut
         """
         ### manual benchmark
-        node1 = eao.assets.Node('node_1')
-        node2 = eao.assets.Node('node_2')
-        timegrid = eao.assets.Timegrid(dt.date(2021,1,1), dt.date(2021,2,1), freq = 'd')
+        node1 = eao.Node('node_1')
+        node2 = eao.Node('node_2')
+        timegrid = eao.Timegrid(dt.date(2021,1,1), dt.date(2021,2,1), freq = 'd')
         a1 = eao.assets.SimpleContract(name = 'SC_1', price = 'rand_price_1', nodes = node1 ,
                         min_cap= -20., max_cap=20., start = dt.date(2021,1,10), end = dt.date(2021,1,20))
         #a1.set_timegrid(timegrid)
@@ -342,7 +342,8 @@ class various(unittest.TestCase):
         res = op.optimize()        
         out = eao.io.extract_output(portf, op, res, prices)
         # shortcut
-        out2 = eao.io.do_optimization(portf, timegrid, prices)
+        #out2 = eao.io.optimize(portf, timegrid, prices)
+        out2 = eao.optimize(portf, timegrid, prices)
         self.assertAlmostEqual(out['summary'].loc['value','Values'], out2['summary'].loc['value','Values'], 2)
         self.assertAlmostEqual(out['dispatch'].abs().sum().sum(), out2['dispatch'].abs().sum().sum(), 2)
 
@@ -435,7 +436,7 @@ class various(unittest.TestCase):
         res = op.optimize()
         out = eao.io.extract_output(portf = portf, op = op, res = res)
         # shortcut
-        out2 = eao.io.do_optimization(portf, tg, prices, split_interval_size='d')
+        out2 = eao.optimize(portf, tg, prices, split_interval_size='d')
         self.assertAlmostEqual(out['summary'].loc['value','Values'], out2['summary'].loc['value','Values'], 2)
         self.assertAlmostEqual(out['dispatch'].abs().sum().sum(), out2['dispatch'].abs().sum().sum(), 2)
 
