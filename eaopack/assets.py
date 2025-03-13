@@ -240,11 +240,14 @@ class Storage(Asset):
                 cost_store : float = 0.,
                 block_size : str = None,
                 eff_in  : float = 1.,
+                eff_out  : float = 1.,                
                 inflow  : float = 0.,
                 no_simult_in_out: bool = False,
                 max_store_duration : float = None,
                 price: str=None,
                 freq: str = None,
+                max_cycles_no: float = None,
+                max_cycles_freq: str = 'd' ,
                 profile: pd.Series = None,
                 periodicity: str = None,
                 periodicity_duration: str = None                 ):
@@ -275,7 +278,13 @@ class Storage(Asset):
                                           Note: Cost for stored inflow is correctly optimized, but constant contribution not part of output NPV
             block_size (str, optional): Mainly to speed optimization, optimize the storage in time blocks. Defaults None (no blocks).
                                         Using pandas type frequency strings (e.g. 'd' to have a block each day)
+
             eff_in (float, optional): Efficiency taking in the commodity. Means e.g. at 90%: 1MWh in --> 0,9 MWh in storage. Defaults to 1 (=100%).
+            eff_out: Efficiency taking out the commodity. Defaults to 1 (=100%)
+
+            max_cycles_no   (float, optional): Maximum number of cycles the battery can perform. Defaults to None -- MIP!
+            max_cycles_freq (str, optional): Frequency of the maximum number of cycles. Example: "d" for daily cycles. Defaults to 'd'
+
             inflow (float, optional): Constant rate of inflow volumes (flow in each time step. E.g. water inflow in hydro storage). Defaults to 0.
             no_simult_in_out (boolean, optional): Enforce no simultaneous dispatch in/out in case of costs or efficiency!=1. Makes problem MIP. Defaults to False
             max_store_duration (float, optional): Maximal duration in main time units that charged commodity can be held. Makes problem a MIP. Defaults to none
@@ -294,6 +303,7 @@ class Storage(Asset):
         assert cap_in  >=0, 'Storage --'+self.name+'--: cap_in must not be negative'
         assert cap_out >=0, 'Storage --'+self.name+'--: cap_out must not be negative'
         self.eff_in = eff_in
+        self.eff_out = eff_out
         self.inflow = inflow
         self.cost_out = cost_out
         self.cost_in = cost_in
@@ -305,6 +315,8 @@ class Storage(Asset):
         assert len(self.nodes)<=2, 'for storage only one or two nodes valid'
         self.no_simult_in_out   = no_simult_in_out
         self.max_store_duration = max_store_duration
+        self.max_cycles_no      = max_cycles_no
+        self.max_cycles_freq    = max_cycles_freq
         #### periodicity
         assert not ((periodicity_duration is not None) and (periodicity is None)), 'Cannot have periodicity duration not none and periodicity none'
         self.periodicity          = periodicity
@@ -356,11 +368,11 @@ class Storage(Asset):
             else: # simply restrict prices to  asset time window
                 price           = price[self.timegrid.restricted.I]
             # warning if there are neg. prices and no_simult_in_out is not True
-            if (not self.no_simult_in_out) and (self.eff_in <= 1) and (not (price >= 0).all()):
+            if (not self.no_simult_in_out) and ((self.eff_in < 1) or (self.eff_out < 1)) and (not (price >= 0).all()):
                 print('Storage --'+self.name+'--: no_simult_in_out is set to False, but there are neg. prices. Likely storage will load & unload simultaneously. You want that?')
         # separation into in/out needed?  Only one or two dispatch variables per time step
         # new separation reason: separate nodes in and out
-        sep_needed =  (self.eff_in != 1) or (self.cost_in !=0) or (self.cost_out !=0) or (len(self.nodes)==2)
+        sep_needed =  (self.eff_in != 1) or (self.eff_out != 1) or (self.cost_in !=0) or (self.cost_out !=0) or (len(self.nodes)==2) or (self.max_cycles_no is not None)
         # cost_store -- costs for keeping quantity in storage
         # effectively, for each time step t we have:   cost_store * sum_{i<t}(disp_i)
         # and after summing ofer time steps t we get   cost_store * sum_t(disp_t * N_t)
@@ -382,7 +394,7 @@ class Storage(Asset):
                 c -= np.asarray(price)
             c = c * (np.tile(discount, (2,1)))
             if self.cost_store != 0:
-                c -= (np.vstack((cost_store*self.eff_in, cost_store)))
+                c -= (np.vstack((cost_store*self.eff_in, cost_store/self.eff_out)))
         else:
             u = ct
             l = -cp
@@ -396,6 +408,8 @@ class Storage(Asset):
         if costs_only:
             return c
         # Storage restriction --  cumulative sums must fit into reservoir
+        ## treatment eff_in: only eff_in reaches storage        
+        ## treatment of eff_out: discharge disaptch up to cap_out -- but storage is drained cap_out/eff_out
         if self.block_size is None:
             A = -sp.tril(np.ones((n,n),float))
             # Maximum: max volume not exceeded
@@ -440,18 +454,38 @@ class Storage(Asset):
                 parts_b_min[-1] =   self.end_level - self.start_level - inflow[-1]
                 b_min[a:a+diff] = parts_b_min
         if sep_needed:
-            A = sp.hstack((A*self.eff_in, A )) # for in and out
+            A = sp.hstack((A*self.eff_in, A/self.eff_out )) # for in and out
         # join restrictions for in, out, full, empty
         b = np.hstack((b, b_min))
         A = sp.vstack((A, A))
         cType = 'U'*n + 'L'*n
+
+        ## add restrictions for max_cycles
+        # quantity behind no of cycles
+        if self.max_cycles_no is not None:
+            cycle_quant = self.max_cycles_no * self.size
+            ## create daterange for start / end of cycles
+            try:   extra_time = pd.Timedelta(self.max_cycles_freq)
+            except:extra_time = pd.Timedelta(1,self.max_cycles_freq)
+            myrange = pd.date_range(start = self.timegrid.restricted.start, 
+                                    end = self.timegrid.restricted.end + extra_time, 
+                                    freq = self.max_cycles_freq, 
+                                    inclusive = 'both')
+            ## loop through intervals
+            for i in range(0,len(myrange)-1):
+                myI = (self.timegrid.restricted.timepoints >= myrange[i]) & (self.timegrid.restricted.timepoints < myrange[i+1])
+                if any(myI):
+                    myA = sp.lil_matrix((1,2*n))
+                    myA[0,self.timegrid.restricted.I[myI]] = -self.eff_in # restriction only for disp_in - referring to effective storage size (disp_in is negative!)
+                    A = sp.vstack((A, myA))
+                    b = np.hstack((b, cycle_quant))
+                    cType += 'U'
+
         mapping = pd.DataFrame()
         if sep_needed:
             mapping['time_step'] = np.hstack((self.timegrid.restricted.I, self.timegrid.restricted.I))
             mapping['var_name']  = np.nan # name variables for use e.g. in RI
             mapping['var_name'] = mapping['var_name'].astype(str)
-            # mapping['var_name'].iloc[0:n] = 'disp_in'
-            # mapping['var_name'].iloc[n:] = 'disp_out'
             ind_var_name = mapping.columns.get_indexer(['var_name'])[0]
             mapping.iloc[0:n, ind_var_name] = 'disp_in'
             mapping.iloc[n:, ind_var_name] = 'disp_out'
@@ -461,11 +495,8 @@ class Storage(Asset):
                 mapping['node']  = np.nan
                 mapping['node'] = mapping['node'].astype(str)
                 my_ind = mapping.columns.get_indexer(['node'])[0]
-                # mapping['node'].iloc[0:n]      = self.nodes[0].name
-                # mapping['node'].iloc[n:2*n]    = self.nodes[1].name
                 mapping.iloc[0:n, my_ind]      = self.nodes[0].name
                 mapping.iloc[n:2*n, my_ind]    = self.nodes[1].name
-
         else:
             mapping['time_step'] = self.timegrid.restricted.I
             mapping['node']      = self.nodes[0].name
@@ -493,7 +524,8 @@ class Storage(Asset):
             # extend A for binary variables (not relevant in exist. restrictions)
             # in:  (1-b)*min <= in  <= 0
             # out:        0  <= out <= (b) * max
-            A = sp.hstack((A, sp.lil_matrix((2*n,n)) ))
+            myn = A.shape[0] # current number of rows
+            A = sp.hstack((A, sp.lil_matrix((myn,n)) ))
             # create extra restrictions
             myA = sp.lil_matrix((n,3*n))
             # "0" means mode "in"
@@ -510,6 +542,7 @@ class Storage(Asset):
             b = np.hstack((b, np.zeros(n)))
             cType += 'U'*n
 
+        
         ### in case of max_store_duration - add binary variables and restrictions
         if not self.max_store_duration is None: # without sep_needed no need for forcing
             if 'bool' not in mapping:
@@ -557,17 +590,15 @@ class Storage(Asset):
                                 timegrid               = self.timegrid)
     
     def fill_level(self, optim_problem:OptimProblem, results:Results) -> np.array:
-        """ Calculate discounted cash flow for the asset given the optimization results
+        """ Calculate fill level of the storage incl. efficiencies etc
 
         Args:
             optim_problem (OptimProblem): optimization problem created by this asset
             results (Results): Results given by optimizer
 
         Returns:
-            np.array: array with DCF per time step as per timegrid of asset
+            np.array: array with fill level per time step as per timegrid of asset
         """
-        # for this asset simply from cost vector and optimal dispatch
-        # mapped to the full timegrid
 
         ######### missing: mapping in optim problem
         fill_level = np.zeros(self.timegrid.T)
@@ -576,25 +607,14 @@ class Storage(Asset):
         # drop duplicate index - since mapping may contain several rows per variable (indexes enumerate variables)
         my_mapping = pd.DataFrame(my_mapping[~my_mapping.index.duplicated(keep = 'first')])
 
-        # # for only one variable
-        # I_d  = my_mapping['var_name']=="disp"
-        # if sum(I_d) != 0:
-        #     fill_level =   np.maximum(0,-results.x[my_mapping.loc[I_d].index]*self.eff_in) \
-        #                  + np.minimum(0,-results.x[my_mapping.loc[I_d].index])
-        # else:
-        #     I_in  = my_mapping['var_name']=="disp_in"
-        #     I_out = my_mapping['var_name']=="disp_out"
-        #     fill_level = -results.x[my_mapping.loc[I_in].index]*self.eff_in \
-        #                 - results.x[my_mapping.loc[I_out].index]
-        # fill_level = fill_level.cumsum() + self.start_level
-
         fill_level = np.zeros(self.timegrid.T)
         for i, r in my_mapping.iterrows():
             fill_level[r['time_step']] +=  max(0,-results.x[i])*self.eff_in \
-                                         + min(0,-results.x[i])
+                                         + min(0,-results.x[i])/self.eff_out
         fill_level = fill_level.cumsum() + self.start_level            
         return fill_level
     
+
 class SimpleContract(Asset):
     """ Contract Class """
     def __init__(self,

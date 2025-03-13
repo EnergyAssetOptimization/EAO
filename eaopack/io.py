@@ -291,7 +291,7 @@ def set_param(obj, path, value):
         raise ValueError('Error. Object could not be created. Parameter issue? Object: '+n+' | parameter '+str(path))
     return res
 
-def optimize(portf:Portfolio, timegrid:Timegrid, data = None, split_interval_size = None) -> Dict:
+def optimize(portf:Portfolio, timegrid:Timegrid, data = None, split_interval_size = None, solver = None) -> Dict:
     """ Optimization shortcut: Cast data into timegrid, do the optimization and extract the results in one go
 
     Args:
@@ -302,6 +302,8 @@ def optimize(portf:Portfolio, timegrid:Timegrid, data = None, split_interval_siz
                                              Hard cut of optimization into time split for faster calculation.
                                              Pandas convention 'd', 'h', 'W', ...
                                              (none for no split)
+        solver (str, optional): Solver to be used. Defaults to None (uses default solver)
+
     Returns: Output dictionary with keys (if optimization feasible):
                - summary
                - dispatch
@@ -318,6 +320,6 @@ def optimize(portf:Portfolio, timegrid:Timegrid, data = None, split_interval_siz
     else:
         if not isinstance(split_interval_size, str): raise ValueError('split_interval_size must be a string')
         op  = portf.setup_split_optim_problem(prices = my_data, timegrid = timegrid, interval_size = split_interval_size)
-    res = op.optimize()
+    res = op.optimize(solver=solver)
     out = extract_output(portf, op, res, my_data)
     return out
