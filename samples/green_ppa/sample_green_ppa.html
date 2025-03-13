@@ -7,7 +7,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sample for optimizing a portfolio that supplies a load minimum share of green energy &mdash; EAO  documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
 
@@ -171,7 +171,11 @@ grey_sources  = eao.assets.Node(&#39;grey sources&#39;, commodity= &#39;power&#3
 </section>
 <section id="The-downstream-contract">
 <h2>The downstream contract<a class="headerlink" href="#The-downstream-contract" title="Link to this heading"></a></h2>
-<p>Assume we have a contract, where we are obliged to (1) deliver a given load profile (2) ensure that a fraction (e.g. 80%) of the overall energy comes from green sources (our PPAs). The rest may be provided from the market We assume we have an obligation to deliver at a fixed price.</p>
+<p>Assume we have a contract, where we are obliged to</p>
+<ol class="arabic simple">
+<li><p>deliver a given load profile</p></li>
+<li><p>ensure that a fraction (e.g. 80%) of the overall energy comes from green sources (our PPAs). The rest may be provided from the market We assume we have an obligation to deliver at a fixed price.</p></li>
+</ol>
 <p>This is a rather complex asset and we make use of the StructuredAsset. This could be done in a simpler way, but allows us to encapsulate everything in one asset.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:

@@ -7,7 +7,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mixing long-term and short-term optimization targets &mdash; EAO  documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
 
@@ -77,7 +77,12 @@
   <section id="Mixing-long-term-and-short-term-optimization-targets">
 <h1>Mixing long-term and short-term optimization targets<a class="headerlink" href="#Mixing-long-term-and-short-term-optimization-targets" title="Link to this heading"></a></h1>
 <p>In energy, we typically face very short-term optimization tasks (e.g. 15min intervals in power) as well as long-term effects such as saisonality. Bringing both together in optimization can easily make complexity explode – if we optimize all assets on the most granular time grid. In our approach we allow all assets bring along their own time-scale, which may be different from the time-scale that is used on portfolio level.</p>
-<p>In this example we explain the feature using a rather simple example: * power market with hourly prices that exhibit an hourly as well as a seasonal structure * a short-term storage such as a smaller pump storage or a battery that is optimized hourly on a daily basis - but not across more than a week * a long-term storage such as a high-volume hydro reservoir that is optimized across the whole seaon on a biweekly basis</p>
+<p>In this example we explain the feature using a rather simple example:</p>
+<ul class="simple">
+<li><p>power market with hourly prices that exhibit an hourly as well as a seasonal structure</p></li>
+<li><p>a short-term storage such as a smaller pump storage or a battery that is optimized hourly on a daily basis - but not across more than a week</p></li>
+<li><p>a long-term storage such as a high-volume hydro reservoir that is optimized across the whole seaon on a biweekly basis</p></li>
+</ul>
 </section>
 <section id="Some-prerequisites">
 <h1>Some prerequisites<a class="headerlink" href="#Some-prerequisites" title="Link to this heading"></a></h1>
@@ -109,7 +114,12 @@ import matplotlib.pyplot as plt
 </section>
 <section id="Define-portfolio">
 <h2>Define portfolio<a class="headerlink" href="#Define-portfolio" title="Link to this heading"></a></h2>
-<p>We use three different assets: * Market: a simple contract with a given market price * Short-term storage, acting on an hourly basis. We reduce the complexity by enforcing that the optimization is done for every day, but not across weeks * Long-term storage acting on a weekly level for the whole season: We reduce complexity by assuming the same (here flat) profile for all hours within two weeks</p>
+<p>We use three different assets:</p>
+<ul class="simple">
+<li><p>Market: a simple contract with a given market price</p></li>
+<li><p>Short-term storage, acting on an hourly basis. We reduce the complexity by enforcing that the optimization is done for every day, but not across weeks</p></li>
+<li><p>Long-term storage acting on a weekly level for the whole season: We reduce complexity by assuming the same (here flat) profile for all hours within two weeks</p></li>
+</ul>
 <p>Note: For sake of clarity in the charts we do the optimization on daily granularity. Finer overall granularity (e.g. hours) is defined on portfolio level in the timegrid</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:

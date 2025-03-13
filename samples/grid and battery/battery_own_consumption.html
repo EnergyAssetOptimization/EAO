@@ -7,7 +7,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EAO - easy and straight forward optimization of energy setups &mdash; EAO  documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
 
@@ -393,7 +393,12 @@ Total:  -49494.0
 
 </pre></div></div>
 </div>
-<p>There are two contributions: * supply &amp; PV: we are utilizing the battery to maximize own consumption, mainly to avoid variable grid fees * battery &amp; grid: we try to minimize peak load (capacity fee) * battery arbitrage: utilizing the battery to consume from grid in cheap hours and feed in in expensive hours</p>
+<p>There are two contributions:</p>
+<ul class="simple">
+<li><p>supply &amp; PV: we are utilizing the battery to maximize own consumption, mainly to avoid variable grid fees</p></li>
+<li><p>battery &amp; grid: we try to minimize peak load (capacity fee)</p></li>
+<li><p>battery arbitrage: utilizing the battery to consume from grid in cheap hours and feed in in expensive hours</p></li>
+</ul>
 <p>Everything is optimized in a consistent manner in one go!</p>
 <p>The grid connection is a special case: Besides avoiding variable grid fees, we’re sizing the capacity over the course of the year, utilizing the battery to reduce peaks. Here the results. “Value” gives the required capacity:</p>
 <div class="nbinput docutils container">
